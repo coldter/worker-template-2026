@@ -1,0 +1,50 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "server",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-03-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "placement": { "mode": "smart" },
+  "observability": {
+    "enabled": true,
+    "logs": { "head_sampling_rate": 1 },
+    "traces": { "enabled": true, "head_sampling_rate": 0.01 }
+  },
+  "hyperdrive": [
+    {
+      "binding": "HYPERDRIVE",
+      "id": "placeholder-hyperdrive-id",
+      "localConnectionString": "postgresql://postgres:postgres@localhost:5432/app_dev"
+    }
+  ],
+  "kv_namespaces": [
+    { "binding": "CACHE", "id": "placeholder-kv-id", "preview_id": "placeholder-kv-preview-id" }
+  ],
+  "analytics_engine_datasets": [
+    { "binding": "ANALYTICS", "dataset": "server_requests" },
+    { "binding": "PRODUCT_ANALYTICS", "dataset": "server_events" }
+  ],
+  "durable_objects": {
+    "bindings": [
+      { "name": "RATE_LIMITER", "class_name": "RateLimiter" }
+    ]
+  },
+  "migrations": [
+    { "tag": "v1", "new_classes": ["RateLimiter"] }
+  ],
+  "workflows": [
+    { "name": "onboarding-workflow", "binding": "ONBOARDING_WF", "class_name": "OnboardingWorkflow" },
+    { "name": "email-notification-workflow", "binding": "EMAIL_NOTIFICATION_WF", "class_name": "EmailNotificationWorkflow" },
+    { "name": "push-notification-workflow", "binding": "PUSH_NOTIFICATION_WF", "class_name": "PushNotificationWorkflow" }
+  ],
+  "secrets": {
+    "required": ["BETTER_AUTH_SECRET", "FIREBASE_SERVICE_ACCOUNT_KEY_BASE64", "RESEND_API_KEY", "VAULT_MASTER_KEY"]
+  },
+  "vars": {
+    "APP_URL": "http://localhost:8787",
+    "CORS_ORIGINS": "http://localhost:3000",
+    "EMAIL_FROM": "noreply@example.com",
+    "EMAIL_FROM_NAME": "App",
+    "FCM_PROVIDER": "console"
+  }
+}

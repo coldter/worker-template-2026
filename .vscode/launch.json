@@ -1,0 +1,38 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug Worker (Wrangler)",
+      "type": "node",
+      "request": "attach",
+      "port": 9229,
+      "cwd": "${workspaceFolder}/apps/server",
+      "resolveSourceMapLocations": ["${workspaceFolder}/**", "!**/node_modules/**"],
+      "attachSimplePort": 9229,
+      "preLaunchTask": "wrangler-dev-inspect"
+    },
+    {
+      "name": "[NODE] Debug Any Script",
+      "type": "node",
+      "request": "launch",
+      "runtimeArgs": [
+        "--import",
+        "tsx/esm"
+      ],
+      "args": ["${file}"],
+      "cwd": "${workspaceFolder}/apps/server",
+      "env": {
+        "NODE_ENV": "development"
+      },
+      "resolveSourceMapLocations": ["${workspaceFolder}/**", "!**/node_modules/**"]
+    },
+    {
+      "name": "[WEB] Debug Web (Brave)",
+      "type": "chrome",
+      "request": "launch",
+      "url": "http://localhost:3001",
+      "webRoot": "${workspaceFolder}/apps/web/src",
+      "runtimeExecutable": "/usr/bin/brave-browser-stable"
+    }
+  ]
+}
