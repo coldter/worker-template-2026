@@ -9,7 +9,7 @@ import { ApiError, clientConfig } from "@/lib/api";
  */
 export const createClientConfig: CreateClientConfig = (baseConfig) => ({
   ...baseConfig,
-  baseUrl: import.meta.env.VITE_SERVER_URL || "http://localhost:3100",
+  baseUrl: import.meta.env.VITE_SERVER_URL || "http://localhost:8787",
   responseStyle: "data",
   throwOnError: true,
   fetch: async (input: RequestInfo | URL, init?: RequestInit) => {

@@ -70,16 +70,33 @@ export async function hasPermission(
 
 /**
  * Check if user has ANY of the specified permissions
+ * Fetches roles once and checks all permissions in memory.
  */
 export async function hasAnyPermission(
   db: DrizzleClient,
   user: UserWithRoles,
   permissionList: PermissionIdentifier[]
 ): Promise<boolean> {
-  for (const permission of permissionList) {
-    if (await hasPermission(db, user, permission)) {
+  if (!(user.roleSlugs.length && permissionList.length)) {
+    return false;
+  }
+
+  const userRoles = await db.query.roles.findMany({
+    where: { slug: { in: user.roleSlugs }, deletedAt: { isNull: true } },
+    columns: { permissions: true },
+  });
+
+  const castedUserRoles = userRoles as Array<{ permissions: PermissionKey[] }>;
+  const keys = permissionList.map((p) => getPermissionKey(p) as PermissionKey);
+
+  for (const role of castedUserRoles) {
+    if (role.permissions.includes("*")) {
+      return true;
+    }
+    if (keys.some((key) => role.permissions.includes(key))) {
       return true;
     }
   }
+
   return false;
 }

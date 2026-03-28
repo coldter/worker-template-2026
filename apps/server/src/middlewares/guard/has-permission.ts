@@ -1,12 +1,23 @@
 import { createMiddleware } from "hono/factory";
 
 import type { Env } from "@/lib/context";
-import {
-  hasAnyPermission as checkAnyPermission,
-  hasPermission as checkPermission,
-  getPermissionKey,
-  type PermissionIdentifier,
-} from "@/modules/roles";
+import { getPermissionKey, type PermissionIdentifier } from "@/modules/roles";
+
+type UserWithPermissions = { permissions?: string[] };
+
+/**
+ * Reads the pre-loaded permissions array from the session user.
+ *
+ * The enhancedSessionPlugin populates `user.permissions` on every
+ * getSession call, so the permissions are always fresh. No DB query needed.
+ */
+function getUserPermissions(user: Record<string, unknown>): string[] {
+  return (user as UserWithPermissions).permissions ?? [];
+}
+
+function hasPermissionKey(userPermissions: string[], key: string): boolean {
+  return userPermissions.includes("*") || userPermissions.includes(key);
+}
 
 /**
  * Permission guard middleware
@@ -14,27 +25,17 @@ import {
  * Checks if the authenticated user has the specified permission.
  * Returns 401 if not authenticated, 403 if permission denied.
  *
- * Accepts either a permission key string or a permission object:
- *   - requirePermission(PERMISSIONS.USERS.VIEW) // object with autocomplete
- *   - requirePermission("users:view") // string key
+ * Uses the pre-loaded `user.permissions` from the session (populated by
+ * enhancedSessionPlugin) rather than querying the database.
  *
  * @param permission - Permission identifier (key or object)
  *
  * @example
  * ```typescript
- * // Using permission object (recommended - has autocomplete)
  * app.get(
  *   "/users",
  *   isAuthenticated,
  *   requirePermission(PERMISSIONS.USERS.VIEW),
- *   handler
- * );
- *
- * // Using permission key string
- * app.get(
- *   "/users",
- *   isAuthenticated,
- *   requirePermission("users:view"),
  *   handler
  * );
  * ```
@@ -42,7 +43,6 @@ import {
 export const requirePermission = (permission: PermissionIdentifier) =>
   createMiddleware<Env>(async (c, next) => {
     const user = c.get("user");
-    const db = c.get("db");
     const permissionKey = getPermissionKey(permission);
 
     if (!user) {
@@ -52,13 +52,7 @@ export const requirePermission = (permission: PermissionIdentifier) =>
       );
     }
 
-    const granted = await checkPermission(
-      db,
-      { roleSlugs: (user as { roleSlugs?: string[] }).roleSlugs ?? [] },
-      permission
-    );
-
-    if (!granted) {
+    if (!hasPermissionKey(getUserPermissions(user), permissionKey)) {
       return c.json(
         {
           error: {
@@ -97,7 +91,6 @@ export const requirePermission = (permission: PermissionIdentifier) =>
 export function requireAnyPermission(...permissions: PermissionIdentifier[]) {
   return createMiddleware<Env>(async (c, next) => {
     const user = c.get("user");
-    const db = c.get("db");
 
     if (!user) {
       return c.json(
@@ -106,14 +99,13 @@ export function requireAnyPermission(...permissions: PermissionIdentifier[]) {
       );
     }
 
-    const granted = await checkAnyPermission(
-      db,
-      { roleSlugs: (user as { roleSlugs?: string[] }).roleSlugs ?? [] },
-      permissions
+    const userPermissions = getUserPermissions(user);
+    const permissionKeys = permissions.map(getPermissionKey);
+    const granted = permissionKeys.some((key) =>
+      hasPermissionKey(userPermissions, key)
     );
 
     if (!granted) {
-      const permissionKeys = permissions.map(getPermissionKey);
       return c.json(
         {
           error: {
@@ -153,7 +145,6 @@ export function requireAnyPermission(...permissions: PermissionIdentifier[]) {
 export function requireAllPermissions(...permissions: PermissionIdentifier[]) {
   return createMiddleware<Env>(async (c, next) => {
     const user = c.get("user");
-    const db = c.get("db");
 
     if (!user) {
       return c.json(
@@ -162,17 +153,11 @@ export function requireAllPermissions(...permissions: PermissionIdentifier[]) {
       );
     }
 
-    const userWithRoles = {
-      roleSlugs: (user as { roleSlugs?: string[] }).roleSlugs ?? [],
-    };
-
-    const missingPermissions: string[] = [];
-    for (const permission of permissions) {
-      const granted = await checkPermission(db, userWithRoles, permission);
-      if (!granted) {
-        missingPermissions.push(getPermissionKey(permission));
-      }
-    }
+    const userPermissions = getUserPermissions(user);
+    const permissionKeys = permissions.map(getPermissionKey);
+    const missingPermissions = permissionKeys.filter(
+      (key) => !hasPermissionKey(userPermissions, key)
+    );
 
     if (missingPermissions.length > 0) {
       return c.json(
