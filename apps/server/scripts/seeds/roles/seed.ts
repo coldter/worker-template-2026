@@ -23,14 +23,6 @@ const systemRoles: Array<{
 ];
 
 /**
- * Check if roles table has any records
- */
-const isRolesSeeded = async (): Promise<boolean> => {
-  const existingRoles = await db.query.roles.findFirst();
-  return existingRoles !== undefined;
-};
-
-/**
  * Seed system roles to the database
  *
  * Uses upsert to ensure roles exist without duplicating them.
@@ -62,15 +54,4 @@ export const rolesSeed = async () => {
   }
 
   console.info(chalk.greenBright("System roles seeded successfully.\n"));
-};
-
-/**
- * Seed system roles - can be run independently
- */
-export const runRolesSeed = async () => {
-  if (await isRolesSeeded()) {
-    console.warn("Roles table is not empty - updating system roles only");
-  }
-
-  await rolesSeed();
 };

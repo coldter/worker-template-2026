@@ -2,6 +2,7 @@ import { OpenAPIHono } from "@hono/zod-openapi";
 import { secureHeaders } from "hono/secure-headers";
 import { trimTrailingSlash } from "hono/trailing-slash";
 import type { AppEnv } from "@/lib/context";
+import { setupDocs } from "@/lib/docs";
 import { analyticsMiddleware } from "@/middlewares/analytics";
 import { authContextMiddleware } from "@/middlewares/auth-context";
 import { createCorsMiddleware } from "@/middlewares/cors";
@@ -36,12 +37,8 @@ app.route("/api/users", usersHandler);
 app.route("/api/audit-logs", auditLogsHandler);
 app.route("/api/notifications", notificationsHandler);
 
-// OpenAPI docs + Scalar UI
-app.doc31("/openapi.json", {
-  servers: [{ url: "/" }],
-  info: { title: "Server API", version: "v1" },
-  openapi: "3.1.0",
-});
+// OpenAPI docs + Scalar UI (non-production only)
+setupDocs(app);
 
 // Error handling
 app.notFound((c) =>

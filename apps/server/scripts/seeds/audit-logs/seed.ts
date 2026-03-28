@@ -8,7 +8,7 @@ import type {
   AuditEventKey,
   TargetType,
 } from "@/modules/audit-logs/types";
-import { db } from "../utils";
+import { db, isAuditLogsSeeded } from "../utils";
 
 const SEED_COUNT = 200;
 
@@ -77,8 +77,7 @@ export const auditLogsSeed = async () => {
     return;
   }
 
-  const existing = await db.select().from(auditLogs).limit(1);
-  if (existing.length > 0) {
+  if (await isAuditLogsSeeded()) {
     console.warn("Audit logs table is not empty - skipping seed");
     return;
   }
@@ -98,7 +97,6 @@ export const auditLogsSeed = async () => {
     const targetType = getTargetTypeForEvent(event);
 
     return {
-      id: faker.string.uuid(),
       event,
       actorId:
         actorType === "user" && userIds.length > 0

@@ -17,23 +17,25 @@ export function setupDocs(app: OpenAPIHono<AppEnv>): void {
   app.doc31("/openapi.json", {
     servers: [{ url: env.APP_URL }],
     info: {
-      title: "Api Reference",
+      title: "Server API",
       version: "v1",
       description: "API documentation",
     },
     openapi: "3.1.0",
   });
 
-  app.get("/docs", (c) =>
-    Scalar<AppEnv>({
-      url: "openapi.json",
-      theme: "deepSpace",
-      servers: [
-        {
-          url: new URL(c.req.url).origin,
-          description: "Current",
-        },
-      ],
-    })(c, async () => {})
-  );
+  if (String(env.ENVIRONMENT) !== "production") {
+    app.get("/docs", (c) =>
+      Scalar<AppEnv>({
+        url: "openapi.json",
+        theme: "deepSpace",
+        servers: [
+          {
+            url: new URL(c.req.url).origin,
+            description: "Current",
+          },
+        ],
+      })(c, async () => {})
+    );
+  }
 }
