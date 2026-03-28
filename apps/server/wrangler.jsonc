@@ -78,12 +78,18 @@
   ],
   "secrets": {
     "required": [
-      "BETTER_AUTH_SECRET",
       "FIREBASE_SERVICE_ACCOUNT_KEY_BASE64",
       "RESEND_API_KEY",
       "VAULT_MASTER_KEY"
     ]
   },
+  "services": [
+    {
+      "binding": "AUTH",
+      "service": "auth",
+      "entrypoint": "AuthEntrypoint"
+    }
+  ],
   "vars": {
     "ENVIRONMENT": "development",
     "APP_URL": "http://localhost:8787",

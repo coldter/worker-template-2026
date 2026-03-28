@@ -1,5 +1,5 @@
 import { env } from "cloudflare:workers";
-import { logger } from "@/lib/logger";
+import { logger } from "@repo/shared/logger";
 
 // ============================================================
 // TYPES

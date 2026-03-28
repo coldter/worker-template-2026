@@ -47,7 +47,7 @@ export const getPeakTimes = <ThrowOnError extends boolean = true>(options?: Opti
  */
 export const listRoles = <ThrowOnError extends boolean = true>(options?: Options<ListRolesData, ThrowOnError>) => (options?.client ?? client).get<ListRolesResponses, ListRolesErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
-    url: '/api/auth/roles',
+    url: '/api/roles',
     ...options
 });
 

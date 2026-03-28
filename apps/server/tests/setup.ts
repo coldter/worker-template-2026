@@ -1,19 +1,17 @@
 import path from "node:path";
-import { drizzle } from "drizzle-orm/node-postgres";
+import { createDrizzleClient } from "@repo/db/client";
+import { accounts, sessions, users, verifications } from "@repo/db/schema";
+import { logger } from "@repo/shared/logger";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
 import type { Context, Next } from "hono";
 import { Client } from "pg";
 import { vi } from "vitest";
-import { relations } from "@/db/relations";
-import * as schema from "@/db/schema";
-import { accounts, sessions, users, verifications } from "@/db/schema/auth";
-import { logger } from "@/lib/logger";
 
 const client = new Client({
   connectionString: process.env.DATABASE_TEST_URL ?? process.env.DATABASE_URL,
 });
 await client.connect();
-const db = drizzle({ client, schema, relations, casing: "snake_case" });
+const db = createDrizzleClient(client);
 
 vi.mock("@/middlewares/rate-limit", () => ({
   rateLimiter: vi.fn().mockReturnValue(async (_: Context, next: Next) => {
@@ -68,7 +66,7 @@ export async function clearDatabase() {
 export async function migrateDatabase() {
   const migrationsPath = path.resolve(
     import.meta.dirname,
-    "../src/db/migrations"
+    "../../../packages/db/src/migrations"
   );
   logger.info(`[Test Setup] Running migrations from ${migrationsPath}`);
 

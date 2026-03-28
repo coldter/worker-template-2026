@@ -3,9 +3,9 @@ import {
   type WorkflowEvent,
   type WorkflowStep,
 } from "cloudflare:workers";
-import { drizzle } from "drizzle-orm/node-postgres";
+import { createDrizzleClient } from "@repo/db/client";
+import * as schema from "@repo/db/schema";
 import { Client } from "pg";
-import { relations, schema } from "@/db";
 
 interface OnboardingParams {
   email: string;
@@ -30,12 +30,7 @@ export class OnboardingWorkflow extends WorkflowEntrypoint<
         });
         await client.connect();
         try {
-          const db = drizzle({
-            client,
-            schema,
-            relations,
-            casing: "snake_case",
-          });
+          const db = createDrizzleClient(client);
           await db.insert(schema.auditLogs).values({
             event: "user.created",
             actorId: event.payload.userId,

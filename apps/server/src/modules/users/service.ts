@@ -1,3 +1,5 @@
+import type { DrizzleClient } from "@repo/db";
+import { accounts, sessions, users } from "@repo/db/schema";
 import { hashPassword } from "better-auth/crypto";
 import {
   and,
@@ -10,8 +12,6 @@ import {
   or,
   type SQL,
 } from "drizzle-orm";
-import type { DrizzleClient } from "@/db";
-import { accounts, sessions, users } from "@/db/schema";
 import { AUDIT_EVENTS, TARGET_TYPES } from "@/modules/audit-logs/constants";
 import { auditLogService } from "@/modules/audit-logs/service";
 import type { AuditLogMetadata } from "@/modules/audit-logs/types";

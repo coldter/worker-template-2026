@@ -1,19 +1,17 @@
 /** biome-ignore-all lint/suspicious/noConsole: script file */
 import { readFileSync } from "node:fs";
 import { confirm, input, select } from "@inquirer/prompts";
-import chalk from "chalk";
-import { highlight } from "cli-highlight";
-import { and, desc, eq } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/node-postgres";
-import { Client } from "pg";
-import { relations } from "@/db/relations";
-import * as schema from "@/db/schema";
+import { createDrizzleClient } from "@repo/db/client";
 import {
   notificationPreferences,
   notifications,
   pushTokens,
-} from "@/db/schema";
-import { users } from "@/db/schema/auth";
+  users,
+} from "@repo/db/schema";
+import chalk from "chalk";
+import { highlight } from "cli-highlight";
+import { and, desc, eq } from "drizzle-orm";
+import { Client } from "pg";
 import { getPushProvider } from "@/lib/firebase";
 import {
   NOTIFICATION_TYPE_CONFIG,
@@ -26,7 +24,7 @@ import { notificationService } from "@/modules/notifications/service";
 
 const client = new Client({ connectionString: process.env.DATABASE_URL });
 await client.connect();
-const db = drizzle({ client, schema, relations, casing: "snake_case" });
+const db = createDrizzleClient(client);
 
 // -- Safety guard --
 

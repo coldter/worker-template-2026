@@ -1,10 +1,10 @@
+import { logger } from "@repo/shared/logger";
 import { DrizzleQueryError } from "drizzle-orm";
 import type { ErrorHandler } from "hono";
 import { HTTPException } from "hono/http-exception";
 import pg from "pg";
 import { PostgresError } from "pg-error-enum";
 import type { AppEnv } from "@/lib/context";
-import { logger } from "@/lib/logger";
 
 function errorResponse(
   code: string,

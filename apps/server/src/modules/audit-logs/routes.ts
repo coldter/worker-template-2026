@@ -1,7 +1,7 @@
 import { commonErrorResponses } from "@/lib/common-response";
 import { createRouteConfig } from "@/lib/route-config";
 import { requirePermission } from "@/middlewares/guard";
-import { PERMISSIONS } from "@/modules/auth/roles/permissions";
+import { PERMISSIONS } from "@/modules/roles/permissions";
 
 import {
   listAuditLogsQuerySchema,

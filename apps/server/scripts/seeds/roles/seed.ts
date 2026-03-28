@@ -1,6 +1,6 @@
+import { roles } from "@repo/db/schema";
 import chalk from "chalk";
-import { roles } from "@/db/schema";
-import { type PermissionKey, SYSTEM_ROLES } from "@/modules/auth/roles";
+import { type PermissionKey, SYSTEM_ROLES } from "@/modules/roles";
 import { db } from "../utils";
 
 /**

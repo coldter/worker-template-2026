@@ -1,8 +1,8 @@
+import { createAccountId, createUserId } from "@repo/db/ids";
+import { accounts, users } from "@repo/db/schema";
 import { hashPassword } from "better-auth/crypto";
 import chalk from "chalk";
-import { accounts, users } from "@/db/schema";
-import { createAccountId, createUserId } from "@/lib/ids";
-import { SYSTEM_ROLES } from "@/modules/auth/roles";
+import { SYSTEM_ROLES } from "@/modules/roles";
 import { defaultAdminUser } from "../fixtures";
 import { db, isUserSeeded } from "../utils";
 

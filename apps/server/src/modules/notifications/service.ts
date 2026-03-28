@@ -1,11 +1,10 @@
-import { and, asc, count, desc, eq, type SQL, sql } from "drizzle-orm";
-
-import type { DrizzleClient } from "@/db";
+import type { DrizzleClient } from "@repo/db";
 import {
   notificationPreferences,
   notifications,
   pushTokens,
-} from "@/db/schema";
+} from "@repo/db/schema";
+import { and, asc, count, desc, eq, type SQL, sql } from "drizzle-orm";
 import { triggerWorkflow } from "@/lib/events";
 import {
   createPaginatedResponse,

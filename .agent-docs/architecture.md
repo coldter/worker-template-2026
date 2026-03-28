@@ -5,9 +5,20 @@
 | Path | Purpose |
 | --- | --- |
 | `apps/server` | Cloudflare Worker: Hono API with OpenAPI, Drizzle/Postgres via Hyperdrive |
+| `apps/auth` | Cloudflare Worker: Better Auth with bearer tokens, JWT, Service Binding RPC |
 | `apps/web` | React SPA (TanStack Router/Query, Zustand) |
+| `packages/db` | Shared database schema, relations, client, and migrations (Drizzle ORM) |
 | `packages/shared` | Shared runtime constants, types, and helpers |
 | `packages/email` | React Email templates + Resend transport |
+
+## Service Bindings
+
+`apps/server` and `apps/auth` are linked via Cloudflare Service Bindings (no network hop):
+
+- `apps/server` binds `AUTH` -> `apps/auth` (`AuthEntrypoint`): used to proxy `/api/auth/*` requests and to call `getSession` / `getToken` RPC methods per request.
+- `apps/auth` binds `API` -> `apps/server` (`ApiEntrypoint`): used to fire lifecycle event hooks (`onUserCreated`, `onNewDeviceLogin`, `onUserStatusChange`).
+
+See [Auth architecture](.agent-docs/auth-architecture.md) for the full technical reference.
 
 ## Server Runtime (Cloudflare Workers)
 
@@ -24,7 +35,8 @@
 Use `import { env } from "cloudflare:workers"` for access outside of a Hono handler. Inside a handler, use `c.env`. Never pass `env` as a function parameter.
 
 ## Server Modules (`apps/server/src/modules`)
-- `analytics`, `audit-logs`, `auth`, `cards`, `controls`, `mcc-catalog`, `mobile-dashboard`, `notifications`, `shares`, `status`, `transactions`, `users`
+- `analytics`, `audit-logs`, `cards`, `controls`, `mcc-catalog`, `mobile-dashboard`, `notifications`, `roles`, `shares`, `status`, `transactions`, `users`
+- Authentication is handled by `apps/auth` (a separate worker), not a module in `apps/server`. The server proxies `/api/auth/*` to the auth worker and validates sessions via Service Binding RPC.
 
 ## Import Aliases
 - In app workspaces, `@/*` maps to `src/*`.

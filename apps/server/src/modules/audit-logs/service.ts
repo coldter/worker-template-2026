@@ -1,3 +1,5 @@
+import type { DrizzleClient, Executor } from "@repo/db";
+import { auditLogs } from "@repo/db/schema";
 import {
   and,
   asc,
@@ -9,9 +11,6 @@ import {
   type SQL,
   sql,
 } from "drizzle-orm";
-
-import type { DrizzleClient, Executor } from "@/db";
-import { auditLogs } from "@/db/schema/audit-logs";
 import type {
   CreateAuditLogInput,
   FindAuditLogsQuery,

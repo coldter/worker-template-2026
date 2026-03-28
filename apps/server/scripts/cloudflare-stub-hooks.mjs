@@ -6,6 +6,7 @@ const STUB_SOURCE = [
   "const handler = {",
   "  get(_, prop) {",
   "    if (typeof prop === 'symbol' || prop === 'then') return undefined;",
+  "    if (prop === 'toString' || prop === 'valueOf') return () => '';",
   "    return new Proxy(function() {}, handler);",
   "  },",
   "  apply() { return Promise.resolve(new Proxy({}, handler)); }",

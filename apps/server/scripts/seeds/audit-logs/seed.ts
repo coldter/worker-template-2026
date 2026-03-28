@@ -1,7 +1,6 @@
 import { faker } from "@faker-js/faker";
+import { auditLogs, users } from "@repo/db/schema";
 import chalk from "chalk";
-import { users } from "@/db/schema";
-import { auditLogs } from "@/db/schema/audit-logs";
 import { ACTOR_TYPES, AUDIT_EVENTS } from "@/modules/audit-logs/constants";
 import type {
   ActorType,

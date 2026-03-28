@@ -1,4 +1,4 @@
-import type { DrizzleClient } from "@/db";
+import type { DrizzleClient } from "@repo/db";
 
 export type AppEnv = {
   Bindings: CloudflareBindings;
@@ -13,7 +13,6 @@ export type AppEnv = {
 // Re-export for backward compat with files that import `Env`
 export type Env = AppEnv;
 
-// Auth types will be refined when auth instance is rewritten
-// For now, use the existing types from better-auth
+// Loose auth types - the AUTH service binding returns these via RPC
 export type AuthUser = Record<string, unknown> & { id: string };
 export type AuthSession = Record<string, unknown> & { id: string };

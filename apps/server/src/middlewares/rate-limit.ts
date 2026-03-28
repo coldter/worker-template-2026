@@ -35,7 +35,7 @@ export const rateLimitMiddleware = createMiddleware<AppEnv>(async (c, next) => {
       c.header("X-RateLimit-Remaining", String(remaining));
       return next();
     } catch (err) {
-      const { logger } = await import("@/lib/logger");
+      const { logger } = await import("@repo/shared/logger");
       logger.warn("Rate limiter DO unavailable, falling back to KV", {
         error: err instanceof Error ? err.message : String(err),
       });

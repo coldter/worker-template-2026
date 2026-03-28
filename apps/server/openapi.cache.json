@@ -935,7 +935,7 @@
         }
       }
     },
-    "/api/auth/roles": {
+    "/api/roles": {
       "get": {
         "operationId": "listRoles",
         "tags": ["roles"],

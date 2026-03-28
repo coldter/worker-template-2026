@@ -390,7 +390,7 @@ export type ListRolesData = {
     body?: never;
     path?: never;
     query?: never;
-    url: '/api/auth/roles';
+    url: '/api/roles';
 };
 
 export type ListRolesErrors = {

@@ -53,4 +53,26 @@ export const AUDIT_EVENTS = {
   },
 } as const;
 
-export type AuditEventKey = string;
+// Narrow type: union of all event strings from AUDIT_EVENTS
+type AuditEventObject = {
+  [K in keyof typeof AUDIT_EVENTS]: {
+    [E in keyof (typeof AUDIT_EVENTS)[K]]: (typeof AUDIT_EVENTS)[K][E];
+  }[keyof (typeof AUDIT_EVENTS)[K]];
+}[keyof typeof AUDIT_EVENTS];
+
+export type AuditEventKey = AuditEventObject extends { event: infer E }
+  ? E extends string
+    ? E
+    : string
+  : string;
+
+export interface FieldChange<T = unknown> {
+  from: T;
+  to: T;
+}
+
+export interface AuditLogMetadata {
+  changedFields?: string[];
+  changes?: Record<string, FieldChange>;
+  [key: string]: unknown;
+}

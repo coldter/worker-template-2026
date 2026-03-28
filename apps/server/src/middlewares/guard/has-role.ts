@@ -6,7 +6,7 @@ import {
   type RoleSlug,
   SYSTEM_ROLES,
   type SystemRoleSlug,
-} from "@/modules/auth/roles";
+} from "@/modules/roles";
 
 /**
  * Role guard middleware factory

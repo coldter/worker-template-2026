@@ -10,7 +10,9 @@
     "./users": "./src/users.ts",
     "./roles": "./src/roles.ts",
     "./pagination": "./src/pagination.ts",
-    "./audit": "./src/audit.ts"
+    "./audit": "./src/audit.ts",
+    "./logger": "./src/logger.ts",
+    "./kv-cache": "./src/kv-cache.ts"
   },
   "devDependencies": {
     "@hono/zod-openapi": "^1.2.4",

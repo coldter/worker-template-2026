@@ -12,8 +12,8 @@
     "db:studio": "drizzle-kit studio",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "db:seed": "tsx --env-file=.env scripts/seeds/index.ts",
-    "seed:audit-logs": "tsx --env-file=.env scripts/seeds/audit-logs/run.ts",
+    "db:seed": "tsx scripts/seeds/index.ts",
+    "seed:audit-logs": "tsx scripts/seeds/audit-logs/run.ts",
     "vault:debug": "tsx scripts/vault-debug.ts",
     "push:debug": "tsx scripts/push-debug.ts",
     "generate-openapi": "tsx scripts/generate-openapi.ts",
@@ -24,6 +24,7 @@
   },
   "dependencies": {
     "@hono/zod-openapi": "^1.2.4",
+    "@repo/db": "workspace:*",
     "@repo/email": "workspace:*",
     "@repo/shared": "workspace:*",
     "@scalar/hono-api-reference": "^0.10.5",

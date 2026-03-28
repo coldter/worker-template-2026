@@ -1,0 +1,50 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "auth",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-03-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "placement": {
+    "mode": "smart"
+  },
+  "observability": {
+    "enabled": true,
+    "logs": {
+      "head_sampling_rate": 1
+    }
+  },
+  "hyperdrive": [
+    {
+      "binding": "HYPERDRIVE",
+      "id": "placeholder-hyperdrive-id",
+      "localConnectionString": "postgresql://postgres:postgres@localhost:5432/app_dev"
+    }
+  ],
+  "kv_namespaces": [
+    {
+      "binding": "CACHE",
+      "id": "placeholder-kv-id",
+      "preview_id": "placeholder-kv-preview-id"
+    }
+  ],
+  "services": [
+    {
+      "binding": "API",
+      "service": "server",
+      "entrypoint": "ApiEntrypoint"
+    }
+  ],
+  "secrets": {
+    "required": [
+      "BETTER_AUTH_SECRET",
+      "RESEND_API_KEY"
+    ]
+  },
+  "vars": {
+    "ENVIRONMENT": "development",
+    "APP_URL": "http://localhost:8787",
+    "CORS_ORIGINS": "http://localhost:3001",
+    "EMAIL_FROM": "noreply@example.com",
+    "EMAIL_FROM_NAME": "App"
+  }
+}

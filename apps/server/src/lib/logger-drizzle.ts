@@ -1,5 +1,5 @@
+import { logger } from "@repo/shared/logger";
 import type { Logger } from "drizzle-orm";
-import { logger } from "@/lib/logger";
 
 export class DrizzleLogger implements Logger {
   logQuery(query: string, params: unknown[]): void {

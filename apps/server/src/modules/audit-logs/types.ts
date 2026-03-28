@@ -1,37 +1,30 @@
 import type { z } from "@hono/zod-openapi";
-import type { ValueOf } from "type-fest";
 
-import type { ACTOR_TYPES, AUDIT_EVENTS, TARGET_TYPES } from "./constants";
+import type { AUDIT_EVENTS } from "./constants";
 import type { listAuditLogsQuerySchema } from "./schema";
 
-export type ActorType = (typeof ACTOR_TYPES)[keyof typeof ACTOR_TYPES];
-export type TargetType = (typeof TARGET_TYPES)[keyof typeof TARGET_TYPES];
+export type {
+  ActorType,
+  AuditEventKey,
+  AuditLogMetadata,
+  FieldChange,
+  TargetType,
+} from "@repo/shared/audit";
 
-export type AuditEventObject = ValueOf<{
-  [K in keyof typeof AUDIT_EVENTS]: ValueOf<(typeof AUDIT_EVENTS)[K]>;
-}>;
-
-export type AuditEventKey = AuditEventObject["event"];
-
-export interface FieldChange<T = unknown> {
-  from: T;
-  to: T;
-}
-
-export interface AuditLogMetadata {
-  changedFields?: string[];
-  changes?: Record<string, FieldChange>;
-  [key: string]: unknown;
-}
+export type AuditEventObject = {
+  [K in keyof typeof AUDIT_EVENTS]: {
+    [E in keyof (typeof AUDIT_EVENTS)[K]]: (typeof AUDIT_EVENTS)[K][E];
+  }[keyof (typeof AUDIT_EVENTS)[K]];
+}[keyof typeof AUDIT_EVENTS];
 
 export interface CreateAuditLogInput {
   actorId?: string;
-  actorType?: ActorType;
-  event: AuditEventKey;
+  actorType?: import("@repo/shared/audit").ActorType;
+  event: import("@repo/shared/audit").AuditEventKey;
   ipAddress?: string;
-  metadata?: AuditLogMetadata;
+  metadata?: import("@repo/shared/audit").AuditLogMetadata;
   targetId?: string;
-  targetType?: TargetType;
+  targetType?: import("@repo/shared/audit").TargetType;
   userAgent?: string;
 }
 

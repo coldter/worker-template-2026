@@ -3,11 +3,11 @@ import {
   type WorkflowEvent,
   type WorkflowStep,
 } from "cloudflare:workers";
+import { createDrizzleClient } from "@repo/db/client";
+import * as schema from "@repo/db/schema";
+import { logger } from "@repo/shared/logger";
 import { eq } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/node-postgres";
 import { Client } from "pg";
-import { relations, schema } from "@/db";
-import { logger } from "@/lib/logger";
 
 interface EmailNotificationParams {
   notificationId: string;
@@ -31,12 +31,7 @@ export class EmailNotificationWorkflow extends WorkflowEntrypoint<
         });
         await client.connect();
         try {
-          const db = drizzle({
-            client,
-            schema,
-            relations,
-            casing: "snake_case",
-          });
+          const db = createDrizzleClient(client);
 
           const notification = await db.query.notifications.findFirst({
             where: { id: { eq: event.payload.notificationId } },
@@ -102,12 +97,7 @@ export class EmailNotificationWorkflow extends WorkflowEntrypoint<
         });
         await client.connect();
         try {
-          const db = drizzle({
-            client,
-            schema,
-            relations,
-            casing: "snake_case",
-          });
+          const db = createDrizzleClient(client);
           await db
             .update(schema.notifications)
             .set({ sentAt: new Date(), status: "sent" })

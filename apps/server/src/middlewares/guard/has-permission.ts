@@ -6,7 +6,7 @@ import {
   hasPermission as checkPermission,
   getPermissionKey,
   type PermissionIdentifier,
-} from "@/modules/auth/roles";
+} from "@/modules/roles";
 
 /**
  * Permission guard middleware
