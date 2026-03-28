@@ -15,6 +15,7 @@
     "check-types": "turbo check-types",
     "dev:web": "turbo -F web dev",
     "preview:web": "turbo -F web preview",
+    "deploy:web": "turbo -F web deploy",
     "dev:server": "turbo -F server dev",
     "dev:email": "turbo -F @repo/email dev",
     "db:push": "turbo -F server db:push",
