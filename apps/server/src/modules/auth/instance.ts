@@ -393,11 +393,3 @@ export function createAuth(db: DrizzleClient, executionCtx: ExecutionContext) {
 
   return betterAuth(authConfig);
 }
-
-// Type helper - create a disposable instance for type inference only
-function _inferAuthType() {
-  return createAuth({} as DrizzleClient, {} as ExecutionContext);
-}
-export type AuthInstance = ReturnType<typeof _inferAuthType>;
-export type AuthUser = AuthInstance["$Infer"]["Session"]["user"];
-export type AuthSession = AuthInstance["$Infer"]["Session"]["session"];

@@ -31,12 +31,3 @@ export async function triggerWorkflow(event: AppEvent): Promise<void> {
     });
   }
 }
-
-// Keep old event name constants for reference during migration
-export const EVENTS = {
-  USER_CREATED: "user.created",
-  USER_UPDATED: "user.updated",
-  USER_DEACTIVATED: "user.deactivated",
-  NOTIFICATION_EMAIL_SEND: "notification.email",
-  NOTIFICATION_PUSH_SEND: "notification.push",
-} as const;

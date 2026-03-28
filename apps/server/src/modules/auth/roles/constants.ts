@@ -12,10 +12,6 @@ export const systemRoleSlugSchema = z.enum(SYSTEM_ROLE_SLUG_VALUES);
 export type SystemRoleSlug = z.infer<typeof systemRoleSlugSchema>;
 export type RoleSlug = SystemRoleSlug | (string & {});
 
-export function isSystemRole(slug: string): slug is SystemRoleSlug {
-  return systemRoleSlugSchema.safeParse(slug).success;
-}
-
 export type {
   BasePermissionObject,
   PermissionIdentifier,
