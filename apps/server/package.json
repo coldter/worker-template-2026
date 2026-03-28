@@ -24,7 +24,7 @@
   },
   "dependencies": {
     "@casl/ability": "^6.8.0",
-    "@hono/zod-openapi": "^1.2.3",
+    "@hono/zod-openapi": "^1.2.4",
     "@repo/email": "workspace:*",
     "@repo/shared": "workspace:*",
     "@scalar/hono-api-reference": "^0.10.5",
