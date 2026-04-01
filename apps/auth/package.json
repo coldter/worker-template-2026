@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "wrangler dev --port 8788",
+    "dev": "wrangler dev --port 8788 --inspector-port 9230",
     "deploy": "wrangler deploy --minify",
     "check-types": "tsc --noEmit",
     "cf-typegen": "wrangler types --env-interface CloudflareBindings",
