@@ -18,7 +18,8 @@
   "devDependencies": {
     "@hono/zod-openapi": "^1.2.4",
     "type-fest": "^5.5.0",
-    "typescript": "^6.0.2"
+    "typescript": "^6.0.2",
+    "vitest": "^4.1.2"
   },
   "dependencies": {
     "@casl/ability": "^6.8.0",

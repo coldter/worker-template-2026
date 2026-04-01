@@ -12,11 +12,7 @@ export {
   systemRoleSlugSchema,
 } from "./constants";
 // Helpers
-export {
-  hasAnyPermission,
-  hasPermission,
-  hasRole,
-} from "./helpers";
+export { hasRole } from "./helpers";
 export type { GenericPermissionObject } from "./permissions";
 export { PERMISSIONS } from "./permissions";
 // Types

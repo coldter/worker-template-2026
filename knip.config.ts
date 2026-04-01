@@ -10,7 +10,6 @@ const config: KnipConfig = {
     "tw-animate-css",
     "react-dom",
     "@types/react-dom",
-    "vitest",
   ],
   ignoreIssues: {
     "apps/web/src/modules/ui/**": ["exports"],
@@ -47,8 +46,11 @@ const config: KnipConfig = {
     "packages/email": {
       project: "**/*.{ts,tsx}",
     },
-    "packages/*": {
+    "packages/shared": {
       entry: ["src/**/*.test.ts"],
+      project: "**/*.ts",
+    },
+    "packages/*": {
       project: "**/*.ts",
     },
   },

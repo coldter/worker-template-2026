@@ -1,6 +1,5 @@
 import type { z } from "@hono/zod-openapi";
 
-import type { AUDIT_EVENTS } from "./constants";
 import type { listAuditLogsQuerySchema } from "./schema";
 
 export type {
@@ -10,12 +9,6 @@ export type {
   FieldChange,
   TargetType,
 } from "@repo/shared/audit";
-
-export type AuditEventObject = {
-  [K in keyof typeof AUDIT_EVENTS]: {
-    [E in keyof (typeof AUDIT_EVENTS)[K]]: (typeof AUDIT_EVENTS)[K][E];
-  }[keyof (typeof AUDIT_EVENTS)[K]];
-}[keyof typeof AUDIT_EVENTS];
 
 export interface CreateAuditLogInput {
   actorId?: string;
