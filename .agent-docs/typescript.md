@@ -2,7 +2,7 @@
 
 - Prefer `as const` objects over `enum`.
 - Use `import type` for type-only imports.
-- Do not use the `node:` prefix for built-ins; the runtime is Cloudflare Workers, not Node.js.
+- `nodejs_compat` is enabled, so Node built-ins are allowed when needed. Prefer platform-native APIs (`crypto`, `fetch`, Web Streams) first, and avoid Node-only assumptions in shared runtime code.
 - Prefer `for...of` for iteration and `Promise.all` for independent async work.
 - Use strict equality (`===`, `!==`) and template literals.
 - Prefer `Array.isArray` over `instanceof Array`.

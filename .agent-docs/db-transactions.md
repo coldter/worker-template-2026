@@ -10,7 +10,7 @@
 
 - In handlers use `c.var.db` and pass it to service functions.
 - Service functions accept `db: DrizzleClient` (or `executor: Executor`) as their first parameter; they do not import a global singleton.
-- Import `DrizzleClient`, `Transaction`, and `Executor` types from `@/db`.
+- Import DB types from `@repo/db`.
 
 ## Transactions
 

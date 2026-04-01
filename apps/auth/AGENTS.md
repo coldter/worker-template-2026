@@ -83,7 +83,7 @@ Opens a per-call Postgres connection via Hyperdrive, creates a temporary auth in
 
 ### `getToken(headers: Headers): Promise<TokenResult | null>`
 
-Same pattern as `getSession` but delegates to `auth.api.getToken({ headers })`. Used by native/mobile clients that authenticate with a bearer token instead of a session cookie.
+Same pattern as `getSession` but delegates to `auth.api.getToken({ headers })`. Used by internal server/auth integration paths that need a signed token derived from the current auth session context.
 
 Both `getSession` and `getToken` close the Postgres client with `ctx.waitUntil(client.end())` after the call, regardless of success or failure.
 
@@ -101,7 +101,7 @@ Called when a sign-in is detected from a different user-agent or IP than the use
 
 ### `adminPlugin` -- `env.API.onUserStatusChange`
 
-Called synchronously (not via waitUntil) by the admin plugin's `deactivateUser` and `activateUser` endpoints to propagate status changes to the API worker (e.g. audit log, downstream cleanup).
+Called synchronously (not via `waitUntil`) by admin status-change endpoints (`deactivateUser`, `activateUser`) so status propagation failures are surfaced to callers instead of being silently deferred.
 
 `env.API` is typed as `AuthBindings["API"]` -- an intersection of the raw `Service` binding with the `ApiBindingRpc` interface declared in `src/instance.ts`. This avoids a circular package dependency on `apps/server`.
 

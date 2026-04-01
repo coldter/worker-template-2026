@@ -1,5 +1,7 @@
 # Response Shapes
 
+Use module-specific schemas in `apps/server/src/modules/*/schema.ts` as the source of truth. The shapes below are common patterns, not strict global contracts.
+
 ## Paginated Response
 
 ```typescript
@@ -23,6 +25,8 @@
 ```typescript
 { user: UserSchema }
 ```
+
+Other endpoints use similarly scoped keys such as `{ roles: Role[] }`, `{ profile: ... }`, `{ notification: ... }`, `{ preferences: ... }`.
 
 ## Action Response
 

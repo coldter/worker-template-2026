@@ -2,7 +2,7 @@
 
 | Avoid | Prefer |
 | --- | --- |
-| `guard: isAuthenticated` | `guard: [isAuthenticated]` |
+| custom guard wiring outside `createRouteConfig` | define guards via the `guard` field in route config |
 | hard-coded permission strings | shared `PERMISSIONS.*` constants |
 | `c.req.valid("params")` | `c.req.valid("param")` |
 | implicit status response | `c.json(payload, 200)` |

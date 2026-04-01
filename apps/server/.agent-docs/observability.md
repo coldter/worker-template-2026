@@ -8,9 +8,9 @@
 
 ## Analytics Engine
 
-- Use `trackEvent` from `src/utils/analytics.ts` for structured event tracking.
-- Writes to `env.PRODUCT_ANALYTICS` (Workers Analytics Engine). Failures are silently swallowed to never affect requests.
-- The `analyticsMiddleware` calls `trackEvent` for every HTTP request.
+- `analyticsMiddleware` writes request metrics to `env.ANALYTICS` via `writeDataPoint`.
+- `PRODUCT_ANALYTICS` is also configured in Wrangler for product-specific events, but there is no shared `trackEvent` utility in the current server source tree.
+- Analytics should remain non-blocking for request flow.
 
 ## Guidelines
 - Log errors with enough context (path, method, relevant IDs) for debugging.

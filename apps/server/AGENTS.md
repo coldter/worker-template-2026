@@ -29,7 +29,7 @@ In services: accept `db: DrizzleClient` (or `executor: Executor`) as the first p
 1. Create `src/modules/<name>/` with `schema.ts`, `routes.ts`, `handler.ts`, `service.ts`.
 2. Service functions take `db: DrizzleClient` as the first parameter.
 3. Handler calls the service with `c.var.db`.
-4. Register the handler in `src/routers/main.ts` (or directly in `src/server.ts`).
+4. Register the handler in `src/server.ts`.
 
 ## Adding a New Workflow
 
@@ -42,7 +42,7 @@ In services: accept `db: DrizzleClient` (or `executor: Executor`) as the first p
 
 1. Create `src/durable-objects/<Name>.ts` exporting a class that extends `DurableObject`.
 2. Export the class from `src/index.ts`.
-3. Add a `[[durable_objects]]` binding and a `[durable_objects.bindings]` entry in `wrangler.jsonc`.
+3. Add a `durable_objects.bindings` entry and matching `migrations` entry in `wrangler.jsonc`.
 
 ## Detailed Instructions
 - [Architecture](.agent-docs/architecture.md)

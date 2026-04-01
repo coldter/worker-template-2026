@@ -4,40 +4,53 @@
 
 | Path | Purpose |
 | --- | --- |
-| `apps/server` | Cloudflare Worker: Hono API with OpenAPI, Drizzle/Postgres via Hyperdrive |
-| `apps/auth` | Cloudflare Worker: Better Auth with bearer tokens, JWT, Service Binding RPC |
-| `apps/web` | React SPA (TanStack Router/Query, Zustand) |
-| `packages/db` | Shared database schema, relations, client, and migrations (Drizzle ORM) |
-| `packages/shared` | Shared runtime constants, types, and helpers |
-| `packages/email` | React Email templates + Resend transport |
+| `apps/server` | Cloudflare Worker API (Hono + OpenAPI), workflows, and durable objects |
+| `apps/auth` | Dedicated Cloudflare Worker for Better Auth and auth lifecycle hooks |
+| `apps/web` | React SPA (TanStack Router, TanStack Query, Zustand) |
+| `packages/db` | Shared Drizzle schema, relations, typed client factory, and migrations |
+| `packages/shared` | Shared runtime constants, permissions, logging, pagination, and helpers |
+| `packages/email` | Shared React Email templates + Resend transport wrapper |
 
-## Service Bindings
+## Worker-to-Worker Topology
 
-`apps/server` and `apps/auth` are linked via Cloudflare Service Bindings (no network hop):
+`apps/server` and `apps/auth` communicate through Cloudflare Service Bindings:
 
-- `apps/server` binds `AUTH` -> `apps/auth` (`AuthEntrypoint`): used to proxy `/api/auth/*` requests and to call `getSession` / `getToken` RPC methods per request.
-- `apps/auth` binds `API` -> `apps/server` (`ApiEntrypoint`): used to fire lifecycle event hooks (`onUserCreated`, `onNewDeviceLogin`, `onUserStatusChange`).
+- `apps/server` -> `AUTH` (`AuthEntrypoint`): HTTP proxy for `/api/auth/*` and RPC (`getSession`, `getToken`).
+- `apps/auth` -> `API` (`ApiEntrypoint`): RPC hooks for auth lifecycle events (`onUserCreated`, `onNewDeviceLogin`, `onUserStatusChange`).
 
-See [Auth architecture](.agent-docs/auth-architecture.md) for the full technical reference.
+This keeps auth internal while exposing a single public API origin.
 
-## Server Runtime (Cloudflare Workers)
+## `apps/server` Runtime
 
-- **HTTP**: Hono on `OpenAPIHono`, exported as `default` from `src/index.ts`.
-- **Database**: PostgreSQL via Hyperdrive. A `pg.Client` is created per request in `dbMiddleware`, connected to `env.HYPERDRIVE.connectionString`, and closed with `waitUntil(client.end())` after the response is sent.
-- **KV**: Used for caching and as a rate-limit fallback when the RateLimiter DO is unavailable (`env.KV`).
-- **Durable Objects**: `RateLimiter` (sliding-window rate limiting per key). Exported from `src/index.ts` and bound in `wrangler.jsonc`.
-- **Workflows**: `OnboardingWorkflow`, `EmailNotificationWorkflow`, `PushNotificationWorkflow`. Each step creates its own `pg.Client` connection and closes it synchronously. Exported from `src/index.ts`.
-- **Analytics Engine**: `env.PRODUCT_ANALYTICS` (Workers Analytics Engine dataset). Written via `trackEvent` in `src/utils/analytics.ts`.
-- **Email**: Resend via `@repo/email`. Call `sendEmail({ apiKey, from, to, subject, template, props })`.
+- **HTTP**: `OpenAPIHono<AppEnv>` in `src/server.ts`, exported from `src/index.ts`.
+- **Database**: PostgreSQL via Hyperdrive (`env.HYPERDRIVE.connectionString`) with per-request `pg.Client` lifecycle in `dbMiddleware`.
+- **Cache**: KV namespace bound as `CACHE` (token/cache utilities, rate-limit fallback).
+- **Durable Object**: `RateLimiter` for primary request throttling.
+- **Workflows**: `OnboardingWorkflow`, `EmailNotificationWorkflow`, `PushNotificationWorkflow`.
+- **Analytics**: `ANALYTICS` dataset is written by `analyticsMiddleware`; `PRODUCT_ANALYTICS` is configured but currently not written by server runtime code.
+- **Email**: transactional send path via `@repo/email`.
 
-## Environment Access
+## `apps/auth` Runtime
 
-Use `import { env } from "cloudflare:workers"` for access outside of a Hono handler. Inside a handler, use `c.env`. Never pass `env` as a function parameter.
+- Better Auth is created per request in `src/server.ts` using a request-scoped Drizzle client.
+- Session and user lifecycle behavior is implemented in `src/instance.ts` plugins and `databaseHooks`.
+- Auth worker owns auth secrets and does not expose a separate public origin.
 
-## Server Modules (`apps/server/src/modules`)
-- `analytics`, `audit-logs`, `cards`, `controls`, `mcc-catalog`, `mobile-dashboard`, `notifications`, `roles`, `shares`, `status`, `transactions`, `users`
-- Authentication is handled by `apps/auth` (a separate worker), not a module in `apps/server`. The server proxies `/api/auth/*` to the auth worker and validates sessions via Service Binding RPC.
+## Environment Access Patterns
+
+- Hono handlers: use `c.env`.
+- `WorkerEntrypoint` / `WorkflowEntrypoint` / `DurableObject` classes: use `this.env` and `this.ctx`.
+- Utility modules outside handler/class context: use `import { env } from "cloudflare:workers"` when binding access is required.
+
+## Active Server Modules (`apps/server/src/modules`)
+
+- `audit-logs`
+- `notifications`
+- `roles`
+- `status`
+- `users`
 
 ## Import Aliases
+
 - In app workspaces, `@/*` maps to `src/*`.
-- Shared package imports use explicit subpaths (for example: `@repo/shared/permissions`).
+- Shared imports use explicit subpaths (for example: `@repo/shared/permissions`).

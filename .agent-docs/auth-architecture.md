@@ -54,7 +54,8 @@ The auth worker calls back into the server worker using the `API` Service Bindin
 - `onNewDeviceLogin(params)` - triggered in the session create hook when sign-in is detected from a different device or IP; sends a security notification
 - `onUserStatusChange(params)` - triggered by the admin plugin when an admin changes a user's status; runs status-change business logic in the server
 
-All event hook calls are wrapped in `ctx.waitUntil(...)` so they do not block the auth response. Errors are caught and logged but do not fail the auth operation.
+Most auth lifecycle hooks are wrapped in `ctx.waitUntil(...)` so they do not block auth responses.  
+`onUserStatusChange` (admin-triggered status transitions) is invoked synchronously so failures are surfaced to the caller.
 
 ## Session Model
 
@@ -80,25 +81,17 @@ All event hook calls are wrapped in `ctx.waitUntil(...)` so they do not block th
 - JWKS rotation interval is 30 days
 - JWTs are intended for downstream service-to-service calls where a full session lookup is too expensive
 
-## Social Sign-in Flow
+## Provider Sign-in
 
-Social sign-in (OAuth) is handled entirely through the HTTP proxy pattern:
+The current auth worker configuration does not register OAuth/social providers in `apps/auth/src/instance.ts`.
 
-1. Client navigates to `/api/auth/sign-in/<provider>` on the server worker
-2. Server proxy forwards the request to the auth worker via the `AUTH` Service Binding fetch
-3. Auth worker redirects the browser to the OAuth provider
-4. Provider redirects back to `/api/auth/callback/<provider>` on the server worker
-5. Server proxy forwards the callback to the auth worker
-6. Auth worker exchanges the code, creates/updates the user record, fires `databaseHooks`, and sets the session cookie
-7. Auth worker redirects the browser to the app URL
-
-Because all redirects go through the server worker's public URL, the OAuth callback URL registered with providers is always the server worker's domain, not the auth worker's.
+If provider sign-in is added later, it should still follow the same `/api/auth/*` proxy path through `apps/server`, so auth stays behind service bindings and clients keep a single public origin.
 
 ## Service Binding Security Model
 
 Service Bindings in Cloudflare Workers provide a zero-network-hop RPC mechanism:
 
-- Calls between `apps/server` and `apps/auth` are in-process (same isolate context on the same machine)
+- Calls between `apps/server` and `apps/auth` avoid public network exposure and use Cloudflare's internal service-binding path
 - There is no HTTP round-trip, no TLS, and no public network exposure
 - The auth worker (`apps/auth`) does not need a public route; it is only reachable via the server's binding
 - The server's `AUTH` binding targets the `AuthEntrypoint` class exported from `apps/auth/src/index.ts`

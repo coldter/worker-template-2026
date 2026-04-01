@@ -26,6 +26,6 @@ const user = await createUser(c.var.db, validated);
 
 ## Checklist
 - Reuse shared schemas/helpers from `@repo/shared` where possible.
-- Keep route guards and permission declarations in `routes.ts`.
+- Keep route guards and permission declarations in `routes.ts` (`guard` accepts a middleware or middleware array).
 - Keep authorization ownership checks close to data access in services.
-- Register module handler in `src/server.ts` (or `src/routers/main.ts` if it exists).
+- Register module handlers in `src/server.ts`.

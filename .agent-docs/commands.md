@@ -15,13 +15,16 @@ All env vars live in the root `.env` (single source of truth). The `setup:env` s
 
 | Command | Purpose |
 | --- | --- |
-| `wrangler dev` | Local development (run from `apps/server`) |
-| `wrangler deploy --minify` | Deploy server to Cloudflare (run from `apps/server`) |
-| `bun run dev:auth` | Start auth worker dev server |
+| `bun run dev:server` | Start server worker dev flow (Turbo; wraps `wrangler dev`) |
+| `bun run dev:auth` | Start auth worker dev flow |
+| `bun run dev:web` | Start web app dev flow |
+| `bun run preview:web` | Preview web app build locally |
+| `bun run deploy:web` | Build and deploy web app |
+| `turbo -F server deploy` | Deploy server worker |
 | `turbo -F auth deploy` | Deploy auth worker |
 | `turbo -F auth check-types` | Type-check auth worker |
-| `bun run deploy:web` | Build and deploy web app to Cloudflare (or `bun run deploy` from `apps/web`) |
-| `wrangler types --env-interface CloudflareBindings` | Regenerate `CloudflareBindings` type from `wrangler.jsonc` |
+| `turbo -F server cf-typegen` | Regenerate server `CloudflareBindings` type |
+| `turbo -F auth cf-typegen` | Regenerate auth `CloudflareBindings` type |
 
 ## Code Quality
 
@@ -31,6 +34,8 @@ All env vars live in the root `.env` (single source of truth). The `setup:env` s
 | `bun run check` | Lint + static checks without autofix |
 | `bun run check-types` | Type-check all workspaces |
 | `bun run test` | Run workspace tests (Turbo + Vitest) |
+| `bun run test:watch` | Run tests in watch mode |
+| `bun run test:coverage` | Run tests with coverage reports |
 | `bun run build` | Build all workspaces |
 
 ## Database (Drizzle Kit)
