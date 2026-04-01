@@ -38,7 +38,7 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@cloudflare/vitest-pool-workers": "^0.13.5",
+    "@cloudflare/vitest-pool-workers": "^0.14.0",
     "@faker-js/faker": "^10.4.0",
     "@inquirer/prompts": "^8.3.2",
     "@types/pg": "^8.20.0",
@@ -48,6 +48,6 @@
     "type-fest": "^5.5.0",
     "typescript": "^6.0.2",
     "vitest": "^4.1.2",
-    "wrangler": "^4.78.0"
+    "wrangler": "^4.79.0"
   }
 }
