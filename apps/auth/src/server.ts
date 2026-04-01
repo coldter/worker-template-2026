@@ -1,5 +1,7 @@
 import { createDrizzleClient } from "@repo/db/client";
+import { DrizzleLogger } from "@repo/shared/logger-drizzle";
 import { Hono } from "hono";
+import { trimTrailingSlash } from "hono/trailing-slash";
 import { Client } from "pg";
 import { type AuthBindings, createAuth } from "./instance";
 
@@ -12,13 +14,21 @@ type AuthEnv = {
 
 const app = new Hono<AuthEnv>();
 
+app.use("*", trimTrailingSlash());
+
 // DB middleware - creates and manages connection per request
 app.use("*", async (c, next) => {
   const client = new Client({
     connectionString: c.env.HYPERDRIVE.connectionString,
   });
   await client.connect();
-  c.set("db", createDrizzleClient(client));
+  c.set(
+    "db",
+    createDrizzleClient(
+      client,
+      process.env.NODE_ENV === "development" ? new DrizzleLogger() : undefined
+    )
+  );
   try {
     await next();
   } finally {

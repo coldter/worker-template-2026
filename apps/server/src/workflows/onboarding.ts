@@ -5,6 +5,7 @@ import {
 } from "cloudflare:workers";
 import { createDrizzleClient } from "@repo/db/client";
 import * as schema from "@repo/db/schema";
+import { DrizzleLogger } from "@repo/shared/logger-drizzle";
 import { Client } from "pg";
 
 interface OnboardingParams {
@@ -30,7 +31,12 @@ export class OnboardingWorkflow extends WorkflowEntrypoint<
         });
         await client.connect();
         try {
-          const db = createDrizzleClient(client);
+          const db = createDrizzleClient(
+            client,
+            process.env.NODE_ENV === "development"
+              ? new DrizzleLogger()
+              : undefined
+          );
           await db.insert(schema.auditLogs).values({
             event: "user.created",
             actorId: event.payload.userId,

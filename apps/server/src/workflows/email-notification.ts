@@ -6,6 +6,7 @@ import {
 import { createDrizzleClient } from "@repo/db/client";
 import * as schema from "@repo/db/schema";
 import { logger } from "@repo/shared/logger";
+import { DrizzleLogger } from "@repo/shared/logger-drizzle";
 import { eq } from "drizzle-orm";
 import { Client } from "pg";
 
@@ -31,7 +32,12 @@ export class EmailNotificationWorkflow extends WorkflowEntrypoint<
         });
         await client.connect();
         try {
-          const db = createDrizzleClient(client);
+          const db = createDrizzleClient(
+            client,
+            process.env.NODE_ENV === "development"
+              ? new DrizzleLogger()
+              : undefined
+          );
 
           const notification = await db.query.notifications.findFirst({
             where: { id: { eq: event.payload.notificationId } },
@@ -97,7 +103,12 @@ export class EmailNotificationWorkflow extends WorkflowEntrypoint<
         });
         await client.connect();
         try {
-          const db = createDrizzleClient(client);
+          const db = createDrizzleClient(
+            client,
+            process.env.NODE_ENV === "development"
+              ? new DrizzleLogger()
+              : undefined
+          );
           await db
             .update(schema.notifications)
             .set({ sentAt: new Date(), status: "sent" })

@@ -9,7 +9,10 @@ export interface Logger {
 }
 
 function log(level: LogLevel, message: string, context?: LogContext): void {
-  const entry = JSON.stringify({ level, message, ts: Date.now(), ...context });
+  const entry =
+    process.env.NODE_ENV === "production"
+      ? JSON.stringify({ level, message, ts: Date.now(), ...context })
+      : { level, message, ts: Date.now(), ...context };
   switch (level) {
     case "error":
       console.error(entry);

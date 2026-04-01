@@ -8,6 +8,7 @@ import {
   pushTokens,
   users,
 } from "@repo/db/schema";
+import { DrizzleLogger } from "@repo/shared/logger-drizzle";
 import chalk from "chalk";
 import { highlight } from "cli-highlight";
 import { and, desc, eq } from "drizzle-orm";
@@ -24,7 +25,10 @@ import { notificationService } from "@/modules/notifications/service";
 
 const client = new Client({ connectionString: process.env.DATABASE_URL });
 await client.connect();
-const db = createDrizzleClient(client);
+const db = createDrizzleClient(
+  client,
+  process.env.NODE_ENV === "development" ? new DrizzleLogger() : undefined
+);
 
 // -- Safety guard --
 

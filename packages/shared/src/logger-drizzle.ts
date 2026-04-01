@@ -1,7 +1,10 @@
-import { logger } from "@repo/shared/logger";
-import type { Logger } from "drizzle-orm";
+import { logger } from "./logger";
 
-export class DrizzleLogger implements Logger {
+export interface DrizzleOrmLogger {
+  logQuery: (query: string, params: unknown[]) => void;
+}
+
+export class DrizzleLogger implements DrizzleOrmLogger {
   logQuery(query: string, params: unknown[]): void {
     logger.debug("DB Query", {
       query: this.replaceSqlPlaceholders(query, params),

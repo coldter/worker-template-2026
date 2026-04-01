@@ -1,5 +1,6 @@
 import { WorkerEntrypoint } from "cloudflare:workers";
 import { createDrizzleClient } from "@repo/db/client";
+import { DrizzleLogger } from "@repo/shared/logger-drizzle";
 import { Client } from "pg";
 import { type AuthBindings, createAuth } from "./instance";
 import app from "./server";
@@ -15,7 +16,10 @@ export class AuthEntrypoint extends WorkerEntrypoint<CloudflareBindings> {
     });
     await client.connect();
     try {
-      const db = createDrizzleClient(client);
+      const db = createDrizzleClient(
+        client,
+        process.env.NODE_ENV === "development" ? new DrizzleLogger() : undefined
+      );
       const auth = createAuth(db, this.env as AuthBindings, this.ctx);
       return await auth.api.getSession({ headers });
     } finally {
@@ -29,7 +33,10 @@ export class AuthEntrypoint extends WorkerEntrypoint<CloudflareBindings> {
     });
     await client.connect();
     try {
-      const db = createDrizzleClient(client);
+      const db = createDrizzleClient(
+        client,
+        process.env.NODE_ENV === "development" ? new DrizzleLogger() : undefined
+      );
       const auth = createAuth(db, this.env as AuthBindings, this.ctx);
       return await auth.api.getToken({ headers });
     } finally {

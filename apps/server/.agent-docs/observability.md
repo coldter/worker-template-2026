@@ -4,7 +4,7 @@
 
 - `src/lib/logger.ts` exports a `logger` object with `debug`, `info`, `warn`, and `error` methods.
 - Each call emits a single-line JSON string via `console.log` / `console.error` / etc., which Cloudflare Workers picks up in Workers Logs and `wrangler tail`.
-- The Drizzle logger (`src/lib/logger-drizzle.ts`) implements `Logger` from `drizzle-orm` and forwards SQL logs through the same `logger`.
+- The Drizzle logger (`@repo/shared/logger-drizzle`) implements `Logger` from `drizzle-orm` and forwards SQL logs through the same `logger`.
 
 ## Analytics Engine
 

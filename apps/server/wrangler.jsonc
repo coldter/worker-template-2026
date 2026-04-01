@@ -91,6 +91,7 @@
     }
   ],
   "vars": {
+    "NODE_ENV": "production",
     "ENVIRONMENT": "development",
     "APP_URL": "http://localhost:8787",
     "CORS_ORIGINS": "http://localhost:3001",

@@ -2,6 +2,7 @@ import path from "node:path";
 import { createDrizzleClient } from "@repo/db/client";
 import { accounts, sessions, users, verifications } from "@repo/db/schema";
 import { logger } from "@repo/shared/logger";
+import { DrizzleLogger } from "@repo/shared/logger-drizzle";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
 import type { Context, Next } from "hono";
 import { Client } from "pg";
@@ -11,7 +12,10 @@ const client = new Client({
   connectionString: process.env.DATABASE_TEST_URL ?? process.env.DATABASE_URL,
 });
 await client.connect();
-const db = createDrizzleClient(client);
+const db = createDrizzleClient(
+  client,
+  process.env.NODE_ENV === "development" ? new DrizzleLogger() : undefined
+);
 
 vi.mock("@/middlewares/rate-limit", () => ({
   rateLimiter: vi.fn().mockReturnValue(async (_: Context, next: Next) => {

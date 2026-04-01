@@ -1,5 +1,6 @@
 import { WorkerEntrypoint } from "cloudflare:workers";
 import { createDrizzleClient } from "@repo/db/client";
+import { DrizzleLogger } from "@repo/shared/logger-drizzle";
 import { Client } from "pg";
 import { NOTIFICATION_TYPES } from "@/modules/notifications/constants";
 import { notificationService } from "@/modules/notifications/service";
@@ -30,7 +31,10 @@ export class ApiEntrypoint extends WorkerEntrypoint<CloudflareBindings> {
     });
     await client.connect();
     try {
-      const db = createDrizzleClient(client);
+      const db = createDrizzleClient(
+        client,
+        process.env.NODE_ENV === "development" ? new DrizzleLogger() : undefined
+      );
       const deviceDesc =
         params.platform === "mobile" ? "a mobile device" : "a web browser";
       await notificationService.send(db, {

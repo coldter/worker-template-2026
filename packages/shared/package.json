@@ -12,6 +12,7 @@
     "./pagination": "./src/pagination.ts",
     "./audit": "./src/audit.ts",
     "./logger": "./src/logger.ts",
+    "./logger-drizzle": "./src/logger-drizzle.ts",
     "./kv-cache": "./src/kv-cache.ts"
   },
   "devDependencies": {

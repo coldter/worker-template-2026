@@ -6,6 +6,7 @@ import {
 import { createDrizzleClient } from "@repo/db/client";
 import * as schema from "@repo/db/schema";
 import { logger } from "@repo/shared/logger";
+import { DrizzleLogger } from "@repo/shared/logger-drizzle";
 import { eq } from "drizzle-orm";
 import { Client } from "pg";
 import { getPushProvider } from "@/lib/firebase";
@@ -32,7 +33,12 @@ export class PushNotificationWorkflow extends WorkflowEntrypoint<
         });
         await client.connect();
         try {
-          const db = createDrizzleClient(client);
+          const db = createDrizzleClient(
+            client,
+            process.env.NODE_ENV === "development"
+              ? new DrizzleLogger()
+              : undefined
+          );
 
           const notification = await db.query.notifications.findFirst({
             where: { id: { eq: event.payload.notificationId } },
@@ -118,7 +124,12 @@ export class PushNotificationWorkflow extends WorkflowEntrypoint<
         });
         await client.connect();
         try {
-          const db = createDrizzleClient(client);
+          const db = createDrizzleClient(
+            client,
+            process.env.NODE_ENV === "development"
+              ? new DrizzleLogger()
+              : undefined
+          );
 
           const anySuccess = sendResults.some((r) => r.success);
           const allFailed = sendResults.every((r) => !r.success);
