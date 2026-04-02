@@ -23,7 +23,6 @@ import { RATE_LIMIT_CONFIG, TWO_FACTOR_CONFIG } from "./constants";
 import { adminPlugin } from "./plugins/admin";
 import { loginSecurityPlugin } from "./plugins/login-security";
 import { createOrganizationPlugin } from "./plugins/organization-setup";
-import { enhancedSessionPlugin } from "./plugins/session-permissions";
 import {
   enhancedUserPlugin,
   type UserWithStatusFields,
@@ -519,8 +518,6 @@ export function createAuth(
         disableDefaultReference: true,
       }),
       createOrganizationPlugin(db),
-      // Must be last to access all fields added by other plugins
-      enhancedSessionPlugin(db),
       bearer({ requireSignature: true }),
       jwt({
         jwt: {

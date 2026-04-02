@@ -35,7 +35,7 @@ Session validation for all other API routes uses the `authContextMiddleware`, wh
 - Never expose auth secrets (`BETTER_AUTH_SECRET`, `RESEND_API_KEY`) in responses or logs.
 - Always use `ctx.waitUntil()` for background tasks (sending emails, calling `env.API.*` hooks). Never `await` them inline -- this prevents timing attacks and avoids blocking the response.
 - Keep auth behavior in plugins and hooks (`src/plugins/`, `databaseHooks` in `src/instance.ts`), not scattered across ad hoc files.
-- Use `@repo/shared` for role and permission constants (`SYSTEM_ROLES`, `PERMISSIONS`).
+- Use `@repo/shared` for shared role and authorization helpers (`SYSTEM_ROLES`, shared authorization registry/principal helpers).
 - Use `@repo/db` for database schema imports and the Drizzle client type.
 - Never create a global `pg.Client` or Drizzle instance. All DB access is per-request.
 - Do not run `wrangler dev` or start servers (environment managed externally).
@@ -66,7 +66,7 @@ The auth worker includes Better Auth's `organization` plugin (`src/plugins/organ
 
 Session fields: `activeOrganizationId` (managed by BA org plugin), `activeOrgRole` (custom field).
 
-Plugin order: `createOrganizationPlugin()` goes before `enhancedSessionPlugin` (which must be last content plugin).
+Plugin order: keep `createOrganizationPlugin()` before any plugin that depends on org session context.
 
 ## Structure
 
@@ -80,8 +80,6 @@ src/
     admin.ts                      # adminPlugin: deactivate/activate/unlock user endpoints (permission-gated)
     login-security.ts             # loginSecurityPlugin: status checks, failed-attempt tracking, auto-lockout
     organization-setup.ts         # createOrganizationPlugin: Better Auth org plugin with project defaults
-    patched-custom-session.ts     # Patched customSession: fixes double-encoding bug in upstream better-auth
-    session-permissions.ts        # optional session enrichment for clients that still need role-derived metadata
     user-status.ts                # enhancedUserPlugin: extends user schema with status, lockout, and role fields
 ```
 
@@ -91,7 +89,7 @@ src/
 2. Accept `db: DrizzleClient` and/or `env.API` binding as constructor arguments if the plugin needs them. Do not import globals.
 3. Register the plugin in the `plugins` array inside `createAuth()` in `src/instance.ts`.
 4. If the plugin adds user or session fields, declare them via the `schema` key in the plugin object (see `user-status.ts` for reference).
-5. If the plugin must run after all other plugins have added their fields (e.g. to read those fields), add it last in the plugins array (as `enhancedSessionPlugin` is placed last).
+5. If the plugin must run after all other plugins have added their fields, add it after the plugins it depends on.
 6. Export any shared types or constants the plugin exposes so `instance.ts` can use them.
 7. Run `bun run fix` and `bun run check-types` from the repo root.
 

@@ -17,6 +17,7 @@
     "apps/auth": {
       "name": "auth",
       "dependencies": {
+        "@repo/authorization": "workspace:*",
         "@repo/db": "workspace:*",
         "@repo/email": "workspace:*",
         "@repo/shared": "workspace:*",
@@ -188,12 +189,12 @@
       "name": "@repo/shared",
       "version": "0.0.0",
       "dependencies": {
+        "@repo/authorization": "workspace:*",
         "zod": "^4.3.6",
       },
       "devDependencies": {
         "@hono/zod-openapi": "^1.2.4",
         "@types/node": "^25.5.0",
-        "type-fest": "^5.5.0",
         "typescript": "^6.0.2",
       },
     },

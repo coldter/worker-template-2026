@@ -5,7 +5,7 @@ Cloudflare Worker: Hono REST API with OpenAPI, Drizzle/Postgres via Hyperdrive, 
 ## Critical Rules
 - Keep handlers thin: validate input, call service, map HTTP response.
 - Keep business logic and data access in services.
-- Define resource policies in `src/modules/*/*.authorization.ts` and enforce them with `authorize()` middleware.
+- Define resource policies in the shared authorization contract (`packages/shared/src/authorization.ts`) and enforce them with `authorize()` middleware.
 - For multi-step writes, use a transaction and pass `executor` down to nested writes.
 - Never pass `env` as a function parameter. Use `c.env` in handlers; use `import { env } from "cloudflare:workers"` outside of handlers.
 - Never create a global `pg.Client` or Drizzle instance. All DB access is per-request via `c.var.db`.
@@ -15,7 +15,7 @@ Cloudflare Worker: Hono REST API with OpenAPI, Drizzle/Postgres via Hyperdrive, 
 The server worker is the policy enforcement point for the app.
 
 - Define the auth schema in `src/auth/schema.ts`.
-- Define per-module resources in `src/modules/*/*.authorization.ts`.
+- Define app resources in `packages/shared/src/authorization.ts`.
 - Register resources in `src/auth/registry.ts`.
 - Build the principal in `src/auth/principal.ts`.
 - Enforce policies with `authorize(resource, action, opts)` from `src/auth/middleware.ts`.

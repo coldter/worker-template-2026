@@ -3,9 +3,12 @@ import {
   createAuthorize,
   getAuthorizedResource,
 } from "@repo/authorization/hono";
+import {
+  buildAuthorizationPrincipal,
+  toBaseAuthorizationPrincipal,
+} from "@repo/shared/authorization";
 import type { Context } from "hono";
 import type { AppEnv } from "@/lib/context";
-import { buildPrincipal } from "./principal";
 import { authorization } from "./registry";
 
 /**
@@ -21,38 +24,12 @@ export function resolvePrincipalFromContext(
 
 function resolvePrincipal(c: Context<AppEnv>): Principal | null {
   const user = c.get("user");
-  const session = c.get("session");
   if (!user) {
     return null;
   }
-  const principal = buildPrincipal(
-    {
-      id: user.id,
-      roleSlugs: (user as Record<string, unknown>).roleSlugs as
-        | string[]
-        | undefined,
-      status: (user as Record<string, unknown>).status as string | undefined,
-      email: (user as Record<string, unknown>).email as string | undefined,
-      emailVerified: (user as Record<string, unknown>).emailVerified as
-        | boolean
-        | undefined,
-    },
-    {
-      activeOrganizationId: session
-        ? ((session as Record<string, unknown>).activeOrganizationId as
-            | string
-            | undefined)
-        : undefined,
-      activeOrgRole: session
-        ? ((session as Record<string, unknown>).activeOrgRole as
-            | string
-            | undefined)
-        : undefined,
-    }
+  return toBaseAuthorizationPrincipal(
+    buildAuthorizationPrincipal(user, c.get("session") ?? {})
   );
-  // The generic Principal type uses never for TOrgRoles by default; cast is safe
-  // because the runtime value satisfies the base Principal contract.
-  return principal as unknown as Principal;
 }
 
 function resolveDb(c: Context<AppEnv>) {

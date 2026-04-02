@@ -1,7 +1,11 @@
+import { AuthorizationError, type Principal } from "@repo/authorization";
 import type { DrizzleClient } from "@repo/db";
-import { hasPermission } from "@repo/db/permissions";
 import * as schema from "@repo/db/schema";
-import { PERMISSIONS } from "@repo/shared/permissions";
+import {
+  authorization,
+  buildAuthorizationPrincipal,
+  toBaseAuthorizationPrincipal,
+} from "@repo/shared/authorization";
 import type { BetterAuthPlugin } from "better-auth";
 import {
   APIError,
@@ -12,6 +16,15 @@ import { eq } from "drizzle-orm";
 import { z } from "zod";
 
 type UserId = string;
+type ManageUserStatusAction = "activate" | "deactivate" | "unlock";
+
+type AuthSessionUser = {
+  email?: string;
+  emailVerified?: boolean;
+  id: string;
+  roleSlugs?: string[];
+  status?: string;
+};
 
 /** Minimal interface for the API service binding to avoid circular dependency */
 type ApiBinding = {
@@ -22,6 +35,31 @@ type ApiBinding = {
     reason: string | null;
   }): Promise<void>;
 };
+
+function getAuthorizationActor(user: AuthSessionUser) {
+  return {
+    id: user.id,
+    roleSlugs: user.roleSlugs ?? [],
+    status: user.status,
+    email: user.email,
+    emailVerified: user.emailVerified,
+  };
+}
+
+async function assertCanManageUserStatusWithApiError(
+  actor: AuthSessionUser,
+  action: ManageUserStatusAction,
+  targetUserId: string
+) {
+  try {
+    await assertCanManageUserStatus(actor, action, targetUserId);
+  } catch (error) {
+    if (error instanceof AuthorizationError) {
+      throw new APIError("FORBIDDEN", { message: "Permission denied" });
+    }
+    throw error;
+  }
+}
 
 /**
  * Admin Plugin
@@ -73,29 +111,20 @@ export const adminPlugin = (db: DrizzleClient, apiBinding: ApiBinding) => {
           },
         },
         async (ctx) => {
-          const currentUser = ctx.context.session.user;
+          const currentUser = ctx.context.session.user as AuthSessionUser;
 
-          // Permission check
-          const canDeactivate = await hasPermission(
-            db,
-            {
-              roleSlugs:
-                (currentUser as { roleSlugs?: string[] }).roleSlugs ?? [],
-            },
-            PERMISSIONS.USERS.DEACTIVATE
+          await assertCanManageUserStatusWithApiError(
+            currentUser,
+            "deactivate",
+            ctx.body.userId
           );
-          if (!canDeactivate) {
-            throw new APIError("FORBIDDEN", { message: "Permission denied" });
-          }
 
-          // Cannot deactivate yourself
           if (ctx.body.userId === currentUser.id) {
             throw new APIError("BAD_REQUEST", {
               message: "Cannot deactivate yourself",
             });
           }
 
-          // Check if user exists
           const targetUser = await db.query.users.findFirst({
             where: { id: { eq: ctx.body.userId as UserId } },
           });
@@ -104,7 +133,6 @@ export const adminPlugin = (db: DrizzleClient, apiBinding: ApiBinding) => {
             throw new APIError("NOT_FOUND", { message: "User not found" });
           }
 
-          // Update user status
           await db
             .update(schema.users)
             .set({
@@ -115,12 +143,10 @@ export const adminPlugin = (db: DrizzleClient, apiBinding: ApiBinding) => {
             })
             .where(eq(schema.users.id, ctx.body.userId));
 
-          // Revoke all sessions for this user
           await db
             .delete(schema.sessions)
             .where(eq(schema.sessions.userId, ctx.body.userId));
 
-          // Trigger status change hook for domain-specific side effects
           await apiBinding.onUserStatusChange({
             userId: ctx.body.userId,
             newStatus: "inactive",
@@ -169,22 +195,14 @@ export const adminPlugin = (db: DrizzleClient, apiBinding: ApiBinding) => {
           },
         },
         async (ctx) => {
-          const currentUser = ctx.context.session.user;
+          const currentUser = ctx.context.session.user as AuthSessionUser;
 
-          // Permission check
-          const canActivate = await hasPermission(
-            db,
-            {
-              roleSlugs:
-                (currentUser as { roleSlugs?: string[] }).roleSlugs ?? [],
-            },
-            PERMISSIONS.USERS.ACTIVATE
+          await assertCanManageUserStatusWithApiError(
+            currentUser,
+            "activate",
+            ctx.body.userId
           );
-          if (!canActivate) {
-            throw new APIError("FORBIDDEN", { message: "Permission denied" });
-          }
 
-          // Check if user exists
           const targetUser = await db.query.users.findFirst({
             where: { id: { eq: ctx.body.userId as UserId } },
           });
@@ -193,7 +211,6 @@ export const adminPlugin = (db: DrizzleClient, apiBinding: ApiBinding) => {
             throw new APIError("NOT_FOUND", { message: "User not found" });
           }
 
-          // Update user status
           await db
             .update(schema.users)
             .set({
@@ -204,7 +221,6 @@ export const adminPlugin = (db: DrizzleClient, apiBinding: ApiBinding) => {
             })
             .where(eq(schema.users.id, ctx.body.userId));
 
-          // Trigger status change hook for domain-specific side effects
           await apiBinding.onUserStatusChange({
             userId: ctx.body.userId,
             newStatus: "active",
@@ -252,22 +268,14 @@ export const adminPlugin = (db: DrizzleClient, apiBinding: ApiBinding) => {
           },
         },
         async (ctx) => {
-          const currentUser = ctx.context.session.user;
+          const currentUser = ctx.context.session.user as AuthSessionUser;
 
-          // Permission check
-          const canUnlock = await hasPermission(
-            db,
-            {
-              roleSlugs:
-                (currentUser as { roleSlugs?: string[] }).roleSlugs ?? [],
-            },
-            PERMISSIONS.USERS.UNLOCK
+          await assertCanManageUserStatusWithApiError(
+            currentUser,
+            "unlock",
+            ctx.body.userId
           );
-          if (!canUnlock) {
-            throw new APIError("FORBIDDEN", { message: "Permission denied" });
-          }
 
-          // Check if user exists
           const targetUser = await db.query.users.findFirst({
             where: { id: { eq: ctx.body.userId as UserId } },
           });
@@ -276,7 +284,6 @@ export const adminPlugin = (db: DrizzleClient, apiBinding: ApiBinding) => {
             throw new APIError("NOT_FOUND", { message: "User not found" });
           }
 
-          // Reset lockout status
           await db
             .update(schema.users)
             .set({
@@ -292,3 +299,16 @@ export const adminPlugin = (db: DrizzleClient, apiBinding: ApiBinding) => {
     },
   } satisfies BetterAuthPlugin;
 };
+
+export async function assertCanManageUserStatus(
+  actor: AuthSessionUser,
+  action: ManageUserStatusAction,
+  targetUserId: string
+) {
+  const principal = buildAuthorizationPrincipal(getAuthorizationActor(actor));
+  const basePrincipal: Principal = toBaseAuthorizationPrincipal(principal);
+
+  await authorization.assertCan(basePrincipal, "user", action, {
+    resource: { id: targetUserId },
+  });
+}
