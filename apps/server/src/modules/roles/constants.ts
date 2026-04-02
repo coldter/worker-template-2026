@@ -2,15 +2,10 @@ import {
   SYSTEM_ROLE_SLUG_VALUES as SHARED_SYSTEM_ROLE_SLUG_VALUES,
   SYSTEM_ROLES as SHARED_SYSTEM_ROLES,
 } from "@repo/shared/roles";
-import { z } from "zod";
 import { PERMISSIONS } from "./permissions";
 
 export const SYSTEM_ROLES = SHARED_SYSTEM_ROLES;
 export const SYSTEM_ROLE_SLUG_VALUES = SHARED_SYSTEM_ROLE_SLUG_VALUES;
-
-export const systemRoleSlugSchema = z.enum(SYSTEM_ROLE_SLUG_VALUES);
-export type SystemRoleSlug = z.infer<typeof systemRoleSlugSchema>;
-export type RoleSlug = SystemRoleSlug | (string & {});
 
 export type {
   BasePermissionObject,

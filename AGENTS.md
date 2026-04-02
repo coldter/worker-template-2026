@@ -12,11 +12,13 @@ Monorepo with a Cloudflare Worker API (`apps/server`), a dedicated auth worker (
 - Package manager: Bun
 - Commands: see [.agent-docs/commands.md](.agent-docs/commands.md)
 - Shared database package: `packages/db` (`@repo/db`) - schema, Drizzle client, migrations
+- Authorization package: `packages/authorization` (`@repo/authorization`) - schema, resources, evaluator, Hono and Drizzle adapters
 
 ## Scoped Guides
 - [Server](apps/server/AGENTS.md)
 - [Auth](apps/auth/AGENTS.md)
 - [Web](apps/web/AGENTS.md)
+- [Authorization package](packages/authorization/AGENTS.md)
 - [Email package](packages/email/AGENTS.md)
 - [Shared package](packages/shared/AGENTS.md)
 

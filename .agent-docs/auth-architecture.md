@@ -74,10 +74,20 @@ Most auth lifecycle hooks are wrapped in `ctx.waitUntil(...)` so they do not blo
 - The `bearer` plugin validates the token signature on each request
 - The `getToken` RPC method on `AuthEntrypoint` is available for the server to retrieve a signed token for a session
 
+### Organization Context (Multi-Tenancy)
+
+The auth worker includes Better Auth's `organization` plugin. It is opt-in and lazy:
+
+- On login, the `session.create.before` hook queries the user's latest org membership. If found, `activeOrganizationId` and `activeOrgRole` are set on the session. If the user has no orgs, these stay `null`.
+- When a user switches orgs via `POST /api/auth/organization/set-active`, Better Auth updates `activeOrganizationId`. Our hook updates `activeOrgRole` to match the membership role.
+- The server's `buildPrincipal` reads `activeOrganizationId` and `activeOrgRole` from the session and includes them in the `Principal.organization` field.
+- Resources with `resolveOrganization` get automatic tenant isolation. Resources without it work as single-tenant.
+- DB tables: `organization`, `member`, `invitation` (created by BA migration). Read-only Drizzle schemas in `packages/db/src/schema/organizations.ts`.
+
 ### JWT for Downstream Services
 
 - The `jwt` Better Auth plugin issues short-lived JWTs (15-minute expiry)
-- JWT payload includes: `sub` (user id), `email`, `roleSlugs`, `permissions`, `platform`
+- JWT payload includes: `sub` (user id), `email`, `roleSlugs`, `platform`
 - JWKS rotation interval is 30 days
 - JWTs are intended for downstream service-to-service calls where a full session lookup is too expensive
 

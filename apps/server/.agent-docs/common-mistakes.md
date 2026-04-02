@@ -3,7 +3,7 @@
 | Avoid | Prefer |
 | --- | --- |
 | custom guard wiring outside `createRouteConfig` | define guards via the `guard` field in route config |
-| hard-coded permission strings | shared `PERMISSIONS.*` constants |
+| old `requirePermission()` / `isAuthenticated` guards | `authorize("resource", "action")` from `@/auth/middleware` |
 | `c.req.valid("params")` | `c.req.valid("param")` |
 | implicit status response | `c.json(payload, 200)` |
 | empty catch blocks | explicit log + throw/mapped error |

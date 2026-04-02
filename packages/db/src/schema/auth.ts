@@ -63,6 +63,8 @@ export const sessions = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
     platform: text("platform", { enum: ["web", "mobile"] }).default("web"),
+    activeOrganizationId: text("active_organization_id"),
+    activeOrgRole: text("active_org_role"),
   },
   (table) => [index("sessions_user_id_idx").on(table.userId)]
 );

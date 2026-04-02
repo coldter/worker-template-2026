@@ -31,7 +31,9 @@
       "!tsconfig.json",
       "bun.lock",
       "!openapi.cache.json",
-      "!apps/server/src/db/migrations/**/*"
+      "!apps/server/src/db/migrations/**/*",
+      "!.agents/**/*",
+      "!.claude/**/*"
     ]
   },
   "extends": ["ultracite/core", "ultracite/react"],

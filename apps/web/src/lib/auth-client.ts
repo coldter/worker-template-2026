@@ -1,4 +1,7 @@
-import { inferAdditionalFields } from "better-auth/client/plugins";
+import {
+  inferAdditionalFields,
+  organizationClient,
+} from "better-auth/client/plugins";
 import { createAuthClient } from "better-auth/react";
 
 const parsedUrl = new URL(
@@ -10,6 +13,7 @@ export const authClient = createAuthClient({
   baseURL: parsedUrl.origin,
   basePath: pathname === "/" ? "/api/auth" : `${pathname}/api/auth`,
   plugins: [
+    organizationClient(),
     inferAdditionalFields({
       user: {
         status: { type: "string" },
@@ -19,10 +23,10 @@ export const authClient = createAuthClient({
         failedLoginAttempts: { type: "number" },
         lockedUntil: { type: "date" },
         roleSlugs: { type: "string[]" },
-        permissions: { type: "string[]" },
       },
       session: {
         platform: { type: "string" },
+        activeOrgRole: { type: "string" },
       },
     }),
   ],

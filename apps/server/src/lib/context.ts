@@ -7,6 +7,7 @@ export type AppEnv = {
     db: DrizzleClient;
     user: AuthUser | null;
     session: AuthSession | null;
+    authorizedResource: unknown;
   };
 };
 

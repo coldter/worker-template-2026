@@ -2,6 +2,7 @@ import { OpenAPIHono } from "@hono/zod-openapi";
 import { Hono } from "hono";
 import { secureHeaders } from "hono/secure-headers";
 import { trimTrailingSlash } from "hono/trailing-slash";
+import capabilitiesHandler from "@/auth/capabilities";
 import type { AppEnv } from "@/lib/context";
 import { setupDocs } from "@/lib/docs";
 import { analyticsMiddleware } from "@/middlewares/analytics";
@@ -44,6 +45,7 @@ app.route("/api/roles", rolesHandler);
 app.route("/api/users", usersHandler);
 app.route("/api/audit-logs", auditLogsHandler);
 app.route("/api/notifications", notificationsHandler);
+app.route("/api/authorization/capabilities", capabilitiesHandler);
 
 // OpenAPI docs + Scalar UI (non-production only)
 setupDocs(app);

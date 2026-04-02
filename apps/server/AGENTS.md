@@ -5,10 +5,26 @@ Cloudflare Worker: Hono REST API with OpenAPI, Drizzle/Postgres via Hyperdrive, 
 ## Critical Rules
 - Keep handlers thin: validate input, call service, map HTTP response.
 - Keep business logic and data access in services.
-- Use guards/permission helpers for authorization; keep ownership filtering in services.
+- Define resource policies in `src/modules/*/*.authorization.ts` and enforce them with `authorize()` middleware.
 - For multi-step writes, use a transaction and pass `executor` down to nested writes.
 - Never pass `env` as a function parameter. Use `c.env` in handlers; use `import { env } from "cloudflare:workers"` outside of handlers.
 - Never create a global `pg.Client` or Drizzle instance. All DB access is per-request via `c.var.db`.
+
+## Authorization Wiring
+
+The server worker is the policy enforcement point for the app.
+
+- Define the auth schema in `src/auth/schema.ts`.
+- Define per-module resources in `src/modules/*/*.authorization.ts`.
+- Register resources in `src/auth/registry.ts`.
+- Build the principal in `src/auth/principal.ts`.
+- Enforce policies with `authorize(resource, action, opts)` from `src/auth/middleware.ts`.
+- Load concrete records with `loadResource` whenever a policy depends on ownership, tenant scope, or relationships.
+- Treat the capabilities endpoint as a UI helper, not a replacement for route-level authorization.
+
+See:
+- [Authorization package guide](../../packages/authorization/README.md)
+- [Authorization quick start](../../packages/authorization/docs/quick-start.md)
 
 ## Bindings Model
 

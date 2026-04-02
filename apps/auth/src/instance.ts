@@ -17,15 +17,13 @@ import {
 } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { bearer, emailOTP, jwt, openAPI, twoFactor } from "better-auth/plugins";
-import { eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { z } from "zod";
 import { RATE_LIMIT_CONFIG, TWO_FACTOR_CONFIG } from "./constants";
 import { adminPlugin } from "./plugins/admin";
 import { loginSecurityPlugin } from "./plugins/login-security";
-import {
-  enhancedSessionPlugin,
-  type SessionUserWithPermissions,
-} from "./plugins/session-permissions";
+import { createOrganizationPlugin } from "./plugins/organization-setup";
+import { enhancedSessionPlugin } from "./plugins/session-permissions";
 import {
   enhancedUserPlugin,
   type UserWithStatusFields,
@@ -84,6 +82,7 @@ type Platform = "web" | "mobile";
 export type SessionWithAdditionalFields = {
   platform: Platform;
   expiresAt: Date;
+  activeOrgRole: string | null;
 };
 
 // Regex patterns at top-level for performance
@@ -175,6 +174,10 @@ export function createAuth(
           type: [...platformSchema.options],
           required: false,
           defaultValue: "web",
+        },
+        activeOrgRole: {
+          type: "string",
+          required: false,
         },
       },
     },
@@ -279,17 +282,102 @@ export function createAuth(
             // Calculate expiration based on platform
             const expiresAt = new Date(Date.now() + config.expiresIn * 1000);
 
+            // Look up user's most recent org membership for initial org context.
+            // The org plugin manages activeOrganizationId on the session; we
+            // additionally persist activeOrgRole so downstream consumers can
+            // read the role without a separate query.
+            // Wrapped in try-catch: the org tables may not exist if the
+            // organization migration has not been applied yet.
+            let orgContext: {
+              activeOrganizationId: string;
+              activeOrgRole: string;
+            } | null = null;
+            try {
+              const [firstMembership] = await db
+                .select({
+                  organizationId: schema.members.organizationId,
+                  role: schema.members.role,
+                })
+                .from(schema.members)
+                .where(eq(schema.members.userId, session.userId))
+                .orderBy(desc(schema.members.createdAt))
+                .limit(1);
+
+              if (firstMembership) {
+                orgContext = {
+                  activeOrganizationId: firstMembership.organizationId,
+                  activeOrgRole: firstMembership.role,
+                };
+              }
+            } catch {
+              // Organization tables not yet migrated -- skip org context
+            }
+
             return {
               data: {
                 ...session,
                 platform,
                 expiresAt,
+                ...(orgContext ?? {}),
               },
             };
           },
         },
         update: {
           before: async (session, context) => {
+            // Sync activeOrgRole when BA's org plugin updates activeOrganizationId.
+            // The org plugin's setActive endpoint calls updateSession with
+            // { activeOrganizationId } but doesn't know about our custom
+            // activeOrgRole field, so we enrich the update payload here.
+            const updateData = session as Record<string, unknown>;
+            if (updateData.activeOrganizationId !== undefined) {
+              const newOrgId = updateData.activeOrganizationId as string | null;
+
+              if (!newOrgId) {
+                // Clearing active org -- also clear the role
+                return {
+                  data: { ...session, activeOrgRole: null },
+                };
+              }
+
+              // Resolve the userId from the endpoint context's session
+              // (set by orgSessionMiddleware before the DB call).
+              const endpointCtx = context as
+                | {
+                    context?: {
+                      session?: { user?: { id?: string } };
+                    };
+                  }
+                | undefined;
+              const userId = endpointCtx?.context?.session?.user?.id;
+
+              if (userId) {
+                try {
+                  const [membership] = await db
+                    .select({ role: schema.members.role })
+                    .from(schema.members)
+                    .where(
+                      and(
+                        eq(schema.members.userId, userId),
+                        eq(schema.members.organizationId, newOrgId)
+                      )
+                    )
+                    .limit(1);
+
+                  return {
+                    data: {
+                      ...session,
+                      activeOrgRole: membership?.role ?? null,
+                    },
+                  };
+                } catch {
+                  // Org tables not yet migrated -- pass through
+                }
+              }
+
+              return { data: session };
+            }
+
             // Only intervene when Better Auth is refreshing the session expiry.
             // Other updates (e.g. updatedAt, ipAddress) should pass through.
             if (!session.expiresAt) {
@@ -430,6 +518,7 @@ export function createAuth(
       openAPI({
         disableDefaultReference: true,
       }),
+      createOrganizationPlugin(db),
       // Must be last to access all fields added by other plugins
       enhancedSessionPlugin(db),
       bearer({ requireSignature: true }),
@@ -440,13 +529,10 @@ export function createAuth(
           expirationTime: "15m",
           definePayload: ({ user, session }) => {
             const typedUser = user as typeof user & UserWithStatusFields;
-            const typedSession = session as typeof session &
-              SessionUserWithPermissions;
             return {
               sub: user.id,
-              email: user.email,
+              email: (user as { email: string }).email,
               roleSlugs: typedUser.roleSlugs,
-              permissions: typedSession.permissions,
               platform: session.platform,
             };
           },
@@ -460,7 +546,7 @@ export function createAuth(
         id: "override-type",
         $Infer: {} as {
           Session: {
-            user: User & UserWithStatusFields & SessionUserWithPermissions;
+            user: User & UserWithStatusFields;
             session: Session & SessionWithAdditionalFields;
           };
         },

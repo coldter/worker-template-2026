@@ -17,7 +17,7 @@ agent-ref
 *temp.md
 
 # .sisyphus
-scripts/copy-source.sh
+.codex
 
 # Production env (contains secrets)
 .env.production

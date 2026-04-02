@@ -7,6 +7,7 @@ export const ID_PREFIXES = {
   auditLog: "aud",
   notification: "ntf",
   pushToken: "ptk",
+  relation: "rel",
 } as const;
 
 declare const __brand: unique symbol;

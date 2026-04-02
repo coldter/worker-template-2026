@@ -43,6 +43,31 @@ Session validation for all other API routes uses the `authContextMiddleware`, wh
 - No emojis in code or comments.
 - No `any`, `unknown`, or non-null assertions (`!`) in handwritten code.
 
+## Authorization Contract
+
+The auth worker does not enforce the full resource policy model. Its job is to supply a clean principal contract to the API worker.
+
+- Session data must expose the fields the API needs to build a principal, especially `roleSlugs`, user status, and optional org context.
+- Multi-tenant apps should keep `activeOrganizationId` and the active org role in the session so the API can build an org-scoped principal without extra lookup work.
+- Keep any extra session enrichment additive. The API's `authorize()` middleware remains the authoritative resource-level decision point.
+
+See:
+- [Authorization package guide](../../packages/authorization/README.md)
+- [Authorization quick start](../../packages/authorization/docs/quick-start.md)
+
+## Multi-Tenancy (Organization Plugin)
+
+The auth worker includes Better Auth's `organization` plugin (`src/plugins/organization-setup.ts`). It is **opt-in and lazy**:
+
+- Users are NOT required to join organizations. `activeOrganizationId` defaults to `null`.
+- On login, the session hook queries the user's most recent org membership. If found, `activeOrganizationId` and `activeOrgRole` are set on the session. Otherwise the session has no org context.
+- The plugin adds endpoints under `/api/auth/organization/*` for org CRUD, member management, and invitations.
+- Single-tenant users coexist with multi-tenant users without friction.
+
+Session fields: `activeOrganizationId` (managed by BA org plugin), `activeOrgRole` (custom field).
+
+Plugin order: `createOrganizationPlugin()` goes before `enhancedSessionPlugin` (which must be last content plugin).
+
 ## Structure
 
 ```
@@ -54,8 +79,9 @@ src/
   plugins/
     admin.ts                      # adminPlugin: deactivate/activate/unlock user endpoints (permission-gated)
     login-security.ts             # loginSecurityPlugin: status checks, failed-attempt tracking, auto-lockout
+    organization-setup.ts         # createOrganizationPlugin: Better Auth org plugin with project defaults
     patched-custom-session.ts     # Patched customSession: fixes double-encoding bug in upstream better-auth
-    session-permissions.ts        # enhancedSessionPlugin: injects aggregated permissions into session payload
+    session-permissions.ts        # optional session enrichment for clients that still need role-derived metadata
     user-status.ts                # enhancedUserPlugin: extends user schema with status, lockout, and role fields
 ```
 
@@ -79,7 +105,7 @@ Handles all HTTP auth requests (sign-in, sign-up, verify email, etc.). The API w
 
 ### `getSession(headers: Headers): Promise<SessionResult | null>`
 
-Opens a per-call Postgres connection via Hyperdrive, creates a temporary auth instance, and delegates to `auth.api.getSession({ headers })`. Returns the full session object including `user` (with `roleSlugs`, `permissions`, status fields) and `session` (with `platform`, `expiresAt`). Returns `null` when no valid session exists. The API worker calls this from `authContextMiddleware` on every `/api/*` request.
+Opens a per-call Postgres connection via Hyperdrive, creates a temporary auth instance, and delegates to `auth.api.getSession({ headers })`. Returns the full session object including the fields the API needs to build a principal, especially `user.roleSlugs`, user status fields, and session context such as `platform`, `expiresAt`, and optional org data. Returns `null` when no valid session exists. The API worker calls this from `authContextMiddleware` on every `/api/*` request.
 
 ### `getToken(headers: Headers): Promise<TokenResult | null>`
 

@@ -10,7 +10,9 @@ const config: KnipConfig = {
     "tw-animate-css",
     "react-dom",
     "@types/react-dom",
+    "drizzle-orm",
   ],
+  ignore: [".agents/skills/**/templates/**", ".claude/skills/**/templates/**"],
   ignoreIssues: {
     "apps/web/src/modules/ui/**": ["exports"],
     "apps/web/src/modules/permissions/**": ["exports"],
@@ -47,7 +49,6 @@ const config: KnipConfig = {
       project: "**/*.{ts,tsx}",
     },
     "packages/shared": {
-      entry: ["src/**/*.test.ts"],
       project: "**/*.ts",
     },
     "packages/*": {

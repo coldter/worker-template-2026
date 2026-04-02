@@ -2,10 +2,6 @@ import type { DrizzleClient } from "@repo/db";
 import type { PermissionKey } from "@repo/shared/permissions";
 import { patchedCustomSession } from "./patched-custom-session";
 
-export type SessionUserWithPermissions = {
-  permissions: PermissionKey[];
-};
-
 /**
  * Fetches and aggregates all permissions from user's roles
  * Returns deduplicated array of permission keys
