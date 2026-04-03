@@ -22,7 +22,7 @@ export async function kvSetJson<T>(
   await kv.put(
     key,
     JSON.stringify(value),
-    ttlSeconds ? { expirationTtl: ttlSeconds } : undefined
+    ttlSeconds ? { expirationTtl: Math.max(ttlSeconds, 60) } : undefined
   );
 }
 

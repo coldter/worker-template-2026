@@ -3,7 +3,7 @@ import { Separator } from "@/modules/ui/separator";
 type ContentSectionProps = {
   title: string;
   desc: string;
-  children: React.JSX.Element;
+  children: React.ReactNode;
 };
 
 export function ContentSection({ title, desc, children }: ContentSectionProps) {

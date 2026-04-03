@@ -24,7 +24,7 @@ export function setupDocs(app: OpenAPIHono<AppEnv>): void {
     openapi: "3.1.0",
   });
 
-  if (String(env.ENVIRONMENT) !== "production") {
+  if (String(env.NODE_ENV) !== "production") {
     app.get("/docs", (c) =>
       Scalar<AppEnv>({
         url: "openapi.json",

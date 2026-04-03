@@ -58,8 +58,9 @@ interface ApiBindingRpc {
  * Uses intersection so the Service fetch/connect methods remain available
  * and the cast from CloudflareBindings is structurally compatible.
  */
-export type AuthBindings = Omit<CloudflareBindings, "API"> & {
+export type AuthBindings = Omit<CloudflareBindings, "API" | "NODE_ENV"> & {
   API: CloudflareBindings["API"] & ApiBindingRpc;
+  NODE_ENV: string;
 };
 
 const platformSchema = z.enum(["web", "mobile"]);
@@ -479,6 +480,10 @@ export function createAuth(
           // OTP expires in 3 minutes
           period: TWO_FACTOR_CONFIG.twoFactorOtpPeriodMinutes,
           async sendOTP({ user, otp }, reqCtx) {
+            // debugging (remove in production)
+            if (env.NODE_ENV === "development") {
+              logger.info(`OPT: ${otp} for user ${user.id} (${user.email})`); // Log OTP for
+            }
             logger.info(`Sending 2FA OTP to ${user.email}`);
 
             // Extract device info from context if available
