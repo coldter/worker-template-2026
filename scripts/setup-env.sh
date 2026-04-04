@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
-# Generate workspace .env files from the root .env.
+# Generate workspace .dev.vars (worker secrets) and .env (non-wrangler) from root .env.
 # Run from repo root: bun run setup:env
+#
+# Non-secret env-specific vars (NODE_ENV, APP_URL, CORS_ORIGINS) live in
+# wrangler.jsonc "vars" and are overridden at deploy time via --var flags.
+# .dev.vars files only contain secrets needed by wrangler dev.
 
 set -euo pipefail
 
@@ -25,22 +29,20 @@ DATABASE_TEST_URL=$(get_var DATABASE_TEST_URL)
 EOF
 echo "  Generated packages/db/.env"
 
-# --- apps/server/.env (wrangler secrets) --------------------------------------
-cat > apps/server/.env <<EOF
-NODE_ENV=$(get_var NODE_ENV)
+# --- apps/server/.dev.vars (wrangler secrets only) ----------------------------
+cat > apps/server/.dev.vars <<EOF
 FIREBASE_SERVICE_ACCOUNT_KEY_BASE64=$(get_var FIREBASE_SERVICE_ACCOUNT_KEY_BASE64)
 RESEND_API_KEY=$(get_var RESEND_API_KEY)
 VAULT_MASTER_KEY=$(get_var VAULT_MASTER_KEY)
 EOF
-echo "  Generated apps/server/.env"
+echo "  Generated apps/server/.dev.vars"
 
-# --- apps/auth/.env (wrangler secrets) ----------------------------------------
-cat > apps/auth/.env <<EOF
-NODE_ENV=$(get_var NODE_ENV)
+# --- apps/auth/.dev.vars (wrangler secrets only) ------------------------------
+cat > apps/auth/.dev.vars <<EOF
 BETTER_AUTH_SECRET=$(get_var BETTER_AUTH_SECRET)
 RESEND_API_KEY=$(get_var RESEND_API_KEY)
 EOF
-echo "  Generated apps/auth/.env"
+echo "  Generated apps/auth/.dev.vars"
 
 # --- apps/web/.env (Vite public vars) -----------------------------------------
 cat > apps/web/.env <<EOF
@@ -50,4 +52,4 @@ EOF
 echo "  Generated apps/web/.env"
 
 echo ""
-echo "Done. Workspace .env files generated from root .env."
+echo "Done. Worker .dev.vars (secrets) and .env files generated from root .env."

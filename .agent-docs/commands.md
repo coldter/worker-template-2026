@@ -9,7 +9,7 @@ Use Bun from repo root unless noted.
 | `cp .env.example .env` | Create root env file (first time only) |
 | `bun run setup:env` | Generate workspace `.dev.vars` and `.env` files from root `.env` |
 
-All env vars live in the root `.env` (single source of truth). The `setup:env` script generates wrangler `.dev.vars` files for each worker and `.env` for the web app.
+All env vars live in the root `.env` (single source of truth). The `setup:env` script generates wrangler `.dev.vars` files (secrets only) for each worker and `.env` for the web app. Non-secret config lives in `wrangler.jsonc` `vars`. See [env-vars.md](env-vars.md) for details.
 
 ## Development and Deployment
 

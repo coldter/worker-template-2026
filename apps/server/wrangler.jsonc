@@ -91,7 +91,7 @@
     }
   ],
   "vars": {
-    "NODE_ENV": "production",
+    "NODE_ENV": "development",
     "APP_URL": "http://localhost:8787",
     "CORS_ORIGINS": "http://localhost:3001",
     "EMAIL_FROM": "noreply@example.com",

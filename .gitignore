@@ -2,6 +2,7 @@ node_modules
 .turbo
 .alchemy
 .env
+.dev.vars
 .vercel
 .cursor
 dist

@@ -33,3 +33,4 @@ Monorepo with a Cloudflare Worker API (`apps/server`), a dedicated auth worker (
 - [Response shapes](.agent-docs/response-shapes.md)
 - [Database transactions](.agent-docs/db-transactions.md)
 - [Audit logging](.agent-docs/audit-logging.md)
+- [Environment variables](.agent-docs/env-vars.md)
