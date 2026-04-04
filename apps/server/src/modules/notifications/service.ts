@@ -9,12 +9,12 @@ import { triggerWorkflow } from "@/lib/events";
 import {
   createPaginatedResponse,
   getPaginationParams,
+  resolveSortColumn,
 } from "@/utils/pagination";
 
 import {
   NOTIFICATION_TYPE_CONFIG,
   NOTIFICATIONS_SORT_COLUMNS,
-  type NotificationType,
 } from "./constants";
 import { resolveEnabledChannels } from "./helpers";
 import type {
@@ -80,8 +80,11 @@ export const notificationService = {
     const where = and(...conditions);
 
     // Determine sort column
-    const sortKey = sort as keyof typeof SORT_COLUMNS | undefined;
-    const sortColumn = sortKey ? SORT_COLUMNS[sortKey] : SORT_COLUMNS.createdAt;
+    const sortColumn = resolveSortColumn(
+      SORT_COLUMNS,
+      sort,
+      SORT_COLUMNS.createdAt
+    );
     const orderFn = order === "asc" ? asc : desc;
 
     // Get notifications
@@ -218,7 +221,7 @@ export const notificationService = {
     db: DrizzleClient,
     input: SendNotificationInput
   ): Promise<SendResult> {
-    const typeConfig = NOTIFICATION_TYPE_CONFIG[input.type as NotificationType];
+    const typeConfig = NOTIFICATION_TYPE_CONFIG[input.type];
     const requestedChannels = input.channels ??
       typeConfig?.channels ?? ["push"];
     const priority = input.priority ?? typeConfig?.priority ?? "medium";

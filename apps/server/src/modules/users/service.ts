@@ -18,6 +18,7 @@ import type { AuditLogMetadata } from "@/modules/audit-logs/types";
 import {
   createPaginatedResponse,
   getPaginationParams,
+  resolveSortColumn,
 } from "@/utils/pagination";
 
 import { USER_STATUS, USERS_SORT_COLUMNS } from "./constants";
@@ -64,8 +65,7 @@ export const userService = {
       [USERS_SORT_COLUMNS.createdAt]: users.createdAt,
       [USERS_SORT_COLUMNS.updatedAt]: users.updatedAt,
     };
-    const sortColumn =
-      sortColumnMap[sort as keyof typeof sortColumnMap] ?? users.createdAt;
+    const sortColumn = resolveSortColumn(sortColumnMap, sort, users.createdAt);
     const orderFn = order === "asc" ? asc : desc;
 
     const [data, [countResult]] = await Promise.all([

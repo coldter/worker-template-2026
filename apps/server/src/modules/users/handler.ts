@@ -20,7 +20,7 @@ function formatUserForResponse(user: {
   email: string;
   emailVerified: boolean;
   image: string | null;
-  status: string;
+  status: UserStatus;
   roleSlugs: string[];
   createdAt: Date;
   updatedAt: Date;
@@ -31,7 +31,7 @@ function formatUserForResponse(user: {
     email: user.email,
     emailVerified: user.emailVerified,
     image: user.image,
-    status: user.status as UserStatus,
+    status: user.status,
     roleSlugs: user.roleSlugs,
     createdAt: user.createdAt.toISOString(),
     updatedAt: user.updatedAt.toISOString(),
@@ -44,7 +44,7 @@ function formatUserDetailForResponse(user: {
   email: string;
   emailVerified: boolean;
   image: string | null;
-  status: string;
+  status: UserStatus;
   roleSlugs: string[];
   createdAt: Date;
   updatedAt: Date;
@@ -60,7 +60,7 @@ function formatUserDetailForResponse(user: {
     email: user.email,
     emailVerified: user.emailVerified,
     image: user.image,
-    status: user.status as UserStatus,
+    status: user.status,
     roleSlugs: user.roleSlugs,
     createdAt: user.createdAt.toISOString(),
     updatedAt: user.updatedAt.toISOString(),

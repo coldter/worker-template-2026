@@ -181,11 +181,13 @@ export function createAuthSchema<
   type Attrs = ExtractAttributes<TPrincipal>;
   type OrgRole = TOrgRoles extends readonly [] ? never : TOrgRoles[number];
 
+  const orgRoles = (config.organizationRoles ?? []) as readonly OrgRole[];
+
   return {
     roleValues: config.roles,
     relationValues: config.relations,
-    orgRoleValues: (config.organizationRoles ?? []) as readonly OrgRole[],
-    systemAdminRoles: config.systemAdminRoles as readonly Role[],
+    orgRoleValues: orgRoles,
+    systemAdminRoles: config.systemAdminRoles,
     globalPolicies,
     createResource<TResource>(
       name: string,
@@ -198,9 +200,8 @@ export function createAuthSchema<
         Attrs,
         OrgRole
       >(name, resourceConfig, {
-        validRelations: config.relations as unknown as readonly string[],
-        validOrgRoles: (config.organizationRoles ??
-          []) as unknown as readonly string[],
+        validRelations: config.relations,
+        validOrgRoles: orgRoles,
       });
     },
     buildRegistry<TRegistry extends Record<string, AnyResourceDef<Role>>>(
@@ -208,11 +209,11 @@ export function createAuthSchema<
     ): RegistryInstance<TRegistry> {
       return buildRegistryInstance(resources, {
         globalPolicies,
-        systemAdminRoles: config.systemAdminRoles as readonly string[],
-        schemaRoles: config.roles as unknown as readonly string[],
-        schemaRelations: config.relations as unknown as readonly string[],
-        orgRoleValues: (config.organizationRoles ?? []) as readonly string[],
+        systemAdminRoles: config.systemAdminRoles,
+        schemaRoles: config.roles,
+        schemaRelations: config.relations,
+        orgRoleValues: orgRoles,
       });
     },
-  } as AuthSchema<Role, Relation, Attrs, OrgRole>;
+  } satisfies AuthSchema<Role, Relation, Attrs, OrgRole>;
 }

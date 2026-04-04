@@ -22,6 +22,7 @@ import type {
 import {
   createPaginatedResponse,
   getPaginationParams,
+  resolveSortColumn,
 } from "@/utils/pagination";
 
 const ALLOWED_SORT_COLUMNS = {
@@ -100,9 +101,11 @@ export const auditLogService = {
 
     const where = conditions.length > 0 ? and(...conditions) : undefined;
 
-    const sortColumn =
-      ALLOWED_SORT_COLUMNS[sort as keyof typeof ALLOWED_SORT_COLUMNS] ??
-      auditLogs.createdAt;
+    const sortColumn = resolveSortColumn(
+      ALLOWED_SORT_COLUMNS,
+      sort,
+      auditLogs.createdAt
+    );
     const orderFn = order === "asc" ? asc : desc;
 
     const [data, [countResult]] = await Promise.all([

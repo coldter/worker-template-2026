@@ -25,7 +25,10 @@ export const users = pgTable("users", {
     .$onUpdate(() => new Date())
     .notNull(),
   // User status fields (from userStatusPlugin)
-  status: text("status").default("active").notNull(),
+  status: text("status")
+    .$type<"active" | "inactive" | "locked">()
+    .default("active")
+    .notNull(),
   deactivatedAt: timestamp("deactivated_at", { withTimezone: true }),
   deactivatedBy: varchar("deactivated_by", { length: 255 }),
   deactivatedReason: text("deactivated_reason"),

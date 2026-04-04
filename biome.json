@@ -53,7 +53,7 @@
         "noUnknownAtRules": "off",
         "noEmptyBlockStatements": "off",
         "useAwait": "off",
-        "noExplicitAny": "warn",
+        "noExplicitAny": "error",
         "noDocumentCookie": "error",
         "noArrayIndexKey": "off"
       },
@@ -64,7 +64,7 @@
       "style": {
         "noMagicNumbers": "off",
         "noExportedImports": "off",
-        "noNonNullAssertion": "off",
+        "noNonNullAssertion": "warn",
         "useConsistentTypeDefinitions": "off",
         "useAtIndex": "off",
         "useFilenamingConvention": {

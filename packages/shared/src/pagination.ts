@@ -82,18 +82,29 @@ export function getPaginationParams(query: Partial<PaginationQuery>) {
   return { page, perPage, offset, sort, order } as const;
 }
 
-export function createPaginatedResponse<T, R = T>(options: {
+export function createPaginatedResponse<T>(options: {
   data: T[];
   total: number;
   query: Partial<PaginationQuery>;
-  formatter?: (item: T) => R;
-}): PaginatedResponse<R> {
+}): PaginatedResponse<T>;
+export function createPaginatedResponse<T, R>(options: {
+  data: T[];
+  total: number;
+  query: Partial<PaginationQuery>;
+  formatter: (item: T) => R;
+}): PaginatedResponse<R>;
+export function createPaginatedResponse<T>(options: {
+  data: T[];
+  total: number;
+  query: Partial<PaginationQuery>;
+  formatter?: (item: T) => unknown;
+}): PaginatedResponse<unknown> {
   const { data, total, query, formatter } = options;
   const { page, perPage } = getPaginationParams(query);
   const pageCount = Math.ceil(total / perPage);
 
   return {
-    data: formatter ? data.map(formatter) : (data as unknown as R[]),
+    data: formatter ? data.map(formatter) : data,
     meta: {
       total,
       page,
@@ -105,4 +116,15 @@ export function createPaginatedResponse<T, R = T>(options: {
       prevPage: page > 1 ? page - 1 : null,
     },
   };
+}
+
+export function resolveSortColumn<T extends Record<string, unknown>>(
+  columns: T,
+  sort: string | undefined,
+  fallback: T[keyof T]
+): T[keyof T] {
+  if (sort !== undefined && sort in columns) {
+    return columns[sort as keyof T];
+  }
+  return fallback;
 }

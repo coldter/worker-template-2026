@@ -41,6 +41,6 @@ export interface UserRecord {
   lockedUntil: Date | null;
   name: string;
   roleSlugs: string[];
-  status: string;
+  status: UserStatus;
   updatedAt: Date;
 }

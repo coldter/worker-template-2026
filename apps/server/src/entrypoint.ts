@@ -62,7 +62,7 @@ export class ApiEntrypoint extends WorkerEntrypoint<CloudflareBindings> {
   }): Promise<void> {
     await statusChangeHook(
       params.userId,
-      params.newStatus as "active" | "inactive" | "locked" | "deleted",
+      params.newStatus,
       params.previousStatus,
       params.reason
     );

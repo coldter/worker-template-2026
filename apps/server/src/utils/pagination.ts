@@ -11,5 +11,6 @@ export {
   PAGINATION_DEFAULTS,
   paginationMetaSchema,
   paginationQuerySchema,
+  resolveSortColumn,
   sortOrderSchema,
 } from "@repo/shared/pagination";

@@ -6,6 +6,18 @@ import pg from "pg";
 import { PostgresError } from "pg-error-enum";
 import type { AppEnv } from "@/lib/context";
 
+function extractCauseCode(cause: unknown): string | null {
+  if (
+    typeof cause === "object" &&
+    cause !== null &&
+    "code" in cause &&
+    typeof (cause as Record<string, unknown>).code === "string"
+  ) {
+    return (cause as Record<string, unknown>).code as string;
+  }
+  return null;
+}
+
 function errorResponse(
   code: string,
   message: string,
@@ -31,13 +43,7 @@ export const errorHandler: ErrorHandler<AppEnv> = (err, c) => {
       });
     }
 
-    const causeCode =
-      typeof err.cause === "object" &&
-      err.cause !== null &&
-      "code" in err.cause &&
-      typeof (err.cause as { code?: unknown }).code === "string"
-        ? (err.cause as { code: string }).code
-        : null;
+    const causeCode = extractCauseCode(err.cause);
 
     const defaultCodeByStatus: Record<number, string> = {
       400: "BAD_REQUEST",
