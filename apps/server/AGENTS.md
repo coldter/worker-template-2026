@@ -60,6 +60,11 @@ In services: accept `db: DrizzleClient` (or `executor: Executor`) as the first p
 2. Export the class from `src/index.ts`.
 3. Add a `durable_objects.bindings` entry and matching `migrations` entry in `wrangler.jsonc`.
 
+## Audit Logging
+
+Two methods: `auditLogService.create(input, executor)` for critical events inside transactions,
+`auditLogService.enqueue(input)` for bufferable events. See [audit logging guide](../../.agent-docs/audit-logging.md).
+
 ## Detailed Instructions
 - [Architecture](.agent-docs/architecture.md)
 - [Module patterns](.agent-docs/modules.md)

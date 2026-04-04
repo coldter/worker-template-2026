@@ -97,5 +97,19 @@
     "EMAIL_FROM": "noreply@example.com",
     "EMAIL_FROM_NAME": "App",
     "FCM_PROVIDER": "firebase",
+  },
+  "queues": {
+    "producers": [
+      { "binding": "AUDIT_LOG_QUEUE", "queue": "audit-log-buffer" }
+    ],
+    "consumers": [
+      {
+        "queue": "audit-log-buffer",
+        "max_batch_size": 100,
+        "max_batch_timeout": 10,
+        "max_retries": 3,
+        "dead_letter_queue": "audit-log-dlq"
+      }
+    ]
   }
 }

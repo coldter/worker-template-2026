@@ -76,3 +76,40 @@ export interface AuditLogMetadata {
   changes?: Record<string, FieldChange>;
   [key: string]: unknown;
 }
+
+// Events that occur alongside a database write.
+// Must be logged transactionally via auditLogService.create(input, executor).
+export const CRITICAL_EVENTS = [
+  "user.created",
+  "user.updated",
+  "user.deleted",
+  "user.deactivated",
+  "user.activated",
+  "user.unlocked",
+  "auth.password.changed",
+  "auth.session.revoked",
+  "role.created",
+  "role.updated",
+  "role.deleted",
+  "role.assigned",
+  "role.unassigned",
+] as const;
+
+// Observational events with no accompanying business write.
+// Logged asynchronously via auditLogService.enqueue(input).
+export const BUFFERABLE_EVENTS = [
+  "auth.login.success",
+  "auth.login.failed",
+  "auth.logout",
+  "user.viewed",
+  "user.listed",
+] as const;
+
+export type CriticalAuditEvent = (typeof CRITICAL_EVENTS)[number];
+export type BufferableAuditEvent = (typeof BUFFERABLE_EVENTS)[number];
+
+// Compile-time exhaustiveness check: ensures every event in AuditEventKey
+// is classified in exactly one of the two arrays. If a new event is added
+// to AUDIT_EVENTS but not classified, this will produce a type error.
+type _AllClassified = CriticalAuditEvent | BufferableAuditEvent;
+type _ExhaustivenessCheck = AuditEventKey extends _AllClassified ? true : never;

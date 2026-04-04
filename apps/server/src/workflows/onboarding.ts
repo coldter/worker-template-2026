@@ -3,10 +3,6 @@ import {
   type WorkflowEvent,
   type WorkflowStep,
 } from "cloudflare:workers";
-import { createDrizzleClient } from "@repo/db/client";
-import * as schema from "@repo/db/schema";
-import { DrizzleLogger } from "@repo/shared/logger-drizzle";
-import { Client } from "pg";
 
 interface OnboardingParams {
   email: string;
@@ -22,34 +18,6 @@ export class OnboardingWorkflow extends WorkflowEntrypoint<
     event: WorkflowEvent<OnboardingParams>,
     step: WorkflowStep
   ): Promise<void> {
-    await step.do(
-      "write-audit-log",
-      { retries: { limit: 3, delay: "2 seconds", backoff: "exponential" } },
-      async () => {
-        const client = new Client({
-          connectionString: this.env.HYPERDRIVE.connectionString,
-        });
-        await client.connect();
-        try {
-          const db = createDrizzleClient(
-            client,
-            process.env.NODE_ENV === "development"
-              ? new DrizzleLogger()
-              : undefined
-          );
-          await db.insert(schema.auditLogs).values({
-            event: "user.created",
-            actorId: event.payload.userId,
-            actorType: "system",
-            targetId: event.payload.userId,
-            targetType: "user",
-          });
-        } finally {
-          await client.end();
-        }
-      }
-    );
-
     await step.do(
       "send-welcome-email",
       { retries: { limit: 3, delay: "5 seconds", backoff: "exponential" } },

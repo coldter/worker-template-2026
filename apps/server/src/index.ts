@@ -1,3 +1,5 @@
+import type { AuditLogQueueMessage } from "@/modules/audit-logs/types";
+import { processAuditLogBatch } from "@/queues/audit-log-consumer";
 import app from "./server";
 
 // Re-export Durable Objects (required by Wrangler)
@@ -8,4 +10,12 @@ export { EmailNotificationWorkflow } from "./workflows/email-notification";
 export { OnboardingWorkflow } from "./workflows/onboarding";
 export { PushNotificationWorkflow } from "./workflows/push-notification";
 
-export default app;
+export default {
+  fetch: app.fetch,
+  async queue(
+    batch: MessageBatch<AuditLogQueueMessage>,
+    env: CloudflareBindings
+  ): Promise<void> {
+    await processAuditLogBatch(batch, env);
+  },
+} satisfies ExportedHandler<CloudflareBindings, AuditLogQueueMessage>;
