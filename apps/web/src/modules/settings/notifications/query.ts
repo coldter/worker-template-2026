@@ -14,8 +14,8 @@ export const notificationPreferencesKeys = {
 export function useNotificationPreferencesQuery() {
   return useQuery({
     queryKey: notificationPreferencesKeys.detail(),
-    queryFn: async () => {
-      const response = await getNotificationPreferences();
+    queryFn: async ({ signal }) => {
+      const response = await getNotificationPreferences({ signal });
       return response.preferences;
     },
   });

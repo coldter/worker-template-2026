@@ -15,6 +15,7 @@ import {
   CommandList,
 } from "@/modules/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/modules/ui/popover";
+import { rolesKeys } from "@/modules/users/query";
 
 interface RoleMultiSelectProps {
   onChange: (value: string[]) => void;
@@ -25,9 +26,9 @@ export function RoleMultiSelect({ value, onChange }: RoleMultiSelectProps) {
   const [open, setOpen] = useState(false);
 
   const { data: rolesData, isLoading } = useQuery({
-    queryKey: ["roles"],
-    queryFn: async () => {
-      const response = await listRoles();
+    queryKey: rolesKeys.lists(),
+    queryFn: async ({ signal }) => {
+      const response = await listRoles({ signal });
       return response.roles;
     },
   });

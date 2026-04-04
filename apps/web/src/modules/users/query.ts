@@ -27,11 +27,16 @@ export const usersKeys = {
   detail: (id: string) => [...usersKeys.details(), id] as const,
 };
 
+export const rolesKeys = {
+  all: ["roles"] as const,
+  lists: () => [...rolesKeys.all, "list"] as const,
+};
+
 export function useUsersQuery(params: NonNullable<ListUsersData["query"]>) {
   return useQuery({
     queryKey: usersKeys.list(params),
-    queryFn: async () => {
-      const response = await listUsers({ query: params });
+    queryFn: async ({ signal }) => {
+      const response = await listUsers({ query: params, signal });
       return response;
     },
     placeholderData: (prev) => prev,
@@ -41,8 +46,8 @@ export function useUsersQuery(params: NonNullable<ListUsersData["query"]>) {
 export function useUserQuery(userId: string) {
   return useQuery({
     queryKey: usersKeys.detail(userId),
-    queryFn: async () => {
-      const response = await getUser({ path: { userId } });
+    queryFn: async ({ signal }) => {
+      const response = await getUser({ path: { userId }, signal });
       return response.user;
     },
     enabled: Boolean(userId),

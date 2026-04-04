@@ -16,18 +16,18 @@ if (typeof window !== "undefined") {
   syncOnlineStatus();
 }
 
-const cacheConfig = {
-  onError: handleGlobalError,
-  onSuccess: handleGlobalSuccess,
-};
-
 export const queryClient = new QueryClient({
-  queryCache: new QueryCache(cacheConfig),
-  mutationCache: new MutationCache(cacheConfig),
+  queryCache: new QueryCache({
+    onError: handleGlobalError,
+    onSuccess: handleGlobalSuccess,
+  }),
+  mutationCache: new MutationCache({
+    onSuccess: handleGlobalSuccess,
+  }),
   defaultOptions: {
     queries: {
       gcTime: 1000 * 60 * 60 * 24,
-      staleTime: 1000 * 10,
+      staleTime: 1000 * 30,
       refetchOnWindowFocus: false,
       refetchOnReconnect: true,
       retry: false,

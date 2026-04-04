@@ -12,6 +12,8 @@ const router = createRouter({
   routeTree,
   defaultPendingComponent: () => <FullPageLoadingState />,
   defaultErrorComponent: AppError,
+  defaultPreload: "intent",
+  defaultPreloadStaleTime: 0,
   context: {
     session: undefined,
   } satisfies RouterAppContext,
