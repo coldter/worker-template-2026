@@ -6,16 +6,16 @@ declare namespace Cloudflare {
 		mainModule: typeof import("./src/index");
 	}
 	interface Env {
-		CACHE: KVNamespace;
-		HYPERDRIVE: Hyperdrive;
-		NODE_ENV: "development";
+		API: Service /* entrypoint ApiEntrypoint from server */;
 		APP_URL: "http://localhost:8787";
+		BETTER_AUTH_SECRET: string;
+		CACHE: KVNamespace;
 		CORS_ORIGINS: "http://localhost:3001";
 		EMAIL_FROM: "noreply@example.com";
 		EMAIL_FROM_NAME: "App";
-		BETTER_AUTH_SECRET: string;
+		HYPERDRIVE: Hyperdrive;
+		NODE_ENV: "development";
 		RESEND_API_KEY: string;
-		API: Service /* entrypoint ApiEntrypoint from server */;
 	}
 }
 interface CloudflareBindings extends Cloudflare.Env {}

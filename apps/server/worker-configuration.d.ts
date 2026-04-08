@@ -3,29 +3,29 @@
 // Runtime types generated with workerd@1.20260401.1 2026-04-01 nodejs_compat
 declare namespace Cloudflare {
 	interface GlobalProps {
-		mainModule: typeof import("./src/index");
 		durableNamespaces: "RateLimiter";
+		mainModule: typeof import("./src/index");
 	}
 	interface Env {
-		CACHE: KVNamespace;
-		HYPERDRIVE: Hyperdrive;
 		ANALYTICS: AnalyticsEngineDataset;
-		PRODUCT_ANALYTICS: AnalyticsEngineDataset;
-		AUDIT_LOG_QUEUE: Queue;
-		NODE_ENV: "development";
 		APP_URL: "http://localhost:8787";
+		AUDIT_LOG_QUEUE: Queue;
+		AUTH: Service /* entrypoint AuthEntrypoint from auth */;
+		CACHE: KVNamespace;
 		CORS_ORIGINS: "http://localhost:3001";
 		EMAIL_FROM: "noreply@example.com";
 		EMAIL_FROM_NAME: "App";
+		EMAIL_NOTIFICATION_WF: Workflow<Parameters<import("./src/index").EmailNotificationWorkflow['run']>[0]['payload']>;
 		FCM_PROVIDER: "firebase";
 		FIREBASE_SERVICE_ACCOUNT_KEY_BASE64: string;
+		HYPERDRIVE: Hyperdrive;
+		NODE_ENV: "development";
+		ONBOARDING_WF: Workflow<Parameters<import("./src/index").OnboardingWorkflow['run']>[0]['payload']>;
+		PRODUCT_ANALYTICS: AnalyticsEngineDataset;
+		PUSH_NOTIFICATION_WF: Workflow<Parameters<import("./src/index").PushNotificationWorkflow['run']>[0]['payload']>;
+		RATE_LIMITER: DurableObjectNamespace<import("./src/index").RateLimiter>;
 		RESEND_API_KEY: string;
 		VAULT_MASTER_KEY: string;
-		RATE_LIMITER: DurableObjectNamespace<import("./src/index").RateLimiter>;
-		AUTH: Service /* entrypoint AuthEntrypoint from auth */;
-		ONBOARDING_WF: Workflow<Parameters<import("./src/index").OnboardingWorkflow['run']>[0]['payload']>;
-		EMAIL_NOTIFICATION_WF: Workflow<Parameters<import("./src/index").EmailNotificationWorkflow['run']>[0]['payload']>;
-		PUSH_NOTIFICATION_WF: Workflow<Parameters<import("./src/index").PushNotificationWorkflow['run']>[0]['payload']>;
 	}
 }
 interface CloudflareBindings extends Cloudflare.Env {}

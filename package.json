@@ -34,9 +34,9 @@
   "devDependencies": {
     "@biomejs/biome": "^2.4.10",
     "@types/node": "^25.5.2",
-    "knip": "^6.3.0",
+    "knip": "^6.3.1",
     "tsx": "^4.21.0",
-    "turbo": "^2.9.3",
+    "turbo": "^2.9.5",
     "typescript": "^6.0.2",
     "ultracite": "^7.4.3"
   },
