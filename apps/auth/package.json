@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "wrangler types --env-interface CloudflareBindings && wrangler dev --port 8788 --inspector-port 9230",
     "deploy": "wrangler deploy --minify --var NODE_ENV:production",
-    "check-types": "tsc --noEmit",
+    "check-types": "tsgo --noEmit",
+    "check-types:backup": "tsc --noEmit",
     "cf-typegen": "wrangler types --env-interface CloudflareBindings",
     "test": "vitest run --passWithNoTests"
   },
@@ -14,16 +15,17 @@
     "@repo/db": "workspace:*",
     "@repo/email": "workspace:*",
     "@repo/shared": "workspace:*",
-    "better-auth": "^1.6.1",
+    "better-auth": "^1.6.9",
     "drizzle-orm": "^1.0.0-beta.9-e89174b",
-    "hono": "^4.12.12",
+    "hono": "^4.12.15",
     "pg": "^8.20.0",
     "zod": "^4.3.6"
   },
   "devDependencies": {
     "@types/pg": "^8.20.0",
-    "typescript": "^6.0.2",
-    "vitest": "^4.1.3",
-    "wrangler": "^4.81.0"
+    "@typescript/native-preview": "beta",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.5",
+    "wrangler": "^4.85.0"
   }
 }

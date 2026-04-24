@@ -8,6 +8,7 @@ import {
   Section,
   Tailwind,
 } from "@react-email/components";
+import { BRAND_DEFAULTS } from "@repo/shared/brand";
 import type { ReactNode } from "react";
 import React from "react";
 import { EmailFooter } from "./footer";
@@ -62,7 +63,7 @@ export function BaseLayout({
               colors: {
                 brand: {
                   DEFAULT: "#000000",
-                  primary: "#2563eb",
+                  primary: BRAND_DEFAULTS.primaryColor,
                 },
                 slate: {
                   50: "#f8fafc",

@@ -1,4 +1,5 @@
 import { Hr, Link, Section, Text } from "@react-email/components";
+import { BRAND_DEFAULTS } from "@repo/shared/brand";
 import React from "react";
 
 interface EmailFooterProps {
@@ -8,9 +9,9 @@ interface EmailFooterProps {
 }
 
 export function EmailFooter({
-  companyName = "Your App",
+  companyName = BRAND_DEFAULTS.companyName,
   companyAddress = "123 Street Address, City, State 12345",
-  supportEmail = "support@example.com",
+  supportEmail = BRAND_DEFAULTS.supportEmail,
 }: EmailFooterProps) {
   return (
     <Section className="mt-8">

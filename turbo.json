@@ -7,13 +7,21 @@
     "build": {
       "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
-      "outputs": ["dist/**"]
+      "outputs": ["dist/**"],
+      "env": ["VITE_*", "NODE_ENV"]
     },
     "lint": {
       "dependsOn": ["^lint"]
     },
     "check-types": {
-      "dependsOn": ["^check-types"]
+      "dependsOn": ["^check-types"],
+      "inputs": ["$TURBO_DEFAULT$", "tsconfig*.json", "../../tsconfig*.json"],
+      "outputs": []
+    },
+    "check-types:backup": {
+      "dependsOn": ["^check-types:backup"],
+      "inputs": ["$TURBO_DEFAULT$", "tsconfig*.json", "../../tsconfig*.json"],
+      "outputs": []
     },
     "dev": {
       "cache": false,
@@ -37,6 +45,17 @@
     "db:generate": {
       "cache": false
     },
+    "generate-openapi": {
+      "cache": true,
+      "outputs": ["openapi.cache.json"],
+      "inputs": ["src/**/*.ts"]
+    },
+    "generate-client": {
+      "cache": true,
+      "dependsOn": ["^generate-openapi"],
+      "outputs": ["src/api.gen/**"],
+      "inputs": ["openapi-ts.config.ts", "../server/openapi.cache.json"]
+    },
     "test": {
       "cache": false,
       "env": ["DATABASE_TEST_URL"]
@@ -49,6 +68,14 @@
     "test:coverage": {
       "cache": false,
       "env": ["DATABASE_TEST_URL"]
+    },
+    "storybook": {
+      "persistent": true,
+      "cache": false
+    },
+    "build-storybook": {
+      "cache": true,
+      "outputs": ["storybook-static/**"]
     }
   }
 }

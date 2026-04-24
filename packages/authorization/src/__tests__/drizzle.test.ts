@@ -14,8 +14,13 @@ import {
 } from "../drizzle";
 
 // ---------------------------------------------------------------------------
-// Fake table reference -- structural shape only, values are not used in tests
+// Fake table reference -- structural shape only, values are not used in tests.
+// The drizzle module expects columns typed as SQLWrapper (from drizzle-orm);
+// here we feed string sentinels so the mocks can assert equality on them.
+// boundary: test fixture reflection
 // ---------------------------------------------------------------------------
+
+type FakeTable = Parameters<typeof checkRelation>[1];
 
 const fakeTable = {
   subjectType: "subjectType_col",
@@ -24,7 +29,7 @@ const fakeTable = {
   objectType: "objectType_col",
   objectId: "objectId_col",
   createdBy: "createdBy_col",
-};
+} as unknown as FakeTable;
 
 // ---------------------------------------------------------------------------
 // Helpers to build mock db instances
@@ -284,7 +289,7 @@ describe("deleteRelation", () => {
     await deleteRelation(db, fakeTable, checkInput);
     expect(whereFn).toHaveBeenCalledOnce();
     // The condition argument is a drizzle-orm SQL expression; just verify it was passed
-    expect(whereFn.mock.calls[0][0]).toBeDefined();
+    expect(whereFn.mock.calls[0]?.[0]).toBeDefined();
   });
 
   it("resolves to undefined", async () => {

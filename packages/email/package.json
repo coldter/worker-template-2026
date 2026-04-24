@@ -9,21 +9,24 @@
   },
   "scripts": {
     "build": "tsup src/index.ts --format esm --dts",
-    "check-types": "tsc --noEmit",
+    "check-types": "tsgo --noEmit",
+    "check-types:backup": "tsc --noEmit",
     "dev": "email dev --dir ./src/templates --port 3003"
   },
   "dependencies": {
     "@react-email/components": "^1.0.11",
+    "@repo/shared": "workspace:*",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
-    "react-email": "^5.2.10",
-    "resend": "^6.10.0"
+    "react-email": "^6.0.0",
+    "resend": "^6.12.2"
   },
   "devDependencies": {
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
+    "@typescript/native-preview": "beta",
     "tsup": "^8.5.1",
-    "typescript": "^6.0.2"
+    "typescript": "^6.0.3"
   },
   "peerDependencies": {
     "react": "^19.0.0",

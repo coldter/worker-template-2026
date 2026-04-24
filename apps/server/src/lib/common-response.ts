@@ -43,6 +43,32 @@ export const commonErrorResponses = {
       },
     },
   },
+  409: {
+    description:
+      "Conflict: the request conflicts with current state (e.g. unique constraint violation).",
+    content: {
+      "application/json": {
+        schema: failWithErrorSchema,
+      },
+    },
+  },
+  422: {
+    description:
+      "Unprocessable entity: request body failed validation (Zod schema).",
+    content: {
+      "application/json": {
+        schema: failWithErrorSchema,
+      },
+    },
+  },
+  429: {
+    description: "Too many requests: rate limit exceeded.",
+    content: {
+      "application/json": {
+        schema: failWithErrorSchema,
+      },
+    },
+  },
   500: {
     description: "Server error: something went wrong.",
     content: {

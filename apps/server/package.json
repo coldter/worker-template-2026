@@ -3,7 +3,8 @@
   "main": "src/index.ts",
   "type": "module",
   "scripts": {
-    "check-types": "tsc --noEmit",
+    "check-types": "tsgo --noEmit",
+    "check-types:backup": "tsc --noEmit",
     "dev": "wrangler types --env-interface CloudflareBindings && wrangler dev --inspector-port 9229",
     "start": "wrangler dev",
     "deploy": "wrangler deploy --minify --var NODE_ENV:production",
@@ -23,15 +24,15 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
-    "@hono/zod-openapi": "^1.2.4",
+    "@hono/zod-openapi": "^1.3.0",
     "@repo/authorization": "workspace:*",
     "@repo/db": "workspace:*",
     "@repo/email": "workspace:*",
     "@repo/shared": "workspace:*",
-    "@scalar/hono-api-reference": "^0.10.6",
-    "better-auth": "^1.6.1",
+    "@scalar/hono-api-reference": "^0.10.10",
+    "better-auth": "^1.6.9",
     "drizzle-orm": "^1.0.0-beta.9-e89174b",
-    "hono": "^4.12.12",
+    "hono": "^4.12.15",
     "pg": "^8.20.0",
     "pg-error-enum": "^2.0.1",
     "react": "^19.2.5",
@@ -39,16 +40,17 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@cloudflare/vitest-pool-workers": "^0.14.2",
+    "@cloudflare/vitest-pool-workers": "^0.15.0",
     "@faker-js/faker": "^10.4.0",
-    "@inquirer/prompts": "^8.4.1",
+    "@inquirer/prompts": "^8.4.2",
     "@types/pg": "^8.20.0",
+    "@typescript/native-preview": "beta",
     "chalk": "^5.6.2",
     "cli-highlight": "^2.1.11",
     "drizzle-kit": "^1.0.0-beta.9-e89174b",
-    "type-fest": "^5.5.0",
-    "typescript": "^6.0.2",
-    "vitest": "^4.1.3",
-    "wrangler": "^4.81.0"
+    "type-fest": "^5.6.0",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.5",
+    "wrangler": "^4.85.0"
   }
 }

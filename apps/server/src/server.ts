@@ -30,9 +30,7 @@ app.use("*", rateLimitMiddleware);
 
 // Auth proxy - BEFORE db/auth middleware (no DB needed for auth requests)
 const authProxy = new Hono<AppEnv>();
-authProxy.all("/*", async (c) => {
-  return c.env.AUTH.fetch(c.req.raw);
-});
+authProxy.all("/*", async (c) => c.env.AUTH.fetch(c.req.raw));
 app.route("/api/auth", authProxy);
 
 // Scoped middleware -- DB + auth for /api/*

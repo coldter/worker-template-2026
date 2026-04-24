@@ -5,6 +5,7 @@ import {
 } from "cloudflare:workers";
 import { createDrizzleClient } from "@repo/db/client";
 import * as schema from "@repo/db/schema";
+import { getBrandConfig } from "@repo/shared/brand";
 import { logger } from "@repo/shared/logger";
 import { DrizzleLogger } from "@repo/shared/logger-drizzle";
 import { eq } from "drizzle-orm";
@@ -73,16 +74,23 @@ export class EmailNotificationWorkflow extends WorkflowEntrypoint<
       return;
     }
 
+    const recipientEmail = notificationData.email;
+
     // Step 2: Send email via Resend
     await step.do(
       "send-email",
       { retries: { limit: 3, delay: "5 seconds", backoff: "exponential" } },
       async () => {
         const { sendEmail, NotificationEmail } = await import("@repo/email");
+        // boundary: workerd env bindings are typed via wrangler codegen; cast
+        // to a plain record for the brand helper.
+        const brand = getBrandConfig(
+          this.env as unknown as Record<string, string | undefined>
+        );
         await sendEmail({
           apiKey: this.env.RESEND_API_KEY,
-          from: `${this.env.EMAIL_FROM_NAME} <${this.env.EMAIL_FROM}>`,
-          to: notificationData.email as string,
+          from: `${brand.appName} <${this.env.EMAIL_FROM}>`,
+          to: recipientEmail,
           subject: notificationData.subject ?? "",
           template: NotificationEmail,
           props: {

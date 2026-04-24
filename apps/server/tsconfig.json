@@ -1,13 +1,8 @@
 {
   "$schema": "https://json.schemastore.org/tsconfig",
+  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "target": "ESNext",
-    "module": "ESNext",
-    "moduleResolution": "Bundler",
-    "strict": true,
-    "skipLibCheck": true,
     "paths": { "@/*": ["./src/*"] },
-    "lib": ["ESNext"],
     "jsx": "react-jsx",
     "types": ["./worker-configuration.d.ts"],
     "noUnusedLocals": false

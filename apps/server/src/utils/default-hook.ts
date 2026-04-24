@@ -5,11 +5,14 @@ import type { Env } from "@/lib/context";
 
 export const defaultHook: Hook<unknown, Env, "", unknown> = (result) => {
   if (!result.success && result.error instanceof ZodError) {
-    const { message } = result.error.issues[0];
+    const issue = result.error.issues[0];
+    if (!issue) {
+      return;
+    }
     // const type = `form.${code}` as const;
     throw new HTTPException(400, {
       cause: result.error,
-      message,
+      message: issue.message,
     });
   }
 };

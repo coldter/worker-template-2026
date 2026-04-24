@@ -6,7 +6,9 @@ Monorepo with a Cloudflare Worker API (`apps/server`), a dedicated auth worker (
 - Do not run `wrangler dev` or `bun dev` or start/stop servers (environment managed externally).
 - Run `bun run fix` from repo root before addressing lint/type errors.
 - No emojis in code or comments.
-- Do not introduce new `any`, `unknown`, or non-null assertions (`!`) in handwritten code.
+- Do not use `any` in handwritten code.
+- Do not use non-null assertions (`!`) — use explicit guards (`if (!x) throw ...`) or the `firstOrThrow()` helper from `packages/db/src/helpers.ts` (`@repo/db`).
+- `unknown` and `as unknown as <T>` are permitted ONLY at validated boundaries: Zod input parsing, OpenAPI response parsing, structured-log redaction (e.g., OTEL sensitive-field sanitization), vendor-SDK generic variance (Better Auth Session, Cloudflare Workflow class generics), and test fixture reflection. At any such site, either the adjacent runtime has a validator (Zod parse, typeof check, guard) OR the SDK's generics make the cast unavoidable. If you add a cast outside these categories, refactor or annotate with `// boundary: <reason>` and justify in review.
 
 ## Quick Reference
 - Package manager: Bun

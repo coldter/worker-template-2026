@@ -3,6 +3,7 @@ import {
   type WorkflowEvent,
   type WorkflowStep,
 } from "cloudflare:workers";
+import { getBrandConfig } from "@repo/shared/brand";
 
 interface OnboardingParams {
   email: string;
@@ -23,9 +24,14 @@ export class OnboardingWorkflow extends WorkflowEntrypoint<
       { retries: { limit: 3, delay: "5 seconds", backoff: "exponential" } },
       async () => {
         const { sendEmail, WelcomeEmail } = await import("@repo/email");
+        // boundary: workerd env bindings are typed via wrangler codegen; cast
+        // to a plain record for the brand helper.
+        const brand = getBrandConfig(
+          this.env as unknown as Record<string, string | undefined>
+        );
         await sendEmail({
           apiKey: this.env.RESEND_API_KEY,
-          from: `${this.env.EMAIL_FROM_NAME} <${this.env.EMAIL_FROM}>`,
+          from: `${brand.appName} <${this.env.EMAIL_FROM}>`,
           to: event.payload.email,
           subject: "Welcome!",
           template: WelcomeEmail,

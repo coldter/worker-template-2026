@@ -6,6 +6,7 @@ import {
   TwoFactorOtpEmail,
   VerificationOtpEmail,
 } from "@repo/email";
+import { getBrandConfig } from "@repo/shared/brand";
 import { kvDelete, kvGetJson, kvSetJson } from "@repo/shared/kv-cache";
 import { logger } from "@repo/shared/logger";
 import { SYSTEM_ROLES } from "@repo/shared/roles";
@@ -119,9 +120,14 @@ export function createAuth(
   ctx: MinimalExecutionContext
 ) {
   const corsOrigins = env.CORS_ORIGINS.split(",").map((s: string) => s.trim());
+  // boundary: workerd env bindings are typed via wrangler codegen; cast to a
+  // plain record for the brand helper.
+  const brand = getBrandConfig(
+    env as unknown as Record<string, string | undefined>
+  );
 
   const authConfig = {
-    appName: "App",
+    appName: brand.appName,
     secret: env.BETTER_AUTH_SECRET,
     baseURL: env.APP_URL,
     database: drizzleAdapter(db, {
@@ -449,7 +455,7 @@ export function createAuth(
           ctx.waitUntil(
             sendEmail({
               apiKey: env.RESEND_API_KEY,
-              from: `${env.EMAIL_FROM_NAME} <${env.EMAIL_FROM}>`,
+              from: `${brand.appName} <${env.EMAIL_FROM}>`,
               to: email,
               subject: subjectByType[type],
               template: VerificationOtpEmail,
@@ -497,7 +503,7 @@ export function createAuth(
             ctx.waitUntil(
               sendEmail({
                 apiKey: env.RESEND_API_KEY,
-                from: `${env.EMAIL_FROM_NAME} <${env.EMAIL_FROM}>`,
+                from: `${brand.appName} <${env.EMAIL_FROM}>`,
                 to: user.email,
                 subject: "Your Two-Factor Authentication Code",
                 template: TwoFactorOtpEmail,

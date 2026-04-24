@@ -4,6 +4,7 @@ export {
   type Executor,
   type Transaction,
 } from "./client";
+export { firstOrNull, firstOrThrow } from "./helpers";
 export type {
   AccountId,
   SessionId,

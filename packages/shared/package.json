@@ -10,14 +10,21 @@
     "./roles": "./src/roles.ts",
     "./pagination": "./src/pagination.ts",
     "./audit": "./src/audit.ts",
+    "./brand": "./src/brand.ts",
     "./logger": "./src/logger.ts",
     "./logger-drizzle": "./src/logger-drizzle.ts",
     "./kv-cache": "./src/kv-cache.ts"
   },
+  "scripts": {
+    "check-types": "tsgo --noEmit",
+    "check-types:backup": "tsc --noEmit"
+  },
   "devDependencies": {
-    "@hono/zod-openapi": "^1.2.4",
-    "@types/node": "^25.5.2",
-    "typescript": "^6.0.2"
+    "@cloudflare/workers-types": "^4.20260424.1",
+    "@hono/zod-openapi": "^1.3.0",
+    "@types/node": "^25.6.0",
+    "@typescript/native-preview": "beta",
+    "typescript": "^6.0.3"
   },
   "dependencies": {
     "@repo/authorization": "workspace:*",

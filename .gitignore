@@ -33,3 +33,13 @@ plans/requirements
 .wrangler-dry-run
 
 ref-project
+
+# Generated OpenAPI cache (regenerated via postinstall / predev hooks)
+apps/server/openapi.cache.json
+
+# Generated wrangler runtime types (per-app, regenerated via cf-typegen)
+apps/server/worker-configuration.d.ts
+apps/auth/worker-configuration.d.ts
+
+# Storybook build output
+apps/web/storybook-static

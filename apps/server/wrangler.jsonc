@@ -95,7 +95,11 @@
     "APP_URL": "http://localhost:8787",
     "CORS_ORIGINS": "http://localhost:3001",
     "EMAIL_FROM": "noreply@example.com",
-    "EMAIL_FROM_NAME": "App",
+    "APP_NAME": "App",
+    "COMPANY_NAME": "Acme Inc.",
+    "SUPPORT_EMAIL": "support@example.com",
+    "LOGO_TEXT": "App",
+    "BRAND_PRIMARY_COLOR": "#2563eb",
     "FCM_PROVIDER": "firebase",
   },
   "queues": {
