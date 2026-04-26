@@ -4,6 +4,7 @@ const config: KnipConfig = {
   ignoreExportsUsedInFile: true,
   tags: ["-lintignore"],
   ignoreDependencies: [
+    "@typescript/native-preview",
     "cloudflare",
     "postcss",
     "tailwindcss",
