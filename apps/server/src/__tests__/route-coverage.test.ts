@@ -1,4 +1,14 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+// The Cloudflare Workers vitest pool cannot load `pg` (CJS) through its ESM
+// shim. This test only inspects the static `middleware` array on each route,
+// so the real db/postgres client is never executed -- stub the modules that
+// transitively pull `pg` in so the route imports resolve.
+vi.mock("pg", () => ({ default: {}, Client: class {}, Pool: class {} }));
+vi.mock("drizzle-orm/node-postgres", () => ({ drizzle: () => ({}) }));
+vi.mock("drizzle-orm/node-postgres/migrator", () => ({
+  migrate: async () => undefined,
+}));
 
 import auditLogsRoutes from "@/modules/audit-logs/routes";
 import notificationsRoutes from "@/modules/notifications/routes";
