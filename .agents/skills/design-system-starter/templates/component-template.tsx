@@ -11,8 +11,8 @@
  * ```
  */
 
-import React from "react";
-import { cn } from "../utils/cn"; // Utility for className merging
+import React from 'react';
+import { cn } from '../utils/cn'; // Utility for className merging
 
 // ============================================================================
 // Types & Interfaces
@@ -21,31 +21,28 @@ import { cn } from "../utils/cn"; // Utility for className merging
 /**
  * Variants define the visual style of the component
  */
-export type ComponentVariant = "primary" | "secondary" | "outline" | "ghost";
+export type ComponentVariant = 'primary' | 'secondary' | 'outline' | 'ghost';
 
 /**
  * Sizes define the dimensions of the component
  */
-export type ComponentSize = "sm" | "md" | "lg";
+export type ComponentSize = 'sm' | 'md' | 'lg';
 
 /**
  * Props for the Component
  */
 export interface ComponentProps {
   /**
-   * ARIA label for accessibility
+   * Visual variant of the component
+   * @default 'primary'
    */
-  "aria-label"?: string;
+  variant?: ComponentVariant;
 
   /**
-   * Content to be rendered inside the component
+   * Size of the component
+   * @default 'md'
    */
-  children: React.ReactNode;
-
-  /**
-   * Additional CSS classes to apply
-   */
-  className?: string;
+  size?: ComponentSize;
 
   /**
    * Whether the component is disabled
@@ -54,20 +51,24 @@ export interface ComponentProps {
   disabled?: boolean;
 
   /**
+   * Additional CSS classes to apply
+   */
+  className?: string;
+
+  /**
+   * Content to be rendered inside the component
+   */
+  children: React.ReactNode;
+
+  /**
    * Optional click handler
    */
   onClick?: (event: React.MouseEvent<HTMLElement>) => void;
 
   /**
-   * Size of the component
-   * @default 'md'
+   * ARIA label for accessibility
    */
-  size?: ComponentSize;
-  /**
-   * Visual variant of the component
-   * @default 'primary'
-   */
-  variant?: ComponentVariant;
+  'aria-label'?: string;
 }
 
 // ============================================================================
@@ -75,22 +76,19 @@ export interface ComponentProps {
 // ============================================================================
 
 const componentStyles = {
-  base: "inline-flex items-center justify-center font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+  base: 'inline-flex items-center justify-center font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
 
   variants: {
-    primary:
-      "bg-blue-600 text-white hover:bg-blue-700 focus-visible:ring-blue-500",
-    secondary:
-      "bg-gray-600 text-white hover:bg-gray-700 focus-visible:ring-gray-500",
-    outline:
-      "border border-gray-300 bg-transparent hover:bg-gray-100 focus-visible:ring-gray-500",
-    ghost: "hover:bg-gray-100 focus-visible:ring-gray-500",
+    primary: 'bg-blue-600 text-white hover:bg-blue-700 focus-visible:ring-blue-500',
+    secondary: 'bg-gray-600 text-white hover:bg-gray-700 focus-visible:ring-gray-500',
+    outline: 'border border-gray-300 bg-transparent hover:bg-gray-100 focus-visible:ring-gray-500',
+    ghost: 'hover:bg-gray-100 focus-visible:ring-gray-500',
   },
 
   sizes: {
-    sm: "h-8 px-3 text-sm rounded-md",
-    md: "h-10 px-4 text-base rounded-md",
-    lg: "h-12 px-6 text-lg rounded-lg",
+    sm: 'h-8 px-3 text-sm rounded-md',
+    md: 'h-10 px-4 text-base rounded-md',
+    lg: 'h-12 px-6 text-lg rounded-lg',
   },
 };
 
@@ -101,13 +99,13 @@ const componentStyles = {
 export const Component = React.forwardRef<HTMLDivElement, ComponentProps>(
   (
     {
-      variant = "primary",
-      size = "md",
+      variant = 'primary',
+      size = 'md',
       disabled = false,
       className,
       children,
       onClick,
-      "aria-label": ariaLabel,
+      'aria-label': ariaLabel,
     },
     ref
   ) => {
@@ -123,18 +121,14 @@ export const Component = React.forwardRef<HTMLDivElement, ComponentProps>(
     // =========================================================================
 
     const handleClick = (event: React.MouseEvent<HTMLDivElement>) => {
-      if (disabled) {
-        return;
-      }
+      if (disabled) return;
       onClick?.(event);
     };
 
     const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
       // Handle Enter and Space for keyboard accessibility
-      if (disabled) {
-        return;
-      }
-      if (event.key === "Enter" || event.key === " ") {
+      if (disabled) return;
+      if (event.key === 'Enter' || event.key === ' ') {
         event.preventDefault();
         onClick?.(event as any);
       }
@@ -146,8 +140,7 @@ export const Component = React.forwardRef<HTMLDivElement, ComponentProps>(
 
     return (
       <div
-        aria-disabled={disabled}
-        aria-label={ariaLabel}
+        ref={ref}
         className={cn(
           componentStyles.base,
           componentStyles.variants[variant],
@@ -156,9 +149,10 @@ export const Component = React.forwardRef<HTMLDivElement, ComponentProps>(
         )}
         onClick={handleClick}
         onKeyDown={handleKeyDown}
-        ref={ref}
         role="button"
         tabIndex={disabled ? -1 : 0}
+        aria-disabled={disabled}
+        aria-label={ariaLabel}
       >
         {children}
       </div>
@@ -166,7 +160,7 @@ export const Component = React.forwardRef<HTMLDivElement, ComponentProps>(
   }
 );
 
-Component.displayName = "Component";
+Component.displayName = 'Component';
 
 // ============================================================================
 // Compound Components (if applicable)
@@ -175,11 +169,7 @@ Component.displayName = "Component";
 /**
  * Example of a compound component pattern
  */
-export const ComponentHeader = ({
-  children,
-}: {
-  children: React.ReactNode;
-}) => {
+export const ComponentHeader = ({ children }: { children: React.ReactNode }) => {
   return <div className="component-header">{children}</div>;
 };
 
@@ -202,7 +192,7 @@ Component.Body = ComponentBody;
  * Example 1: Basic usage
  */
 export const BasicExample = () => (
-  <Component size="md" variant="primary">
+  <Component variant="primary" size="md">
     Click me
   </Component>
 );
@@ -224,13 +214,13 @@ export const VariantsExample = () => (
  */
 export const SizesExample = () => (
   <div className="flex items-center gap-4">
-    <Component size="sm" variant="primary">
+    <Component variant="primary" size="sm">
       Small
     </Component>
-    <Component size="md" variant="primary">
+    <Component variant="primary" size="md">
       Medium
     </Component>
-    <Component size="lg" variant="primary">
+    <Component variant="primary" size="lg">
       Large
     </Component>
   </div>
@@ -240,7 +230,7 @@ export const SizesExample = () => (
  * Example 4: Disabled state
  */
 export const DisabledExample = () => (
-  <Component disabled variant="primary">
+  <Component variant="primary" disabled>
     Disabled
   </Component>
 );

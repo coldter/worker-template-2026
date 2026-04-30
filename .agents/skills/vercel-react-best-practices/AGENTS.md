@@ -32,7 +32,8 @@ Comprehensive performance optimization guide for React and Next.js applications,
    - 2.2 [Conditional Module Loading](#22-conditional-module-loading)
    - 2.3 [Defer Non-Critical Third-Party Libraries](#23-defer-non-critical-third-party-libraries)
    - 2.4 [Dynamic Imports for Heavy Components](#24-dynamic-imports-for-heavy-components)
-   - 2.5 [Preload Based on User Intent](#25-preload-based-on-user-intent)
+   - 2.5 [Prefer Statically Analyzable Paths](#25-prefer-statically-analyzable-paths)
+   - 2.6 [Preload Based on User Intent](#26-preload-based-on-user-intent)
 3. [Server-Side Performance](#3-server-side-performance) — **HIGH**
    - 3.1 [Authenticate Server Actions Like API Routes](#31-authenticate-server-actions-like-api-routes)
    - 3.2 [Avoid Duplicate Serialization in RSC Props](#32-avoid-duplicate-serialization-in-rsc-props)
@@ -93,9 +94,10 @@ Comprehensive performance optimization guide for React and Next.js applications,
    - 7.13 [Use Set/Map for O(1) Lookups](#713-use-setmap-for-o1-lookups)
    - 7.14 [Use toSorted() Instead of sort() for Immutability](#714-use-tosorted-instead-of-sort-for-immutability)
 8. [Advanced Patterns](#8-advanced-patterns) — **LOW**
-   - 8.1 [Initialize App Once, Not Per Mount](#81-initialize-app-once-not-per-mount)
-   - 8.2 [Store Event Handlers in Refs](#82-store-event-handlers-in-refs)
-   - 8.3 [useEffectEvent for Stable Callback Refs](#83-useeffectevent-for-stable-callback-refs)
+   - 8.1 [Do Not Put Effect Events in Dependency Arrays](#81-do-not-put-effect-events-in-dependency-arrays)
+   - 8.2 [Initialize App Once, Not Per Mount](#82-initialize-app-once-not-per-mount)
+   - 8.3 [Store Event Handlers in Refs](#83-store-event-handlers-in-refs)
+   - 8.4 [useEffectEvent for Stable Callback Refs](#84-useeffectevent-for-stable-callback-refs)
 
 ---
 
@@ -577,7 +579,66 @@ function CodePanel({ code }: { code: string }) {
 }
 ```
 
-### 2.5 Preload Based on User Intent
+### 2.5 Prefer Statically Analyzable Paths
+
+**Impact: HIGH (avoids accidental broad bundles and file traces)**
+
+Build tools work best when import and file-system paths are obvious at build time. If you hide the real path inside a variable or compose it too dynamically, the tool either has to include a broad set of possible files, warn that it cannot analyze the import, or widen file tracing to stay safe.
+
+Prefer explicit maps or literal paths so the set of reachable files stays narrow and predictable. This is the same rule whether you are choosing modules with `import()` or reading files in server/build code.
+
+When analysis becomes too broad, the cost is real:
+
+- Larger server bundles
+
+- Slower builds
+
+- Worse cold starts
+
+- More memory use
+
+**Incorrect: the bundler cannot tell what may be imported**
+
+```ts
+const PAGE_MODULES = {
+  home: './pages/home',
+  settings: './pages/settings',
+} as const
+
+const Page = await import(PAGE_MODULES[pageName])
+```
+
+**Correct: use an explicit map of allowed modules**
+
+```ts
+const PAGE_MODULES = {
+  home: () => import('./pages/home'),
+  settings: () => import('./pages/settings'),
+} as const
+
+const Page = await PAGE_MODULES[pageName]()
+```
+
+**Incorrect: a 2-value enum still hides the final path from static analysis**
+
+```ts
+const baseDir = path.join(process.cwd(), 'content/' + contentKind)
+```
+
+**Correct: make each final path literal at the callsite**
+
+```ts
+const baseDir =
+  kind === ContentKind.Blog
+    ? path.join(process.cwd(), 'content/blog')
+    : path.join(process.cwd(), 'content/docs')
+```
+
+In Next.js server code, this matters for output file tracing too. `path.join(process.cwd(), someVar)` can widen the traced file set because Next.js statically analyze `import`, `require`, and `fs` usage.
+
+Reference: [https://nextjs.org/docs/app/api-reference/config/next-config-js/output](https://nextjs.org/docs/app/api-reference/config/next-config-js/output), [https://nextjs.org/learn/seo/dynamic-imports](https://nextjs.org/learn/seo/dynamic-imports), [https://vite.dev/guide/features.html](https://vite.dev/guide/features.html), [https://esbuild.github.io/api/](https://esbuild.github.io/api/), [https://www.npmjs.com/package/@rollup/plugin-dynamic-import-vars](https://www.npmjs.com/package/@rollup/plugin-dynamic-import-vars), [https://webpack.js.org/guides/dependency-management/](https://webpack.js.org/guides/dependency-management/)
+
+### 2.6 Preload Based on User Intent
 
 **Impact: MEDIUM (reduces perceived latency)**
 
@@ -3575,7 +3636,59 @@ const sorted = [...items].sort((a, b) => a.value - b.value)
 
 Advanced patterns for specific cases that require careful implementation.
 
-### 8.1 Initialize App Once, Not Per Mount
+### 8.1 Do Not Put Effect Events in Dependency Arrays
+
+**Impact: LOW (avoids unnecessary effect re-runs and lint errors)**
+
+Effect Event functions do not have a stable identity. Their identity intentionally changes on every render. Do not include the function returned by `useEffectEvent` in a `useEffect` dependency array. Keep the actual reactive values as dependencies and call the Effect Event from inside the effect body or subscriptions created by that effect.
+
+**Incorrect: Effect Event added as a dependency**
+
+```tsx
+import { useEffect, useEffectEvent } from 'react'
+
+function ChatRoom({ roomId, onConnected }: {
+  roomId: string
+  onConnected: () => void
+}) {
+  const handleConnected = useEffectEvent(onConnected)
+
+  useEffect(() => {
+    const connection = createConnection(roomId)
+    connection.on('connected', handleConnected)
+    connection.connect()
+
+    return () => connection.disconnect()
+  }, [roomId, handleConnected])
+}
+```
+
+Including the Effect Event in dependencies makes the effect re-run every render and triggers the React Hooks lint rule.
+
+**Correct: depend on reactive values, not the Effect Event**
+
+```tsx
+import { useEffect, useEffectEvent } from 'react'
+
+function ChatRoom({ roomId, onConnected }: {
+  roomId: string
+  onConnected: () => void
+}) {
+  const handleConnected = useEffectEvent(onConnected)
+
+  useEffect(() => {
+    const connection = createConnection(roomId)
+    connection.on('connected', handleConnected)
+    connection.connect()
+
+    return () => connection.disconnect()
+  }, [roomId])
+}
+```
+
+Reference: [https://react.dev/reference/react/useEffectEvent#effect-event-in-deps](https://react.dev/reference/react/useEffectEvent#effect-event-in-deps)
+
+### 8.2 Initialize App Once, Not Per Mount
 
 **Impact: LOW-MEDIUM (avoids duplicate init in development)**
 
@@ -3613,7 +3726,7 @@ function Comp() {
 
 Reference: [https://react.dev/learn/you-might-not-need-an-effect#initializing-the-application](https://react.dev/learn/you-might-not-need-an-effect#initializing-the-application)
 
-### 8.2 Store Event Handlers in Refs
+### 8.3 Store Event Handlers in Refs
 
 **Impact: LOW (stable subscriptions)**
 
@@ -3649,7 +3762,7 @@ function useWindowEvent(event: string, handler: (e) => void) {
 
 `useEffectEvent` provides a cleaner API for the same pattern: it creates a stable function reference that always calls the latest version of the handler.
 
-### 8.3 useEffectEvent for Stable Callback Refs
+### 8.4 useEffectEvent for Stable Callback Refs
 
 **Impact: LOW (prevents effect re-runs)**
 
