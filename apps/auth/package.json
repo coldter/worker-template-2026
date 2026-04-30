@@ -17,15 +17,15 @@
     "@repo/shared": "workspace:*",
     "better-auth": "^1.6.9",
     "drizzle-orm": "^1.0.0-beta.9-e89174b",
-    "hono": "^4.12.15",
+    "hono": "^4.12.16",
     "pg": "^8.20.0",
-    "zod": "^4.3.6"
+    "zod": "^4.4.1"
   },
   "devDependencies": {
     "@types/pg": "^8.20.0",
     "@typescript/native-preview": "beta",
     "typescript": "^6.0.3",
     "vitest": "^4.1.5",
-    "wrangler": "^4.85.0"
+    "wrangler": "^4.86.0"
   }
 }
