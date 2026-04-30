@@ -3,13 +3,18 @@ import {
   type WorkflowEvent,
   type WorkflowStep,
 } from "cloudflare:workers";
-import { createDrizzleClient } from "@repo/db/client";
+import { withDrizzleClient } from "@repo/db";
 import * as schema from "@repo/db/schema";
 import { logger } from "@repo/shared/logger";
 import { DrizzleLogger } from "@repo/shared/logger-drizzle";
 import { eq } from "drizzle-orm";
-import { Client } from "pg";
 import { getPushProvider } from "@/lib/firebase";
+
+function getDrizzleLogger() {
+  return process.env.NODE_ENV === "development"
+    ? new DrizzleLogger()
+    : undefined;
+}
 
 interface PushNotificationParams {
   notificationId: string;
@@ -27,42 +32,32 @@ export class PushNotificationWorkflow extends WorkflowEntrypoint<
     const data = await step.do(
       "load-notification-and-tokens",
       { retries: { limit: 3, delay: "2 seconds", backoff: "exponential" } },
-      async () => {
-        const client = new Client({
-          connectionString: this.env.HYPERDRIVE.connectionString,
-        });
-        await client.connect();
-        try {
-          const db = createDrizzleClient(
-            client,
-            process.env.NODE_ENV === "development"
-              ? new DrizzleLogger()
-              : undefined
-          );
+      async () =>
+        withDrizzleClient(
+          this.env.HYPERDRIVE.connectionString,
+          async (db) => {
+            const notification = await db.query.notifications.findFirst({
+              where: { id: { eq: event.payload.notificationId } },
+            });
 
-          const notification = await db.query.notifications.findFirst({
-            where: { id: { eq: event.payload.notificationId } },
-          });
+            if (!notification) {
+              throw new Error(
+                `Notification ${event.payload.notificationId} not found`
+              );
+            }
 
-          if (!notification) {
-            throw new Error(
-              `Notification ${event.payload.notificationId} not found`
-            );
-          }
+            const tokens = await db.query.pushTokens.findMany({
+              where: { userId: { eq: notification.userId } },
+            });
 
-          const tokens = await db.query.pushTokens.findMany({
-            where: { userId: { eq: notification.userId } },
-          });
-
-          return {
-            subject: notification.subject,
-            body: notification.body,
-            tokens: tokens.map((t) => t.token),
-          };
-        } finally {
-          await client.end();
-        }
-      }
+            return {
+              subject: notification.subject,
+              body: notification.body,
+              tokens: tokens.map((t) => t.token),
+            };
+          },
+          { logger: getDrizzleLogger() }
+        )
     );
 
     if (data.tokens.length === 0) {
@@ -119,49 +114,40 @@ export class PushNotificationWorkflow extends WorkflowEntrypoint<
       "update-status",
       { retries: { limit: 3, delay: "2 seconds", backoff: "exponential" } },
       async () => {
-        const client = new Client({
-          connectionString: this.env.HYPERDRIVE.connectionString,
-        });
-        await client.connect();
-        try {
-          const db = createDrizzleClient(
-            client,
-            process.env.NODE_ENV === "development"
-              ? new DrizzleLogger()
-              : undefined
-          );
+        await withDrizzleClient(
+          this.env.HYPERDRIVE.connectionString,
+          async (db) => {
+            const anySuccess = sendResults.some((r) => r.success);
+            const allFailed = sendResults.every((r) => !r.success);
 
-          const anySuccess = sendResults.some((r) => r.success);
-          const allFailed = sendResults.every((r) => !r.success);
-
-          await db
-            .update(schema.notifications)
-            .set({
-              status: allFailed ? "failed" : "sent",
-              sentAt: anySuccess ? new Date() : undefined,
-            })
-            .where(eq(schema.notifications.id, event.payload.notificationId));
-
-          // Remove invalid tokens so future sends skip them
-          const invalidTokens = sendResults
-            .filter((r) => r.invalidToken)
-            .map((r) => r.token);
-
-          for (const token of invalidTokens) {
             await db
-              .delete(schema.pushTokens)
-              .where(eq(schema.pushTokens.token, token));
-          }
+              .update(schema.notifications)
+              .set({
+                status: allFailed ? "failed" : "sent",
+                sentAt: anySuccess ? new Date() : undefined,
+              })
+              .where(eq(schema.notifications.id, event.payload.notificationId));
 
-          if (invalidTokens.length > 0) {
-            logger.info("Cleaned up invalid push tokens", {
-              count: invalidTokens.length,
-              notificationId: event.payload.notificationId,
-            });
-          }
-        } finally {
-          await client.end();
-        }
+            // Remove invalid tokens so future sends skip them
+            const invalidTokens = sendResults
+              .filter((r) => r.invalidToken)
+              .map((r) => r.token);
+
+            for (const token of invalidTokens) {
+              await db
+                .delete(schema.pushTokens)
+                .where(eq(schema.pushTokens.token, token));
+            }
+
+            if (invalidTokens.length > 0) {
+              logger.info("Cleaned up invalid push tokens", {
+                count: invalidTokens.length,
+                notificationId: event.payload.notificationId,
+              });
+            }
+          },
+          { logger: getDrizzleLogger() }
+        );
       }
     );
   }

@@ -1,5 +1,12 @@
-import { type DrizzleClient, firstOrThrow } from "@repo/db";
-import { accounts, sessions, users } from "@repo/db/schema";
+import {
+  activateUser,
+  clearUserLockout,
+  type DrizzleClient,
+  deactivateUser,
+  deleteUserSessions,
+  firstOrThrow,
+} from "@repo/db";
+import { accounts, users } from "@repo/db/schema";
 import { hashPassword } from "better-auth/crypto";
 import {
   and,
@@ -12,8 +19,11 @@ import {
   or,
   type SQL,
 } from "drizzle-orm";
+import {
+  type AuditContext,
+  auditTransaction,
+} from "@/modules/audit-logs/auditable";
 import { AUDIT_EVENTS, TARGET_TYPES } from "@/modules/audit-logs/constants";
-import { auditLogService } from "@/modules/audit-logs/service";
 import type { AuditLogMetadata } from "@/modules/audit-logs/types";
 import {
   createPaginatedResponse,
@@ -22,6 +32,7 @@ import {
 } from "@/utils/pagination";
 
 import { USER_STATUS, USERS_SORT_COLUMNS } from "./constants";
+import { UserNotFoundError } from "./errors";
 import { createChangeMetadata } from "./helpers";
 import type {
   CreateUserInput,
@@ -30,6 +41,7 @@ import type {
   UpdateUserRolesInput,
   UserRecord,
 } from "./types";
+import { onUserStatusChange } from "./user-status-hooks";
 
 export const userService = {
   async find(db: DrizzleClient, query: ListUsersQuery) {
@@ -128,11 +140,11 @@ export const userService = {
     db: DrizzleClient,
     input: CreateUserInput,
     actorId: string,
-    auditContext: { ipAddress?: string; userAgent?: string }
+    auditContext: AuditContext
   ): Promise<UserRecord> {
     const hashedPassword = await hashPassword(input.password);
 
-    return db.transaction(async (tx) => {
+    return auditTransaction(db, auditContext, async (tx, audit) => {
       const user = await firstOrThrow(
         tx
           .insert(users)
@@ -155,23 +167,17 @@ export const userService = {
         password: hashedPassword,
       });
 
-      await auditLogService.create(
-        {
-          event: AUDIT_EVENTS.USER.CREATED.event,
-          actorId,
-          actorType: "user",
-          targetId: user.id,
-          targetType: TARGET_TYPES.USER,
-          ipAddress: auditContext.ipAddress,
-          userAgent: auditContext.userAgent,
-          metadata: {
-            name: input.name,
-            email: input.email,
-            roleSlugs: input.roleSlugs,
-          },
+      audit.record({
+        event: AUDIT_EVENTS.USER.CREATED.event,
+        actorId,
+        targetId: user.id,
+        targetType: TARGET_TYPES.USER,
+        metadata: {
+          name: input.name,
+          email: input.email,
+          roleSlugs: input.roleSlugs,
         },
-        tx
-      );
+      });
 
       return user;
     });
@@ -182,14 +188,14 @@ export const userService = {
     id: string,
     input: UpdateUserInput,
     actorId: string,
-    auditContext: { ipAddress?: string; userAgent?: string }
+    auditContext: AuditContext
   ): Promise<UserRecord> {
     const existingUser = await this.findById(db, id);
     if (!existingUser) {
-      throw new Error("User not found");
+      throw new UserNotFoundError(id);
     }
 
-    return db.transaction(async (tx) => {
+    return auditTransaction(db, auditContext, async (tx, audit) => {
       const updatedUser = await firstOrThrow(
         tx
           .update(users)
@@ -209,19 +215,13 @@ export const userService = {
       );
 
       if (metadata.changedFields && metadata.changedFields.length > 0) {
-        await auditLogService.create(
-          {
-            event: AUDIT_EVENTS.USER.UPDATED.event,
-            actorId,
-            actorType: "user",
-            targetId: id,
-            targetType: TARGET_TYPES.USER,
-            ipAddress: auditContext.ipAddress,
-            userAgent: auditContext.userAgent,
-            metadata,
-          },
-          tx
-        );
+        audit.record({
+          event: AUDIT_EVENTS.USER.UPDATED.event,
+          actorId,
+          targetId: id,
+          targetType: TARGET_TYPES.USER,
+          metadata,
+        });
       }
 
       return updatedUser;
@@ -233,14 +233,14 @@ export const userService = {
     id: string,
     input: UpdateUserRolesInput,
     actorId: string,
-    auditContext: { ipAddress?: string; userAgent?: string }
+    auditContext: AuditContext
   ): Promise<UserRecord> {
     const existingUser = await this.findById(db, id);
     if (!existingUser) {
-      throw new Error("User not found");
+      throw new UserNotFoundError(id);
     }
 
-    return db.transaction(async (tx) => {
+    return auditTransaction(db, auditContext, async (tx, audit) => {
       const updatedUser = await firstOrThrow(
         tx
           .update(users)
@@ -260,19 +260,13 @@ export const userService = {
         changedFields: ["roleSlugs"],
       };
 
-      await auditLogService.create(
-        {
-          event: AUDIT_EVENTS.ROLE.ASSIGNED.event,
-          actorId,
-          actorType: "user",
-          targetId: id,
-          targetType: TARGET_TYPES.USER,
-          ipAddress: auditContext.ipAddress,
-          userAgent: auditContext.userAgent,
-          metadata,
-        },
-        tx
-      );
+      audit.record({
+        event: AUDIT_EVENTS.ROLE.ASSIGNED.event,
+        actorId,
+        targetId: id,
+        targetType: TARGET_TYPES.USER,
+        metadata,
+      });
 
       return updatedUser;
     });
@@ -283,97 +277,91 @@ export const userService = {
     id: string,
     reason: string | null,
     actorId: string,
-    auditContext: { ipAddress?: string; userAgent?: string }
+    auditContext: AuditContext
   ): Promise<void> {
-    await db.transaction(async (tx) => {
-      await tx
-        .update(users)
-        .set({
-          status: USER_STATUS.INACTIVE,
-          deactivatedAt: new Date(),
-          deactivatedBy: actorId,
-          deactivatedReason: reason,
-        })
-        .where(eq(users.id, id));
+    const existingUser = await this.findById(db, id);
+    if (!existingUser) {
+      throw new UserNotFoundError(id);
+    }
 
-      await tx.delete(sessions).where(eq(sessions.userId, id));
+    await auditTransaction(db, auditContext, async (tx, audit) => {
+      const updated = await deactivateUser(tx, id, actorId, reason);
+      if (!updated) {
+        throw new UserNotFoundError(id);
+      }
 
-      await auditLogService.create(
-        {
-          event: AUDIT_EVENTS.USER.DEACTIVATED.event,
-          actorId,
-          actorType: "user",
-          targetId: id,
-          targetType: TARGET_TYPES.USER,
-          ipAddress: auditContext.ipAddress,
-          userAgent: auditContext.userAgent,
-          metadata: { reason },
-        },
-        tx
-      );
+      await deleteUserSessions(tx, id);
+
+      audit.record({
+        event: AUDIT_EVENTS.USER.DEACTIVATED.event,
+        actorId,
+        targetId: id,
+        targetType: TARGET_TYPES.USER,
+        metadata: { reason },
+      });
     });
+
+    await onUserStatusChange(
+      id,
+      USER_STATUS.INACTIVE,
+      existingUser.status,
+      reason
+    );
   },
 
   async activate(
     db: DrizzleClient,
     id: string,
     actorId: string,
-    auditContext: { ipAddress?: string; userAgent?: string }
+    auditContext: AuditContext
   ): Promise<void> {
-    await db.transaction(async (tx) => {
-      await tx
-        .update(users)
-        .set({
-          status: USER_STATUS.ACTIVE,
-          deactivatedAt: null,
-          deactivatedBy: null,
-          deactivatedReason: null,
-        })
-        .where(eq(users.id, id));
+    const existingUser = await this.findById(db, id);
+    if (!existingUser) {
+      throw new UserNotFoundError(id);
+    }
 
-      await auditLogService.create(
-        {
-          event: AUDIT_EVENTS.USER.ACTIVATED.event,
-          actorId,
-          actorType: "user",
-          targetId: id,
-          targetType: TARGET_TYPES.USER,
-          ipAddress: auditContext.ipAddress,
-          userAgent: auditContext.userAgent,
-        },
-        tx
-      );
+    await auditTransaction(db, auditContext, async (tx, audit) => {
+      const updated = await activateUser(tx, id);
+      if (!updated) {
+        throw new UserNotFoundError(id);
+      }
+
+      audit.record({
+        event: AUDIT_EVENTS.USER.ACTIVATED.event,
+        actorId,
+        targetId: id,
+        targetType: TARGET_TYPES.USER,
+      });
     });
+
+    await onUserStatusChange(id, USER_STATUS.ACTIVE, existingUser.status, null);
   },
 
   async unlock(
     db: DrizzleClient,
     id: string,
     actorId: string,
-    auditContext: { ipAddress?: string; userAgent?: string }
+    auditContext: AuditContext
   ): Promise<void> {
-    await db.transaction(async (tx) => {
-      await tx
-        .update(users)
-        .set({
-          status: USER_STATUS.ACTIVE,
-          lockedUntil: null,
-          failedLoginAttempts: 0,
-        })
-        .where(eq(users.id, id));
+    const existingUser = await this.findById(db, id);
+    if (!existingUser) {
+      throw new UserNotFoundError(id);
+    }
 
-      await auditLogService.create(
-        {
-          event: AUDIT_EVENTS.USER.UNLOCKED.event,
-          actorId,
-          actorType: "user",
-          targetId: id,
-          targetType: TARGET_TYPES.USER,
-          ipAddress: auditContext.ipAddress,
-          userAgent: auditContext.userAgent,
-        },
-        tx
-      );
+    await auditTransaction(db, auditContext, async (tx, audit) => {
+      const updated = await clearUserLockout(tx, id);
+      if (!updated) {
+        throw new UserNotFoundError(id);
+      }
+
+      audit.record({
+        event: AUDIT_EVENTS.USER.UNLOCKED.event,
+        actorId,
+        targetId: id,
+        targetType: TARGET_TYPES.USER,
+      });
     });
+
+    await onUserStatusChange(id, USER_STATUS.ACTIVE, existingUser.status, null);
   },
 };

@@ -5,26 +5,19 @@ import {
   pushTokens,
 } from "@repo/db/schema";
 import { and, asc, count, desc, eq, type SQL, sql } from "drizzle-orm";
-import { triggerWorkflow } from "@/lib/events";
 import {
   createPaginatedResponse,
   getPaginationParams,
   resolveSortColumn,
 } from "@/utils/pagination";
 
-import {
-  NOTIFICATION_TYPE_CONFIG,
-  NOTIFICATIONS_SORT_COLUMNS,
-} from "./constants";
-import { resolveEnabledChannels } from "./helpers";
+import { NOTIFICATIONS_SORT_COLUMNS } from "./constants";
 import type {
   ListNotificationsQuery,
   NotificationRecord,
   PreferencesRecord,
   PushTokenRecord,
   RegisterPushTokenInput,
-  SendNotificationInput,
-  SendResult,
   UpdatePreferencesInput,
 } from "./types";
 
@@ -207,94 +200,6 @@ export const notificationService = {
       )
       .returning({ id: notifications.id });
     return result.length;
-  },
-
-  // ─────────────────────────────────────────────────────────────
-  // SEND NOTIFICATION
-  // ─────────────────────────────────────────────────────────────
-
-  /**
-   * Send a notification to a user.
-   * Creates notification records for each channel.
-   */
-  async send(
-    db: DrizzleClient,
-    input: SendNotificationInput
-  ): Promise<SendResult> {
-    const typeConfig = NOTIFICATION_TYPE_CONFIG[input.type];
-    const requestedChannels = input.channels ??
-      typeConfig?.channels ?? ["push"];
-    const priority = input.priority ?? typeConfig?.priority ?? "medium";
-
-    // Check user preferences to filter channels
-    const preferences = await this.getPreferences(db, input.userId);
-    const channels = resolveEnabledChannels(
-      preferences,
-      input.type,
-      requestedChannels
-    );
-
-    if (channels.length === 0) {
-      return {
-        notificationIds: [],
-        channels: requestedChannels,
-        sentChannels: [],
-        failedChannels: [],
-      };
-    }
-
-    const sentChannels: SendResult["sentChannels"] = [];
-    const failedChannels: SendResult["failedChannels"] = [];
-    const notificationIds: string[] = [];
-
-    // Create notification record for each channel
-    for (const channel of channels) {
-      try {
-        const [notification] = await db
-          .insert(notifications)
-          .values({
-            userId: input.userId,
-            type: input.type,
-            channel,
-            status: "pending",
-            priority,
-            subject: input.subject,
-            body: input.body,
-            props: input.props ?? null,
-          })
-          .returning();
-
-        if (notification) {
-          notificationIds.push(notification.id);
-          sentChannels.push(channel);
-
-          // Trigger workflow for actual delivery (fire-and-forget;
-          // workflow creation is durable on the Cloudflare platform)
-          triggerWorkflow(
-            channel === "email"
-              ? {
-                  type: "notification.email",
-                  payload: { notificationId: notification.id },
-                }
-              : {
-                  type: "notification.push",
-                  payload: { notificationId: notification.id },
-                }
-          );
-        }
-      } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : "Unknown error";
-        failedChannels.push({ channel, error: errorMessage });
-      }
-    }
-
-    return {
-      notificationIds,
-      channels: requestedChannels,
-      sentChannels,
-      failedChannels,
-    };
   },
 
   // ─────────────────────────────────────────────────────────────

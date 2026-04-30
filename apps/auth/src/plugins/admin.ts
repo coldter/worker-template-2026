@@ -1,6 +1,8 @@
 import { AuthorizationError, type Principal } from "@repo/authorization";
-import type { DrizzleClient } from "@repo/db";
-import * as schema from "@repo/db/schema";
+import type {
+  ApiBindingRpc,
+  StatusMutationResult,
+} from "@repo/shared/api-binding";
 import {
   authorization,
   buildAuthorizationPrincipal,
@@ -12,10 +14,8 @@ import {
   createAuthEndpoint,
   sessionMiddleware,
 } from "better-auth/api";
-import { eq } from "drizzle-orm";
 import { z } from "zod";
 
-type UserId = string;
 type ManageUserStatusAction = "activate" | "deactivate" | "unlock";
 
 type AuthSessionUser = {
@@ -24,16 +24,6 @@ type AuthSessionUser = {
   id: string;
   roleSlugs?: string[];
   status?: string;
-};
-
-/** Minimal interface for the API service binding to avoid circular dependency */
-type ApiBinding = {
-  onUserStatusChange(params: {
-    userId: string;
-    newStatus: string;
-    previousStatus: string;
-    reason: string | null;
-  }): Promise<void>;
 };
 
 function getAuthorizationActor(user: AuthSessionUser) {
@@ -61,6 +51,16 @@ async function assertCanManageUserStatusWithApiError(
   }
 }
 
+function assertStatusMutationResult(result: StatusMutationResult): void {
+  if (result.success) {
+    return;
+  }
+
+  if (result.reason === "not_found") {
+    throw new APIError("NOT_FOUND", { message: "User not found" });
+  }
+}
+
 /**
  * Admin Plugin
  *
@@ -69,7 +69,7 @@ async function assertCanManageUserStatusWithApiError(
  * - Activate user (admin reactivates a user)
  * - Unlock user (admin unlocks a locked user)
  */
-export const adminPlugin = (db: DrizzleClient, apiBinding: ApiBinding) => {
+export const adminPlugin = (apiBinding: ApiBindingRpc) => {
   return {
     id: "admin",
     endpoints: {
@@ -119,40 +119,12 @@ export const adminPlugin = (db: DrizzleClient, apiBinding: ApiBinding) => {
             ctx.body.userId
           );
 
-          if (ctx.body.userId === currentUser.id) {
-            throw new APIError("BAD_REQUEST", {
-              message: "Cannot deactivate yourself",
-            });
-          }
-
-          const targetUser = await db.query.users.findFirst({
-            where: { id: { eq: ctx.body.userId as UserId } },
-          });
-
-          if (!targetUser) {
-            throw new APIError("NOT_FOUND", { message: "User not found" });
-          }
-
-          await db
-            .update(schema.users)
-            .set({
-              status: "inactive",
-              deactivatedAt: new Date(),
-              deactivatedBy: currentUser.id,
-              deactivatedReason: ctx.body.reason ?? null,
-            })
-            .where(eq(schema.users.id, ctx.body.userId));
-
-          await db
-            .delete(schema.sessions)
-            .where(eq(schema.sessions.userId, ctx.body.userId));
-
-          await apiBinding.onUserStatusChange({
+          const result = await apiBinding.adminDeactivateUser({
             userId: ctx.body.userId,
-            newStatus: "inactive",
-            previousStatus: targetUser.status,
-            reason: ctx.body.reason ?? "admin_deactivated",
+            actorId: currentUser.id,
+            reason: ctx.body.reason ?? null,
           });
+          assertStatusMutationResult(result);
 
           return ctx.json({ success: true });
         }
@@ -203,30 +175,11 @@ export const adminPlugin = (db: DrizzleClient, apiBinding: ApiBinding) => {
             ctx.body.userId
           );
 
-          const targetUser = await db.query.users.findFirst({
-            where: { id: { eq: ctx.body.userId as UserId } },
-          });
-
-          if (!targetUser) {
-            throw new APIError("NOT_FOUND", { message: "User not found" });
-          }
-
-          await db
-            .update(schema.users)
-            .set({
-              status: "active",
-              deactivatedAt: null,
-              deactivatedBy: null,
-              deactivatedReason: null,
-            })
-            .where(eq(schema.users.id, ctx.body.userId));
-
-          await apiBinding.onUserStatusChange({
+          const result = await apiBinding.adminActivateUser({
             userId: ctx.body.userId,
-            newStatus: "active",
-            previousStatus: targetUser.status,
-            reason: null,
+            actorId: currentUser.id,
           });
+          assertStatusMutationResult(result);
 
           return ctx.json({ success: true });
         }
@@ -276,22 +229,11 @@ export const adminPlugin = (db: DrizzleClient, apiBinding: ApiBinding) => {
             ctx.body.userId
           );
 
-          const targetUser = await db.query.users.findFirst({
-            where: { id: { eq: ctx.body.userId as UserId } },
+          const result = await apiBinding.adminUnlockUser({
+            userId: ctx.body.userId,
+            actorId: currentUser.id,
           });
-
-          if (!targetUser) {
-            throw new APIError("NOT_FOUND", { message: "User not found" });
-          }
-
-          await db
-            .update(schema.users)
-            .set({
-              status: "active",
-              lockedUntil: null,
-              failedLoginAttempts: 0,
-            })
-            .where(eq(schema.users.id, ctx.body.userId));
+          assertStatusMutationResult(result);
 
           return ctx.json({ success: true });
         }

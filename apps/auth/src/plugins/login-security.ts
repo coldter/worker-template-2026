@@ -1,5 +1,10 @@
-import type { DrizzleClient } from "@repo/db";
-import * as schema from "@repo/db/schema";
+import {
+  clearUserLockout,
+  type DrizzleClient,
+  setUserFailedAttempts,
+  setUserLocked,
+  users,
+} from "@repo/db";
 import type { BetterAuthPlugin } from "better-auth";
 import { APIError, createAuthMiddleware } from "better-auth/api";
 import { eq } from "drizzle-orm";
@@ -108,14 +113,7 @@ export const loginSecurityPlugin = (db: DrizzleClient) => {
               }
 
               // Lockout expired - auto-unlock
-              await db
-                .update(schema.users)
-                .set({
-                  status: "active",
-                  lockedUntil: null,
-                  failedLoginAttempts: 0,
-                })
-                .where(eq(schema.users.id, user.id));
+              await clearUserLockout(db, user.id);
             }
           }),
         },
@@ -146,24 +144,20 @@ export const loginSecurityPlugin = (db: DrizzleClient) => {
               const shouldLock =
                 newFailedAttempts >= LOCKOUT_CONFIG.maxFailedAttempts;
 
-              await db
-                .update(schema.users)
-                .set({
-                  failedLoginAttempts: newFailedAttempts,
-                  ...(shouldLock && {
-                    status: "locked",
-                    lockedUntil: calculateLockoutExpiry(),
-                  }),
-                })
-                .where(eq(schema.users.id, user.id));
-
-              // Return modified response with lockout info
               if (shouldLock) {
+                await setUserLocked(
+                  db,
+                  user.id,
+                  calculateLockoutExpiry(),
+                  newFailedAttempts
+                );
                 throw new APIError("TOO_MANY_REQUESTS", {
                   message: `Account locked after ${LOCKOUT_CONFIG.maxFailedAttempts} failed attempts. Try again in ${LOCKOUT_CONFIG.lockoutDurationMinutes} minutes.`,
                   code: AUTH_ERROR_CODES.ACCOUNT_LOCKED,
                 });
               }
+
+              await setUserFailedAttempts(db, user.id, newFailedAttempts);
 
               throw new APIError("UNAUTHORIZED", {
                 message: "Invalid credentials",
@@ -173,12 +167,12 @@ export const loginSecurityPlugin = (db: DrizzleClient) => {
 
             // Reset failed attempts on successful login
             await db
-              .update(schema.users)
+              .update(users)
               .set({
                 failedLoginAttempts: 0,
                 lockedUntil: null,
               })
-              .where(eq(schema.users.email, body.email));
+              .where(eq(users.email, body.email));
 
             // Don't return anything - let the original response pass through
           }),

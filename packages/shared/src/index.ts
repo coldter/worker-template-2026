@@ -1,3 +1,4 @@
+export * from "./api-binding";
 export * from "./audit";
 export * from "./authorization";
 export * from "./brand";

@@ -6,6 +6,7 @@ import {
   TwoFactorOtpEmail,
   VerificationOtpEmail,
 } from "@repo/email";
+import type { ApiBindingRpc } from "@repo/shared/api-binding";
 import { getBrandConfig } from "@repo/shared/brand";
 import { kvDelete, kvGetJson, kvSetJson } from "@repo/shared/kv-cache";
 import { logger } from "@repo/shared/logger";
@@ -28,31 +29,6 @@ import {
   enhancedUserPlugin,
   type UserWithStatusFields,
 } from "./plugins/user-status";
-
-/**
- * Minimal interface for the API service binding RPC methods.
- * Avoids circular dependency on the server package. Will be replaced
- * by a concrete Service<ApiEntrypoint> type once Task 5 is complete.
- */
-interface ApiBindingRpc {
-  onNewDeviceLogin(params: {
-    userId: string;
-    ipAddress: string;
-    userAgent: string;
-    platform: string;
-  }): Promise<void>;
-  onUserCreated(params: {
-    id: string;
-    email: string;
-    name: string;
-  }): Promise<void>;
-  onUserStatusChange(params: {
-    userId: string;
-    newStatus: string;
-    previousStatus: string;
-    reason: string | null;
-  }): Promise<void>;
-}
 
 /**
  * CloudflareBindings with the API binding typed for its RPC methods.
@@ -419,7 +395,7 @@ export function createAuth(
     plugins: [
       enhancedUserPlugin(),
       loginSecurityPlugin(db),
-      adminPlugin(db, env.API),
+      adminPlugin(env.API),
       // Email OTP plugin for password reset via OTP (not magic links)
       emailOTP({
         otpLength: TWO_FACTOR_CONFIG.otpLength,
@@ -477,8 +453,9 @@ export function createAuth(
       }),
       // Two-factor authentication plugin (email OTP only, no TOTP)
       twoFactor({
-        // Use our custom twoFactor table
-        twoFactorTable: "twoFactors",
+        // With usePlural: true on the Drizzle adapter, provide the
+        // singular model name so it resolves to our "twoFactors" table.
+        twoFactorTable: "twoFactor",
         // Skip TOTP verification since we only use email OTP
         skipVerificationOnEnable: true,
         // OTP configuration for 2FA verification

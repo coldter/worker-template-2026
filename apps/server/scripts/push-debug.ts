@@ -19,6 +19,7 @@ import {
   NOTIFICATION_TYPES,
   type NotificationType,
 } from "@/modules/notifications/constants";
+import { notificationDispatch } from "@/modules/notifications/dispatch";
 import { notificationService } from "@/modules/notifications/service";
 
 // -- Database --
@@ -239,7 +240,7 @@ async function sendCommand(
     )
   );
 
-  const result = await notificationService.send(db, {
+  const result = await notificationDispatch.send(db, {
     userId: user.id,
     type,
     subject: `Test: ${typeName}`,
@@ -479,7 +480,7 @@ async function sendAllTypesCommand(identifier: string): Promise<void> {
   for (const type of pushTypes) {
     const typeName = type.replace(/[._]/g, " ");
     try {
-      const result = await notificationService.send(db, {
+      const result = await notificationDispatch.send(db, {
         userId: user.id,
         type,
         subject: `Test: ${typeName}`,

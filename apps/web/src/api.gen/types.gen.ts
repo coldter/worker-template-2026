@@ -53,6 +53,36 @@ export type ListRolesErrors = {
         };
     };
     /**
+     * Conflict: the request conflicts with current state (e.g. unique constraint violation).
+     */
+    409: {
+        error: {
+            code?: string;
+            message?: string;
+            details?: string;
+        };
+    };
+    /**
+     * Unprocessable entity: request body failed validation (Zod schema).
+     */
+    422: {
+        error: {
+            code?: string;
+            message?: string;
+            details?: string;
+        };
+    };
+    /**
+     * Too many requests: rate limit exceeded.
+     */
+    429: {
+        error: {
+            code?: string;
+            message?: string;
+            details?: string;
+        };
+    };
+    /**
      * Server error: something went wrong.
      */
     500: {
@@ -163,6 +193,36 @@ export type ListUsersErrors = {
      * Not found: resource does not exist.
      */
     404: {
+        error: {
+            code?: string;
+            message?: string;
+            details?: string;
+        };
+    };
+    /**
+     * Conflict: the request conflicts with current state (e.g. unique constraint violation).
+     */
+    409: {
+        error: {
+            code?: string;
+            message?: string;
+            details?: string;
+        };
+    };
+    /**
+     * Unprocessable entity: request body failed validation (Zod schema).
+     */
+    422: {
+        error: {
+            code?: string;
+            message?: string;
+            details?: string;
+        };
+    };
+    /**
+     * Too many requests: rate limit exceeded.
+     */
+    429: {
         error: {
             code?: string;
             message?: string;
@@ -314,6 +374,36 @@ export type CreateUserErrors = {
         };
     };
     /**
+     * Conflict: the request conflicts with current state (e.g. unique constraint violation).
+     */
+    409: {
+        error: {
+            code?: string;
+            message?: string;
+            details?: string;
+        };
+    };
+    /**
+     * Unprocessable entity: request body failed validation (Zod schema).
+     */
+    422: {
+        error: {
+            code?: string;
+            message?: string;
+            details?: string;
+        };
+    };
+    /**
+     * Too many requests: rate limit exceeded.
+     */
+    429: {
+        error: {
+            code?: string;
+            message?: string;
+            details?: string;
+        };
+    };
+    /**
      * Server error: something went wrong.
      */
     500: {
@@ -400,6 +490,36 @@ export type GetMyAccountErrors = {
      * Not found: resource does not exist.
      */
     404: {
+        error: {
+            code?: string;
+            message?: string;
+            details?: string;
+        };
+    };
+    /**
+     * Conflict: the request conflicts with current state (e.g. unique constraint violation).
+     */
+    409: {
+        error: {
+            code?: string;
+            message?: string;
+            details?: string;
+        };
+    };
+    /**
+     * Unprocessable entity: request body failed validation (Zod schema).
+     */
+    422: {
+        error: {
+            code?: string;
+            message?: string;
+            details?: string;
+        };
+    };
+    /**
+     * Too many requests: rate limit exceeded.
+     */
+    429: {
         error: {
             code?: string;
             message?: string;
@@ -500,6 +620,36 @@ export type GetUserErrors = {
      * Not found: resource does not exist.
      */
     404: {
+        error: {
+            code?: string;
+            message?: string;
+            details?: string;
+        };
+    };
+    /**
+     * Conflict: the request conflicts with current state (e.g. unique constraint violation).
+     */
+    409: {
+        error: {
+            code?: string;
+            message?: string;
+            details?: string;
+        };
+    };
+    /**
+     * Unprocessable entity: request body failed validation (Zod schema).
+     */
+    422: {
+        error: {
+            code?: string;
+            message?: string;
+            details?: string;
+        };
+    };
+    /**
+     * Too many requests: rate limit exceeded.
+     */
+    429: {
         error: {
             code?: string;
             message?: string;
@@ -613,6 +763,36 @@ export type UpdateUserErrors = {
         };
     };
     /**
+     * Conflict: the request conflicts with current state (e.g. unique constraint violation).
+     */
+    409: {
+        error: {
+            code?: string;
+            message?: string;
+            details?: string;
+        };
+    };
+    /**
+     * Unprocessable entity: request body failed validation (Zod schema).
+     */
+    422: {
+        error: {
+            code?: string;
+            message?: string;
+            details?: string;
+        };
+    };
+    /**
+     * Too many requests: rate limit exceeded.
+     */
+    429: {
+        error: {
+            code?: string;
+            message?: string;
+            details?: string;
+        };
+    };
+    /**
      * Server error: something went wrong.
      */
     500: {
@@ -709,6 +889,36 @@ export type UpdateUserRolesErrors = {
      * Not found: resource does not exist.
      */
     404: {
+        error: {
+            code?: string;
+            message?: string;
+            details?: string;
+        };
+    };
+    /**
+     * Conflict: the request conflicts with current state (e.g. unique constraint violation).
+     */
+    409: {
+        error: {
+            code?: string;
+            message?: string;
+            details?: string;
+        };
+    };
+    /**
+     * Unprocessable entity: request body failed validation (Zod schema).
+     */
+    422: {
+        error: {
+            code?: string;
+            message?: string;
+            details?: string;
+        };
+    };
+    /**
+     * Too many requests: rate limit exceeded.
+     */
+    429: {
         error: {
             code?: string;
             message?: string;
@@ -819,6 +1029,36 @@ export type DeactivateUserErrors = {
         };
     };
     /**
+     * Conflict: the request conflicts with current state (e.g. unique constraint violation).
+     */
+    409: {
+        error: {
+            code?: string;
+            message?: string;
+            details?: string;
+        };
+    };
+    /**
+     * Unprocessable entity: request body failed validation (Zod schema).
+     */
+    422: {
+        error: {
+            code?: string;
+            message?: string;
+            details?: string;
+        };
+    };
+    /**
+     * Too many requests: rate limit exceeded.
+     */
+    429: {
+        error: {
+            code?: string;
+            message?: string;
+            details?: string;
+        };
+    };
+    /**
      * Server error: something went wrong.
      */
     500: {
@@ -907,6 +1147,36 @@ export type ActivateUserErrors = {
         };
     };
     /**
+     * Conflict: the request conflicts with current state (e.g. unique constraint violation).
+     */
+    409: {
+        error: {
+            code?: string;
+            message?: string;
+            details?: string;
+        };
+    };
+    /**
+     * Unprocessable entity: request body failed validation (Zod schema).
+     */
+    422: {
+        error: {
+            code?: string;
+            message?: string;
+            details?: string;
+        };
+    };
+    /**
+     * Too many requests: rate limit exceeded.
+     */
+    429: {
+        error: {
+            code?: string;
+            message?: string;
+            details?: string;
+        };
+    };
+    /**
      * Server error: something went wrong.
      */
     500: {
@@ -988,6 +1258,36 @@ export type UnlockUserErrors = {
      * Not found: resource does not exist.
      */
     404: {
+        error: {
+            code?: string;
+            message?: string;
+            details?: string;
+        };
+    };
+    /**
+     * Conflict: the request conflicts with current state (e.g. unique constraint violation).
+     */
+    409: {
+        error: {
+            code?: string;
+            message?: string;
+            details?: string;
+        };
+    };
+    /**
+     * Unprocessable entity: request body failed validation (Zod schema).
+     */
+    422: {
+        error: {
+            code?: string;
+            message?: string;
+            details?: string;
+        };
+    };
+    /**
+     * Too many requests: rate limit exceeded.
+     */
+    429: {
         error: {
             code?: string;
             message?: string;
@@ -1112,6 +1412,36 @@ export type ListAuditLogsErrors = {
      * Not found: resource does not exist.
      */
     404: {
+        error: {
+            code?: string;
+            message?: string;
+            details?: string;
+        };
+    };
+    /**
+     * Conflict: the request conflicts with current state (e.g. unique constraint violation).
+     */
+    409: {
+        error: {
+            code?: string;
+            message?: string;
+            details?: string;
+        };
+    };
+    /**
+     * Unprocessable entity: request body failed validation (Zod schema).
+     */
+    422: {
+        error: {
+            code?: string;
+            message?: string;
+            details?: string;
+        };
+    };
+    /**
+     * Too many requests: rate limit exceeded.
+     */
+    429: {
         error: {
             code?: string;
             message?: string;
@@ -1275,6 +1605,36 @@ export type ListNotificationsErrors = {
      * Not found: resource does not exist.
      */
     404: {
+        error: {
+            code?: string;
+            message?: string;
+            details?: string;
+        };
+    };
+    /**
+     * Conflict: the request conflicts with current state (e.g. unique constraint violation).
+     */
+    409: {
+        error: {
+            code?: string;
+            message?: string;
+            details?: string;
+        };
+    };
+    /**
+     * Unprocessable entity: request body failed validation (Zod schema).
+     */
+    422: {
+        error: {
+            code?: string;
+            message?: string;
+            details?: string;
+        };
+    };
+    /**
+     * Too many requests: rate limit exceeded.
+     */
+    429: {
         error: {
             code?: string;
             message?: string;
@@ -1454,6 +1814,36 @@ export type GetNotificationPreferencesErrors = {
         };
     };
     /**
+     * Conflict: the request conflicts with current state (e.g. unique constraint violation).
+     */
+    409: {
+        error: {
+            code?: string;
+            message?: string;
+            details?: string;
+        };
+    };
+    /**
+     * Unprocessable entity: request body failed validation (Zod schema).
+     */
+    422: {
+        error: {
+            code?: string;
+            message?: string;
+            details?: string;
+        };
+    };
+    /**
+     * Too many requests: rate limit exceeded.
+     */
+    429: {
+        error: {
+            code?: string;
+            message?: string;
+            details?: string;
+        };
+    };
+    /**
      * Server error: something went wrong.
      */
     500: {
@@ -1581,6 +1971,36 @@ export type UpdateNotificationPreferencesErrors = {
         };
     };
     /**
+     * Conflict: the request conflicts with current state (e.g. unique constraint violation).
+     */
+    409: {
+        error: {
+            code?: string;
+            message?: string;
+            details?: string;
+        };
+    };
+    /**
+     * Unprocessable entity: request body failed validation (Zod schema).
+     */
+    422: {
+        error: {
+            code?: string;
+            message?: string;
+            details?: string;
+        };
+    };
+    /**
+     * Too many requests: rate limit exceeded.
+     */
+    429: {
+        error: {
+            code?: string;
+            message?: string;
+            details?: string;
+        };
+    };
+    /**
      * Server error: something went wrong.
      */
     500: {
@@ -1684,6 +2104,36 @@ export type GetNotificationErrors = {
      * Not found: resource does not exist.
      */
     404: {
+        error: {
+            code?: string;
+            message?: string;
+            details?: string;
+        };
+    };
+    /**
+     * Conflict: the request conflicts with current state (e.g. unique constraint violation).
+     */
+    409: {
+        error: {
+            code?: string;
+            message?: string;
+            details?: string;
+        };
+    };
+    /**
+     * Unprocessable entity: request body failed validation (Zod schema).
+     */
+    422: {
+        error: {
+            code?: string;
+            message?: string;
+            details?: string;
+        };
+    };
+    /**
+     * Too many requests: rate limit exceeded.
+     */
+    429: {
         error: {
             code?: string;
             message?: string;
@@ -1829,6 +2279,36 @@ export type GetUnreadNotificationCountErrors = {
         };
     };
     /**
+     * Conflict: the request conflicts with current state (e.g. unique constraint violation).
+     */
+    409: {
+        error: {
+            code?: string;
+            message?: string;
+            details?: string;
+        };
+    };
+    /**
+     * Unprocessable entity: request body failed validation (Zod schema).
+     */
+    422: {
+        error: {
+            code?: string;
+            message?: string;
+            details?: string;
+        };
+    };
+    /**
+     * Too many requests: rate limit exceeded.
+     */
+    429: {
+        error: {
+            code?: string;
+            message?: string;
+            details?: string;
+        };
+    };
+    /**
      * Server error: something went wrong.
      */
     500: {
@@ -1913,6 +2393,36 @@ export type MarkNotificationAsReadErrors = {
      * Not found: resource does not exist.
      */
     404: {
+        error: {
+            code?: string;
+            message?: string;
+            details?: string;
+        };
+    };
+    /**
+     * Conflict: the request conflicts with current state (e.g. unique constraint violation).
+     */
+    409: {
+        error: {
+            code?: string;
+            message?: string;
+            details?: string;
+        };
+    };
+    /**
+     * Unprocessable entity: request body failed validation (Zod schema).
+     */
+    422: {
+        error: {
+            code?: string;
+            message?: string;
+            details?: string;
+        };
+    };
+    /**
+     * Too many requests: rate limit exceeded.
+     */
+    429: {
         error: {
             code?: string;
             message?: string;
@@ -2006,6 +2516,36 @@ export type MarkAllNotificationsAsReadErrors = {
         };
     };
     /**
+     * Conflict: the request conflicts with current state (e.g. unique constraint violation).
+     */
+    409: {
+        error: {
+            code?: string;
+            message?: string;
+            details?: string;
+        };
+    };
+    /**
+     * Unprocessable entity: request body failed validation (Zod schema).
+     */
+    422: {
+        error: {
+            code?: string;
+            message?: string;
+            details?: string;
+        };
+    };
+    /**
+     * Too many requests: rate limit exceeded.
+     */
+    429: {
+        error: {
+            code?: string;
+            message?: string;
+            details?: string;
+        };
+    };
+    /**
      * Server error: something went wrong.
      */
     500: {
@@ -2089,6 +2629,36 @@ export type ListPushTokensErrors = {
      * Not found: resource does not exist.
      */
     404: {
+        error: {
+            code?: string;
+            message?: string;
+            details?: string;
+        };
+    };
+    /**
+     * Conflict: the request conflicts with current state (e.g. unique constraint violation).
+     */
+    409: {
+        error: {
+            code?: string;
+            message?: string;
+            details?: string;
+        };
+    };
+    /**
+     * Unprocessable entity: request body failed validation (Zod schema).
+     */
+    422: {
+        error: {
+            code?: string;
+            message?: string;
+            details?: string;
+        };
+    };
+    /**
+     * Too many requests: rate limit exceeded.
+     */
+    429: {
         error: {
             code?: string;
             message?: string;
@@ -2229,6 +2799,36 @@ export type RegisterPushTokenErrors = {
         };
     };
     /**
+     * Conflict: the request conflicts with current state (e.g. unique constraint violation).
+     */
+    409: {
+        error: {
+            code?: string;
+            message?: string;
+            details?: string;
+        };
+    };
+    /**
+     * Unprocessable entity: request body failed validation (Zod schema).
+     */
+    422: {
+        error: {
+            code?: string;
+            message?: string;
+            details?: string;
+        };
+    };
+    /**
+     * Too many requests: rate limit exceeded.
+     */
+    429: {
+        error: {
+            code?: string;
+            message?: string;
+            details?: string;
+        };
+    };
+    /**
      * Server error: something went wrong.
      */
     500: {
@@ -2343,6 +2943,36 @@ export type DeletePushTokenErrors = {
      * Not found: resource does not exist.
      */
     404: {
+        error: {
+            code?: string;
+            message?: string;
+            details?: string;
+        };
+    };
+    /**
+     * Conflict: the request conflicts with current state (e.g. unique constraint violation).
+     */
+    409: {
+        error: {
+            code?: string;
+            message?: string;
+            details?: string;
+        };
+    };
+    /**
+     * Unprocessable entity: request body failed validation (Zod schema).
+     */
+    422: {
+        error: {
+            code?: string;
+            message?: string;
+            details?: string;
+        };
+    };
+    /**
+     * Too many requests: rate limit exceeded.
+     */
+    429: {
         error: {
             code?: string;
             message?: string;

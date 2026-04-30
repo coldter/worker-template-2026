@@ -1,10 +1,15 @@
 import { WorkerEntrypoint } from "cloudflare:workers";
-import { createDrizzleClient } from "@repo/db/client";
+import { withDrizzleClient } from "@repo/db";
 import { DrizzleLogger } from "@repo/shared/logger-drizzle";
-import { Client } from "pg";
 import { NOTIFICATION_TYPES } from "@/modules/notifications/constants";
-import { notificationService } from "@/modules/notifications/service";
+import { notificationDispatch } from "@/modules/notifications/dispatch";
 import { onUserStatusChange as statusChangeHook } from "@/modules/users/user-status-hooks";
+
+function getDrizzleLogger() {
+  return process.env.NODE_ENV === "development"
+    ? new DrizzleLogger()
+    : undefined;
+}
 
 export class ApiEntrypoint extends WorkerEntrypoint<CloudflareBindings> {
   /** Called by Auth Worker after a new user is created */
@@ -26,31 +31,25 @@ export class ApiEntrypoint extends WorkerEntrypoint<CloudflareBindings> {
     userAgent: string;
     platform: string;
   }): Promise<void> {
-    const client = new Client({
-      connectionString: this.env.HYPERDRIVE.connectionString,
-    });
-    await client.connect();
-    try {
-      const db = createDrizzleClient(
-        client,
-        process.env.NODE_ENV === "development" ? new DrizzleLogger() : undefined
-      );
-      const deviceDesc =
-        params.platform === "mobile" ? "a mobile device" : "a web browser";
-      await notificationService.send(db, {
-        userId: params.userId,
-        type: NOTIFICATION_TYPES.SECURITY_LOGIN_NEW_DEVICE,
-        subject: "New device sign-in",
-        body: `A new sign-in was detected from ${deviceDesc}.`,
-        props: {
-          ipAddress: params.ipAddress,
-          userAgent: params.userAgent,
-          platform: params.platform,
-        },
-      });
-    } finally {
-      this.ctx.waitUntil(client.end());
-    }
+    await withDrizzleClient(
+      this.env.HYPERDRIVE.connectionString,
+      async (db) => {
+        const deviceDesc =
+          params.platform === "mobile" ? "a mobile device" : "a web browser";
+        await notificationDispatch.send(db, {
+          userId: params.userId,
+          type: NOTIFICATION_TYPES.SECURITY_LOGIN_NEW_DEVICE,
+          subject: "New device sign-in",
+          body: `A new sign-in was detected from ${deviceDesc}.`,
+          props: {
+            ipAddress: params.ipAddress,
+            userAgent: params.userAgent,
+            platform: params.platform,
+          },
+        });
+      },
+      { logger: getDrizzleLogger(), waitUntil: (p) => this.ctx.waitUntil(p) }
+    );
   }
 
   /** Called by Auth Worker admin plugin when user status changes */

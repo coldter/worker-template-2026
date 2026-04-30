@@ -1,6 +1,6 @@
 import type { Logger as DrizzleLoggerInterface } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-postgres";
-import type { Client } from "pg";
+import { Client } from "pg";
 import { relations } from "./relations";
 import * as schema from "./schema";
 
@@ -15,6 +15,36 @@ export function createDrizzleClient(
     casing: "snake_case",
     ...(logger && { logger }),
   });
+}
+
+export type WithDrizzleClientOptions = {
+  logger?: DrizzleLoggerInterface;
+  waitUntil?: (promise: Promise<unknown>) => void;
+};
+
+/**
+ * Create a temporary Postgres connection, build a Drizzle client, run the
+ * callback, and guarantee cleanup. If `waitUntil` is provided the client end
+ * is handed off fire-and-forget; otherwise it is awaited synchronously.
+ */
+export async function withDrizzleClient<T>(
+  connectionString: string,
+  callback: (db: DrizzleClient) => Promise<T>,
+  options?: WithDrizzleClientOptions
+): Promise<T> {
+  const client = new Client({ connectionString });
+  await client.connect();
+  const db = createDrizzleClient(client, options?.logger);
+  try {
+    return await callback(db);
+  } finally {
+    const endPromise = client.end();
+    if (options?.waitUntil) {
+      options.waitUntil(endPromise);
+    } else {
+      await endPromise;
+    }
+  }
 }
 
 // Type inference

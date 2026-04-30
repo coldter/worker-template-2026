@@ -3,13 +3,18 @@ import {
   type WorkflowEvent,
   type WorkflowStep,
 } from "cloudflare:workers";
-import { createDrizzleClient } from "@repo/db/client";
+import { withDrizzleClient } from "@repo/db";
 import * as schema from "@repo/db/schema";
 import { getBrandConfig } from "@repo/shared/brand";
 import { logger } from "@repo/shared/logger";
 import { DrizzleLogger } from "@repo/shared/logger-drizzle";
 import { eq } from "drizzle-orm";
-import { Client } from "pg";
+
+function getDrizzleLogger() {
+  return process.env.NODE_ENV === "development"
+    ? new DrizzleLogger()
+    : undefined;
+}
 
 interface EmailNotificationParams {
   notificationId: string;
@@ -27,44 +32,34 @@ export class EmailNotificationWorkflow extends WorkflowEntrypoint<
     const notificationData = await step.do(
       "load-notification",
       { retries: { limit: 3, delay: "2 seconds", backoff: "exponential" } },
-      async () => {
-        const client = new Client({
-          connectionString: this.env.HYPERDRIVE.connectionString,
-        });
-        await client.connect();
-        try {
-          const db = createDrizzleClient(
-            client,
-            process.env.NODE_ENV === "development"
-              ? new DrizzleLogger()
-              : undefined
-          );
+      async () =>
+        withDrizzleClient(
+          this.env.HYPERDRIVE.connectionString,
+          async (db) => {
+            const notification = await db.query.notifications.findFirst({
+              where: { id: { eq: event.payload.notificationId } },
+            });
 
-          const notification = await db.query.notifications.findFirst({
-            where: { id: { eq: event.payload.notificationId } },
-          });
+            if (!notification) {
+              throw new Error(
+                `Notification ${event.payload.notificationId} not found`
+              );
+            }
 
-          if (!notification) {
-            throw new Error(
-              `Notification ${event.payload.notificationId} not found`
-            );
-          }
+            const user = await db.query.users.findFirst({
+              where: { id: { eq: notification.userId } },
+              columns: { email: true, name: true },
+            });
 
-          const user = await db.query.users.findFirst({
-            where: { id: { eq: notification.userId } },
-            columns: { email: true, name: true },
-          });
-
-          return {
-            subject: notification.subject,
-            body: notification.body,
-            email: user?.email,
-            userName: user?.name,
-          };
-        } finally {
-          await client.end();
-        }
-      }
+            return {
+              subject: notification.subject,
+              body: notification.body,
+              email: user?.email,
+              userName: user?.name,
+            };
+          },
+          { logger: getDrizzleLogger() }
+        )
     );
 
     if (!notificationData.email) {
@@ -106,24 +101,16 @@ export class EmailNotificationWorkflow extends WorkflowEntrypoint<
       "update-status",
       { retries: { limit: 3, delay: "2 seconds", backoff: "exponential" } },
       async () => {
-        const client = new Client({
-          connectionString: this.env.HYPERDRIVE.connectionString,
-        });
-        await client.connect();
-        try {
-          const db = createDrizzleClient(
-            client,
-            process.env.NODE_ENV === "development"
-              ? new DrizzleLogger()
-              : undefined
-          );
-          await db
-            .update(schema.notifications)
-            .set({ sentAt: new Date(), status: "sent" })
-            .where(eq(schema.notifications.id, event.payload.notificationId));
-        } finally {
-          await client.end();
-        }
+        await withDrizzleClient(
+          this.env.HYPERDRIVE.connectionString,
+          async (db) => {
+            await db
+              .update(schema.notifications)
+              .set({ sentAt: new Date(), status: "sent" })
+              .where(eq(schema.notifications.id, event.payload.notificationId));
+          },
+          { logger: getDrizzleLogger() }
+        );
       }
     );
   }

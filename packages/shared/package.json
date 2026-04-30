@@ -10,6 +10,7 @@
     "./roles": "./src/roles.ts",
     "./pagination": "./src/pagination.ts",
     "./audit": "./src/audit.ts",
+    "./api-binding": "./src/api-binding.ts",
     "./brand": "./src/brand.ts",
     "./logger": "./src/logger.ts",
     "./logger-drizzle": "./src/logger-drizzle.ts",
