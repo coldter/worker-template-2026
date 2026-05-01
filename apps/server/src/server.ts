@@ -6,6 +6,7 @@ import capabilitiesHandler from "@/auth/capabilities";
 import type { AppEnv } from "@/lib/context";
 import { setupDocs } from "@/lib/docs";
 import { analyticsMiddleware } from "@/middlewares/analytics";
+import { auditContextMiddleware } from "@/middlewares/audit-context";
 import { authContextMiddleware } from "@/middlewares/auth-context";
 import { createCorsMiddleware } from "@/middlewares/cors";
 import { dbMiddleware } from "@/middlewares/db";
@@ -36,6 +37,7 @@ app.route("/api/auth", authProxy);
 // Scoped middleware -- DB + auth for /api/*
 app.use("/api/*", dbMiddleware);
 app.use("/api/*", authContextMiddleware);
+app.use("/api/*", auditContextMiddleware);
 
 // Routes
 app.route("/", statusHandler);

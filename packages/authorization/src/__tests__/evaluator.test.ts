@@ -382,7 +382,7 @@ describe("evaluate", () => {
       roles: ["member"],
       attributes: { status: "active" },
       organization: { id: "org_1", role: "editor" },
-    } as unknown as Principal;
+    };
 
     const noOrgPrincipal: Principal = {
       id: "usr_no_org",
@@ -488,6 +488,31 @@ describe("evaluate", () => {
         resolveOrganization,
         resourcePolicies: [allowRule("*", ["read"])],
         systemAdminRoles: ["system_admin"],
+      });
+      expect(result.allowed).toBe(true);
+    });
+
+    // Regression: system admin bypass must consider ALL principal roles, not
+    // just the first role that intersects the policy's role list. Previously
+    // checkOrgScoping used Array.prototype.find which picked an arbitrary
+    // matched role and only consulted that one for systemAdmin membership.
+    it("system admin bypasses org scoping when admin is not the first matched policy role", async () => {
+      const principalWithAdminAndMember: Principal = {
+        id: "usr_dual",
+        roles: ["admin", "member"],
+        attributes: { status: "active" },
+      };
+      const result = await evaluate({
+        ...defaults,
+        principal: principalWithAdminAndMember,
+        resource: { orgId: "org_any" },
+        resolveOrganization,
+        // policy lists "member" first; legacy find() bug would pick "member"
+        // and skip the system-admin bypass even though principal has admin.
+        resourcePolicies: [allowRule(["member", "admin"], ["read"])],
+        systemAdminRoles: ["admin"],
+        // Note: principalWithAdminAndMember has no organization context,
+        // so without the bypass this would deny with ORG_CONTEXT_MISSING.
       });
       expect(result.allowed).toBe(true);
     });

@@ -16,13 +16,11 @@ export type PolicyDecision =
 export interface Principal<
   TRoles extends string = string,
   TAttributes extends Record<string, unknown> = Record<string, unknown>,
-  TOrgRoles extends string = never,
+  TOrgRoles extends string = string,
 > {
   attributes: TAttributes;
   id: string;
-  organization?: [TOrgRoles] extends [never]
-    ? never
-    : { id: string; role: TOrgRoles };
+  organization?: { id: string; role: TOrgRoles };
   roles: TRoles[];
 }
 

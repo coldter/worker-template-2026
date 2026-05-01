@@ -25,6 +25,7 @@ export {
   clearUserLockout,
   deactivateUser,
   deleteUserSessions,
+  resetFailedLoginAttemptsByEmail,
   setUserFailedAttempts,
   setUserLocked,
 } from "./user-status";

@@ -6,9 +6,9 @@ import {
 } from "@repo/db/schema";
 import { and, asc, count, desc, eq, type SQL, sql } from "drizzle-orm";
 import {
+  buildOrderBy,
   createPaginatedResponse,
   getPaginationParams,
-  resolveSortColumn,
 } from "@/utils/pagination";
 
 import { NOTIFICATIONS_SORT_COLUMNS } from "./constants";
@@ -72,20 +72,11 @@ export const notificationService = {
 
     const where = and(...conditions);
 
-    // Determine sort column
-    const sortColumn = resolveSortColumn(
-      SORT_COLUMNS,
-      sort,
-      SORT_COLUMNS.createdAt
-    );
-    const orderFn = order === "asc" ? asc : desc;
-
-    // Get notifications
     const notificationsList = await db
       .select()
       .from(notifications)
       .where(where)
-      .orderBy(orderFn(sortColumn))
+      .orderBy(buildOrderBy(SORT_COLUMNS, sort, order, SORT_COLUMNS.createdAt))
       .limit(perPage)
       .offset(offset);
 

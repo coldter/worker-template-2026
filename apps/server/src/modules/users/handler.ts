@@ -4,7 +4,6 @@ import { HTTPException } from "hono/http-exception";
 
 import { isValidRole } from "@/auth/principal";
 import { auth } from "@/auth/schema";
-import { extractAuditContext } from "@/lib/audit-context";
 import type { AppEnv } from "@/lib/context";
 import { triggerWorkflow } from "@/lib/events";
 import { notificationService } from "@/modules/notifications";
@@ -100,12 +99,11 @@ const usersHandler = app
       });
     }
 
-    const auditContext = extractAuditContext(c);
     const user = await userService.create(
       c.var.db,
       body,
       currentUser.id,
-      auditContext
+      c.var.auditContext
     );
 
     c.executionCtx.waitUntil(
@@ -123,15 +121,13 @@ const usersHandler = app
     const body = c.req.valid("json");
     const currentUser = requireCurrentUser(c);
 
-    const auditContext = extractAuditContext(c);
-
     try {
       const user = await userService.update(
         c.var.db,
         userId,
         body,
         currentUser.id,
-        auditContext
+        c.var.auditContext
       );
       return c.json({ user: toUserSummaryResponse(user) }, 200);
     } catch (error) {
@@ -157,15 +153,13 @@ const usersHandler = app
       });
     }
 
-    const auditContext = extractAuditContext(c);
-
     try {
       const user = await userService.updateRoles(
         c.var.db,
         userId,
         body,
         currentUser.id,
-        auditContext
+        c.var.auditContext
       );
       return c.json({ user: toUserSummaryResponse(user) }, 200);
     } catch (error) {
@@ -178,14 +172,13 @@ const usersHandler = app
     const body = c.req.valid("json");
     const currentUser = requireCurrentUser(c);
 
-    const auditContext = extractAuditContext(c);
     try {
       await userService.deactivate(
         c.var.db,
         userId,
         body.reason ?? null,
         currentUser.id,
-        auditContext
+        c.var.auditContext
       );
     } catch (error) {
       handleUserNotFound(error);
@@ -197,13 +190,12 @@ const usersHandler = app
   .openapi(usersRoutes.activateUser, async (c) => {
     const { userId } = c.req.valid("param");
     const currentUser = requireCurrentUser(c);
-    const auditContext = extractAuditContext(c);
     try {
       await userService.activate(
         c.var.db,
         userId,
         currentUser.id,
-        auditContext
+        c.var.auditContext
       );
     } catch (error) {
       handleUserNotFound(error);
@@ -215,9 +207,13 @@ const usersHandler = app
   .openapi(usersRoutes.unlockUser, async (c) => {
     const { userId } = c.req.valid("param");
     const currentUser = requireCurrentUser(c);
-    const auditContext = extractAuditContext(c);
     try {
-      await userService.unlock(c.var.db, userId, currentUser.id, auditContext);
+      await userService.unlock(
+        c.var.db,
+        userId,
+        currentUser.id,
+        c.var.auditContext
+      );
     } catch (error) {
       handleUserNotFound(error);
     }

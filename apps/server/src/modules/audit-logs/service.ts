@@ -2,17 +2,7 @@ import { env } from "cloudflare:workers";
 import type { DrizzleClient, Executor } from "@repo/db";
 import { auditLogs } from "@repo/db/schema";
 import { logger } from "@repo/shared/logger";
-import {
-  and,
-  asc,
-  count,
-  desc,
-  eq,
-  gte,
-  lte,
-  type SQL,
-  sql,
-} from "drizzle-orm";
+import { and, count, eq, gte, lte, type SQL, sql } from "drizzle-orm";
 import type {
   AuditLogQueueMessage,
   BufferableAuditLogInput,
@@ -20,9 +10,9 @@ import type {
   FindAuditLogsQuery,
 } from "@/modules/audit-logs/types";
 import {
+  buildOrderBy,
   createPaginatedResponse,
   getPaginationParams,
-  resolveSortColumn,
 } from "@/utils/pagination";
 
 const ALLOWED_SORT_COLUMNS = {
@@ -101,19 +91,14 @@ export const auditLogService = {
 
     const where = conditions.length > 0 ? and(...conditions) : undefined;
 
-    const sortColumn = resolveSortColumn(
-      ALLOWED_SORT_COLUMNS,
-      sort,
-      auditLogs.createdAt
-    );
-    const orderFn = order === "asc" ? asc : desc;
-
     const [data, [countResult]] = await Promise.all([
       db
         .select()
         .from(auditLogs)
         .where(where)
-        .orderBy(orderFn(sortColumn))
+        .orderBy(
+          buildOrderBy(ALLOWED_SORT_COLUMNS, sort, order, auditLogs.createdAt)
+        )
         .limit(perPage)
         .offset(offset),
       db.select({ total: count() }).from(auditLogs).where(where),

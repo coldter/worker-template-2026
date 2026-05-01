@@ -4,13 +4,11 @@ import type {
   CriticalAuditEvent,
   TargetType,
 } from "@repo/shared/audit";
+import type { AuditContext } from "@/lib/audit-context";
 import { auditLogService } from "./service";
 import type { AuditLogMetadata } from "./types";
 
-export type AuditContext = {
-  ipAddress?: string;
-  userAgent?: string;
-};
+export type { AuditContext };
 
 export type AuditLogEntry = {
   event: CriticalAuditEvent;

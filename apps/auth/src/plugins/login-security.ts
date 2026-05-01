@@ -1,13 +1,12 @@
 import {
   clearUserLockout,
   type DrizzleClient,
+  resetFailedLoginAttemptsByEmail,
   setUserFailedAttempts,
   setUserLocked,
-  users,
 } from "@repo/db";
 import type { BetterAuthPlugin } from "better-auth";
 import { APIError, createAuthMiddleware } from "better-auth/api";
-import { eq } from "drizzle-orm";
 
 type UserEmail = string;
 
@@ -165,16 +164,7 @@ export const loginSecurityPlugin = (db: DrizzleClient) => {
               });
             }
 
-            // Reset failed attempts on successful login
-            await db
-              .update(users)
-              .set({
-                failedLoginAttempts: 0,
-                lockedUntil: null,
-              })
-              .where(eq(users.email, body.email));
-
-            // Don't return anything - let the original response pass through
+            await resetFailedLoginAttemptsByEmail(db, body.email);
           }),
         },
       ],

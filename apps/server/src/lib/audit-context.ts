@@ -1,9 +1,11 @@
 import type { Context } from "hono";
 
-export function extractAuditContext(c: Context): {
-  ipAddress: string | undefined;
-  userAgent: string | undefined;
-} {
+export type AuditContext = {
+  ipAddress?: string;
+  userAgent?: string;
+};
+
+export function extractAuditContext(c: Context): AuditContext {
   return {
     ipAddress:
       c.req.header("CF-Connecting-IP") ??

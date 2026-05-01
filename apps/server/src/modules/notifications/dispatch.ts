@@ -67,7 +67,7 @@ export const notificationDispatch = {
           notificationIds.push(notification.id);
           sentChannels.push(channel);
 
-          triggerWorkflow(
+          await triggerWorkflow(
             channel === "email"
               ? {
                   type: "notification.email",

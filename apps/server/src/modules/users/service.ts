@@ -11,9 +11,7 @@ import { hashPassword } from "better-auth/crypto";
 import {
   and,
   arrayContains,
-  asc,
   count,
-  desc,
   eq,
   ilike,
   or,
@@ -26,9 +24,9 @@ import {
 import { AUDIT_EVENTS, TARGET_TYPES } from "@/modules/audit-logs/constants";
 import type { AuditLogMetadata } from "@/modules/audit-logs/types";
 import {
+  buildOrderBy,
   createPaginatedResponse,
   getPaginationParams,
-  resolveSortColumn,
 } from "@/utils/pagination";
 
 import { USER_STATUS, USERS_SORT_COLUMNS } from "./constants";
@@ -70,15 +68,13 @@ export const userService = {
 
     const where = conditions.length > 0 ? and(...conditions) : undefined;
 
-    const sortColumnMap = {
+    const sortColumns = {
       [USERS_SORT_COLUMNS.name]: users.name,
       [USERS_SORT_COLUMNS.email]: users.email,
       [USERS_SORT_COLUMNS.status]: users.status,
       [USERS_SORT_COLUMNS.createdAt]: users.createdAt,
       [USERS_SORT_COLUMNS.updatedAt]: users.updatedAt,
     };
-    const sortColumn = resolveSortColumn(sortColumnMap, sort, users.createdAt);
-    const orderFn = order === "asc" ? asc : desc;
 
     const [data, [countResult]] = await Promise.all([
       db
@@ -95,7 +91,7 @@ export const userService = {
         })
         .from(users)
         .where(where)
-        .orderBy(orderFn(sortColumn))
+        .orderBy(buildOrderBy(sortColumns, sort, order, users.createdAt))
         .limit(perPage)
         .offset(offset),
       db.select({ total: count() }).from(users).where(where),

@@ -25,6 +25,16 @@ export async function setUserFailedAttempts(
     .where(eq(users.id, userId));
 }
 
+export async function resetFailedLoginAttemptsByEmail(
+  executor: Executor,
+  email: string
+): Promise<void> {
+  await executor
+    .update(users)
+    .set({ failedLoginAttempts: 0, lockedUntil: null })
+    .where(eq(users.email, email));
+}
+
 export async function clearUserLockout(
   executor: Executor,
   userId: string
