@@ -16,7 +16,7 @@
     "@repo/email": "workspace:*",
     "@repo/shared": "workspace:*",
     "better-auth": "^1.6.9",
-    "drizzle-orm": "^1.0.0-beta.9-e89174b",
+    "drizzle-orm": "^1.0.0-rc.2-203eab8",
     "hono": "^4.12.16",
     "pg": "^8.20.0",
     "zod": "^4.4.1"
@@ -26,6 +26,6 @@
     "@typescript/native-preview": "beta",
     "typescript": "^6.0.3",
     "vitest": "^4.1.5",
-    "wrangler": "^4.86.0"
+    "wrangler": "^4.87.0"
   }
 }
