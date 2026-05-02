@@ -19,7 +19,7 @@
     "drizzle-orm": "^1.0.0-rc.2-203eab8",
     "hono": "^4.12.16",
     "pg": "^8.20.0",
-    "zod": "^4.4.1"
+    "zod": "^4.4.2"
   },
   "devDependencies": {
     "@types/pg": "^8.20.0",
