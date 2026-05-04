@@ -16,10 +16,10 @@
     "@repo/email": "workspace:*",
     "@repo/shared": "workspace:*",
     "better-auth": "^1.6.9",
-    "drizzle-orm": "^1.0.0-rc.2-203eab8",
+    "drizzle-orm": "^1.0.0-rc.2-33e80cd",
     "hono": "^4.12.16",
     "pg": "^8.20.0",
-    "zod": "^4.4.2"
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@types/pg": "^8.20.0",

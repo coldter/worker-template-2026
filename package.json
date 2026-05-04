@@ -44,9 +44,9 @@
     "@typescript/native-preview": "beta",
     "knip": "^6.11.0",
     "tsx": "^4.21.0",
-    "turbo": "^2.9.7",
+    "turbo": "^2.9.8",
     "typescript": "^6.0.3",
-    "ultracite": "^7.6.2"
+    "ultracite": "^7.6.3"
   },
   "packageManager": "bun@1.3.13"
 }
