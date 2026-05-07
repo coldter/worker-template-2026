@@ -8,6 +8,13 @@ export const ID_PREFIXES = {
   notification: "ntf",
   pushToken: "ptk",
   relation: "rel",
+  tenantHostname: "tnh",
+  ssoProvider: "sso",
+  reservedSlug: "rsv",
+  verificationToken: "vtok",
+  globalAdmin: "gad",
+  organization: "org",
+  invitation: "inv",
 } as const;
 
 declare const __brand: unique symbol;
@@ -46,6 +53,15 @@ export const createAccountId = (): AccountId =>
 export const createVerificationId = (): VerificationId =>
   generatePrefixedCuid(ID_PREFIXES.verification) as VerificationId;
 
+// CLOSED switch: do NOT add new cases here. New schema tables must call
+// generatePrefixedCuid(ID_PREFIXES.X) directly from their $defaultFn.
+//
+// The default branch THROWS rather than falling through to an "ent" prefix.
+// A silent fallback would let a new model accidentally violate the prefix
+// invariant -- IDs shaped `ent_*` would collide across tables and obscure
+// the table-of-origin during incident triage. New models must wire their
+// own `$defaultFn(() => generatePrefixedCuid(ID_PREFIXES.X))` and add a
+// matching entry to `ID_PREFIXES` instead of touching this switch.
 export const generateIdForModel = (model: string): string => {
   switch (model) {
     case "user":
@@ -57,6 +73,10 @@ export const generateIdForModel = (model: string): string => {
     case "verification":
       return createVerificationId();
     default:
-      return generatePrefixedCuid("ent");
+      throw new Error(
+        `generateIdForModel: unsupported model "${model}". ` +
+          "Add a $defaultFn(() => generatePrefixedCuid(ID_PREFIXES.X)) on the table " +
+          "and a matching ID_PREFIXES entry instead of extending this switch."
+      );
   }
 };

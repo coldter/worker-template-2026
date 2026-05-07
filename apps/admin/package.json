@@ -1,0 +1,37 @@
+{
+  "name": "admin",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev --port 8789 --inspector-port 9231",
+    "deploy": "bun run generate-openapi && wrangler deploy --minify --var NODE_ENV:production",
+    "build": "echo \"no build step\"",
+    "check-types": "tsgo --noEmit",
+    "check-types:backup": "tsc --noEmit",
+    "generate-openapi": "tsx scripts/generate-openapi.ts",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@hono/zod-openapi": "^1.3.0",
+    "@repo/authorization": "workspace:*",
+    "@repo/db": "workspace:*",
+    "@repo/shared": "workspace:*",
+    "@repo/tenancy": "workspace:*",
+    "drizzle-orm": "^1.0.0-rc.2-33e80cd",
+    "hono": "^4.12.16",
+    "jose": "^6.2.0",
+    "pg": "^8.20.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20260101.0",
+    "@types/pg": "^8.20.0",
+    "@typescript/native-preview": "beta",
+    "tsx": "^4.21.0",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.5",
+    "wrangler": "^4.87.0"
+  }
+}

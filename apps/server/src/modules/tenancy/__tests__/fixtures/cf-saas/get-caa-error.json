@@ -1,0 +1,19 @@
+{
+  "success": true,
+  "errors": [],
+  "messages": [],
+  "result": {
+    "id": "0000000000000000000000000000000a",
+    "hostname": "app.acme.test",
+    "created_at": "2026-05-06T12:00:00Z",
+    "ssl": {
+      "id": "0000000000000000000000000000000b",
+      "type": "dv",
+      "method": "http",
+      "status": "pending_validation",
+      "validation_errors": [{ "message": "caa_error: pki.goog not authorized" }]
+    },
+    "verification_errors": ["caa_error"],
+    "status": "pending"
+  }
+}

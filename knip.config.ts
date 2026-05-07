@@ -15,8 +15,8 @@ const config: KnipConfig = {
   ],
   ignore: [".agents/skills/**/templates/**", ".claude/skills/**/templates/**"],
   ignoreIssues: {
-    "apps/web/src/modules/ui/**": ["exports"],
-    "apps/web/src/modules/permissions/**": ["exports"],
+    "apps/admin-ui/src/modules/ui/**": ["exports"],
+    "apps/admin-ui/src/modules/permissions/**": ["exports"],
     "packages/email/src/templates/**": ["duplicates"],
   },
   rules: {
@@ -24,7 +24,7 @@ const config: KnipConfig = {
     types: "warn",
   },
   workspaces: {
-    "apps/web": {
+    "apps/admin-ui": {
       entry: ["src/routes/**/*.tsx", "src/api-config.ts"],
       project: ["src/**/*.{ts,tsx}", "*.{ts,tsx}"],
       ignore: ["src/api.gen/**"],
@@ -50,6 +50,7 @@ const config: KnipConfig = {
       project: "**/*.{ts,tsx}",
     },
     "packages/shared": {
+      entry: ["src/__tests__/**/*.{test,spec}.ts"],
       project: "**/*.ts",
     },
     "packages/*": {

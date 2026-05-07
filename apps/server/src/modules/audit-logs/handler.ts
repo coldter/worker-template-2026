@@ -12,7 +12,13 @@ const auditLogsHandler = app.openapi(
   auditLogsRoutes.listAuditLogs,
   async (c) => {
     const query = c.req.valid("query");
-    const result = await auditLogService.find(c.var.db, query);
+    const tenant = c.get("tenant");
+    if (!tenant) {
+      return c.json({ error: { code: "TENANT_REQUIRED" } }, 403);
+    }
+    const result = await auditLogService.find(c.var.db, query, {
+      organizationId: tenant.organizationId,
+    });
 
     return c.json(
       {

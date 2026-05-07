@@ -2,10 +2,12 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "server",
   "main": "src/index.ts",
-  "compatibility_date": "2026-04-01",
+  "compatibility_date": "2026-04-30",
   "compatibility_flags": [
     "nodejs_compat"
   ],
+  "workers_dev": false,
+  "preview_urls": false,
   "placement": {
     "mode": "smart"
   },
@@ -54,7 +56,7 @@
   "migrations": [
     {
       "tag": "v1",
-      "new_classes": [
+      "new_sqlite_classes": [
         "RateLimiter"
       ]
     }
@@ -80,7 +82,12 @@
     "required": [
       "FIREBASE_SERVICE_ACCOUNT_KEY_BASE64",
       "RESEND_API_KEY",
-      "VAULT_MASTER_KEY"
+      "VAULT_MASTER_KEY",
+      "SSO_KEY",
+      // A5 — CF for SaaS (D7). Three permissions, scoped to ONE zone:
+      //   Zone:Read, SSL and Certificates:Edit, Custom Hostnames:Edit.
+      // NEVER account-wide. Quarterly rotation per runbook.
+      "CLOUDFLARE_API_TOKEN"
     ]
   },
   "services": [
@@ -88,6 +95,12 @@
       "binding": "AUTH",
       "service": "auth",
       "entrypoint": "AuthEntrypoint"
+    },
+    // B4 (D40, D45) — apps/app SPA, reachable only via this binding. The
+    // catch-all in `src/server.ts` forwards non-`/api/*` requests here.
+    {
+      "binding": "STATIC_ASSETS",
+      "service": "app"
     }
   ],
   "vars": {
@@ -101,6 +114,21 @@
     "LOGO_TEXT": "App",
     "BRAND_PRIMARY_COLOR": "#2563eb",
     "FCM_PROVIDER": "firebase",
+    "WILDCARD_SUFFIX": ".app.lvh.me",
+    "ADMIN_HOST": "admin.lvh.me",
+    "FALLBACK_HOST": "fallback.lvh.me",
+    "LOCAL_DEV_HOSTS": "localhost:3001,localhost:3002",
+    // Empty placeholder — B6 wires the per-tenant logo CDN URL.
+    "BRANDING_BASE_URL": "",
+    // A5 — CF for SaaS (D5, D7, D14).
+    "CLOUDFLARE_ZONE_ID": "placeholder-zone-id",
+    "CUSTOM_HOST_CNAME_TARGET": "customers.example.test",
+    "CUSTOM_HOST_VERIFICATION_LABEL": "_app-example-verify",
+    "BRANDING_HOST": "branding.example.test",
+  },
+  "triggers": {
+    // A5 / D9 — 60s reconciler for non-terminal custom hostnames.
+    "crons": ["* * * * *"]
   },
   "queues": {
     "producers": [

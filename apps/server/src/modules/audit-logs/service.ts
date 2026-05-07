@@ -1,9 +1,12 @@
 import { env } from "cloudflare:workers";
 import type { DrizzleClient, Executor } from "@repo/db";
 import { auditLogs } from "@repo/db/schema";
-import { logger } from "@repo/shared/logger";
+import { logger, redact } from "@repo/shared/logger";
 import { and, count, eq, gte, lte, type SQL, sql } from "drizzle-orm";
+import type { Context } from "hono";
+import type { AppEnv } from "@/lib/context";
 import type {
+  AuditLogMetadata,
   AuditLogQueueMessage,
   BufferableAuditLogInput,
   CriticalAuditLogInput,
@@ -23,6 +26,25 @@ const ALLOWED_SORT_COLUMNS = {
   createdAt: auditLogs.createdAt,
 } as const;
 
+/**
+ * Run the shared logger redactor over audit metadata before persisting it.
+ * Audit rows are read by humans during incident response, so the same
+ * sensitive-key list applies (passwords, secrets, api keys, etc.). We only
+ * redact when metadata is present and is a plain object — otherwise the
+ * value passes through untouched.
+ */
+function redactMetadata(
+  metadata: AuditLogMetadata | undefined
+): AuditLogMetadata | undefined {
+  if (metadata === undefined) {
+    return;
+  }
+  // boundary: structured-log redaction — `redact` walks plain {k:v} shapes
+  // and rebuilds a sanitized record; the AuditLogMetadata alias is a
+  // structural superset.
+  return redact(metadata) as AuditLogMetadata;
+}
+
 export const auditLogService = {
   async create(input: CriticalAuditLogInput, executor: Executor) {
     const [log] = await executor
@@ -31,34 +53,95 @@ export const auditLogService = {
         event: input.event,
         actorId: input.actorId,
         actorType: input.actorType ?? "user",
+        organizationId: input.organizationId,
         targetId: input.targetId,
         targetType: input.targetType,
         ipAddress: input.ipAddress,
         userAgent: input.userAgent,
-        metadata: input.metadata,
+        metadata: redactMetadata(input.metadata),
       })
       .returning();
     return log;
   },
 
-  enqueue(input: BufferableAuditLogInput): void {
+  /**
+   * D25 — dual-scope CRITICAL audit. Writes two rows for an operator-driven
+   * mutation against a tenant: one global-scope row (organizationId = NULL)
+   * for the operator-attribution feed in apps/admin, and one tenant-scope row
+   * (organizationId = input.organizationId) so the tenant's own audit log
+   * shows the operator's action. Both rows share event, actor, and target so
+   * the pair is searchable end-to-end. Both inserts run on the same executor
+   * (typically the surrounding transaction) so they roll back atomically with
+   * the underlying mutation.
+   */
+  async createDualScope(input: CriticalAuditLogInput, executor: Executor) {
+    if (!input.organizationId) {
+      throw new Error(
+        "createDualScope requires organizationId for the tenant-scope row"
+      );
+    }
+    const globalRow = await this.create(
+      { ...input, organizationId: undefined },
+      executor
+    );
+    const tenantRow = await this.create(input, executor);
+    return { globalRow, tenantRow };
+  },
+
+  /**
+   * Enqueue a bufferable audit event onto the AUDIT_LOG_QUEUE.
+   *
+   * When called with the request `Context`, the queue `send` is registered
+   * with `c.executionCtx.waitUntil` so the response can flush before the
+   * cross-worker queue write completes AND so the runtime keeps the
+   * isolate alive long enough for the send to settle (otherwise the
+   * promise can be cancelled after the response returns).
+   *
+   * The single-argument form remains supported for callers that don't have
+   * a Context handy (e.g., service-level code invoked from workflows /
+   * cron / other queue consumers); they pay the floated-promise hazard
+   * but the surface remains backwards compatible.
+   */
+  enqueue(
+    inputOrCtx: BufferableAuditLogInput | Context<AppEnv>,
+    maybeInput?: BufferableAuditLogInput
+  ): void {
+    const ctx =
+      maybeInput === undefined ? null : (inputOrCtx as Context<AppEnv>);
+    const input =
+      maybeInput === undefined
+        ? (inputOrCtx as BufferableAuditLogInput)
+        : maybeInput;
+
     const message: AuditLogQueueMessage = {
       ...input,
+      metadata: redactMetadata(input.metadata),
       timestamp: new Date().toISOString(),
     };
-    env.AUDIT_LOG_QUEUE.send(message).catch((error) => {
+    const sendPromise = env.AUDIT_LOG_QUEUE.send(message).catch((error) => {
       logger.error("Failed to enqueue audit log", {
         event: message.event,
         error: error instanceof Error ? error.message : String(error),
       });
     });
+    if (ctx) {
+      ctx.executionCtx.waitUntil(sendPromise);
+    }
   },
 
-  async find(db: DrizzleClient, query: FindAuditLogsQuery) {
+  async find(
+    db: DrizzleClient,
+    query: FindAuditLogsQuery,
+    scope?: { organizationId: string }
+  ) {
     const { event, actorId, targetId, targetType, startDate, endDate } = query;
     const { perPage, offset, sort, order } = getPaginationParams(query);
 
     const conditions: SQL[] = [];
+
+    if (scope) {
+      conditions.push(eq(auditLogs.organizationId, scope.organizationId));
+    }
 
     if (event) {
       if (event.endsWith(".*")) {

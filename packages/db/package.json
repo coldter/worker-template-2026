@@ -14,7 +14,9 @@
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate"
+    "db:migrate": "drizzle-kit migrate",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@repo/shared": "workspace:*",
@@ -25,6 +27,7 @@
     "@types/pg": "^8.20.0",
     "@typescript/native-preview": "beta",
     "drizzle-kit": "^1.0.0-rc.2-33e80cd",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.5"
   }
 }

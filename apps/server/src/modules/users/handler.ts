@@ -28,6 +28,16 @@ function requireCurrentUser(
   return currentUser;
 }
 
+function requireTenant(
+  c: Context<AppEnv>
+): NonNullable<AppEnv["Variables"]["tenant"]> {
+  const tenant = c.get("tenant");
+  if (!tenant) {
+    throw new HTTPException(403, { message: "Tenant required" });
+  }
+  return tenant;
+}
+
 function handleUserNotFound(error: unknown): never {
   if (error instanceof UserNotFoundError) {
     throw new HTTPException(404, { message: "User not found" });
@@ -38,7 +48,12 @@ function handleUserNotFound(error: unknown): never {
 const usersHandler = app
   .openapi(usersRoutes.listUsers, async (c) => {
     const query = c.req.valid("query");
-    const result = await userService.find(c.var.db, query);
+    const tenant = requireTenant(c);
+    const result = await userService.find(
+      c.var.db,
+      query,
+      tenant.organizationId
+    );
 
     return c.json(
       {
@@ -79,7 +94,12 @@ const usersHandler = app
 
   .openapi(usersRoutes.getUser, async (c) => {
     const { userId } = c.req.valid("param");
-    const user = await userService.findById(c.var.db, userId);
+    const tenant = requireTenant(c);
+    const user = await userService.findById(
+      c.var.db,
+      userId,
+      tenant.organizationId
+    );
 
     if (!user) {
       throw new HTTPException(404, { message: "User not found" });
@@ -91,6 +111,7 @@ const usersHandler = app
   .openapi(usersRoutes.createUser, async (c) => {
     const body = c.req.valid("json");
     const currentUser = requireCurrentUser(c);
+    const tenant = requireTenant(c);
 
     const invalidRoles = body.roleSlugs.filter((r) => !isValidRole(r));
     if (invalidRoles.length > 0) {
@@ -102,6 +123,7 @@ const usersHandler = app
     const user = await userService.create(
       c.var.db,
       body,
+      tenant.organizationId,
       currentUser.id,
       c.var.auditContext
     );
@@ -120,10 +142,12 @@ const usersHandler = app
     const { userId } = c.req.valid("param");
     const body = c.req.valid("json");
     const currentUser = requireCurrentUser(c);
+    const tenant = requireTenant(c);
 
     try {
       const user = await userService.update(
         c.var.db,
+        tenant.organizationId,
         userId,
         body,
         currentUser.id,
@@ -139,6 +163,7 @@ const usersHandler = app
     const { userId } = c.req.valid("param");
     const body = c.req.valid("json");
     const currentUser = requireCurrentUser(c);
+    const tenant = requireTenant(c);
 
     if (userId === currentUser.id) {
       throw new HTTPException(400, {
@@ -156,6 +181,7 @@ const usersHandler = app
     try {
       const user = await userService.updateRoles(
         c.var.db,
+        tenant.organizationId,
         userId,
         body,
         currentUser.id,
@@ -171,10 +197,12 @@ const usersHandler = app
     const { userId } = c.req.valid("param");
     const body = c.req.valid("json");
     const currentUser = requireCurrentUser(c);
+    const tenant = requireTenant(c);
 
     try {
       await userService.deactivate(
         c.var.db,
+        tenant.organizationId,
         userId,
         body.reason ?? null,
         currentUser.id,
@@ -190,9 +218,11 @@ const usersHandler = app
   .openapi(usersRoutes.activateUser, async (c) => {
     const { userId } = c.req.valid("param");
     const currentUser = requireCurrentUser(c);
+    const tenant = requireTenant(c);
     try {
       await userService.activate(
         c.var.db,
+        tenant.organizationId,
         userId,
         currentUser.id,
         c.var.auditContext
@@ -207,9 +237,11 @@ const usersHandler = app
   .openapi(usersRoutes.unlockUser, async (c) => {
     const { userId } = c.req.valid("param");
     const currentUser = requireCurrentUser(c);
+    const tenant = requireTenant(c);
     try {
       await userService.unlock(
         c.var.db,
+        tenant.organizationId,
         userId,
         currentUser.id,
         c.var.auditContext

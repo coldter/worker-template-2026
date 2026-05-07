@@ -163,29 +163,98 @@ export const auditLogsAuthorization = auth.createResource<
   policies: (p) => [p.allow("admin").to("*")],
 });
 
-export const notificationsAuthorization = auth.createResource<
-  Record<string, never>
->("notification", {
-  actions: [
-    "list",
-    "view",
-    "mark-read",
-    "mark-all-read",
-    "get-preferences",
-    "update-preferences",
-    "list-push-tokens",
-    "register-push-token",
-    "delete-push-token",
-    "get-unread-count",
-  ],
-  policies: (p) => [p.allow("admin").to("*"), p.allow("user").to("*")],
-});
+interface NotificationResource {
+  // Recipient user id (notifications.user_id). The owner is the user the
+  // notification was delivered to; only that user (and admins) may view
+  // or mutate it. Without this gate, `p.allow("user").to("*")` lets any
+  // authenticated user mark-read another user's notifications.
+  userId: string;
+}
+
+export const notificationsAuthorization =
+  auth.createResource<NotificationResource>("notification", {
+    actions: [
+      "list",
+      "view",
+      "mark-read",
+      "mark-all-read",
+      "get-preferences",
+      "update-preferences",
+      "list-push-tokens",
+      "register-push-token",
+      "delete-push-token",
+      "get-unread-count",
+    ],
+    resolveOwner: (resource) => resource.userId,
+    policies: (p) => [
+      p.allow("admin").to("*"),
+      // Listing/preferences/push-token actions and mark-all-read are
+      // collection-level (no resource); they are gated by role only and
+      // the service layer must filter results to the calling principal.
+      p
+        .allow("user")
+        .to(
+          "list",
+          "mark-all-read",
+          "get-preferences",
+          "update-preferences",
+          "list-push-tokens",
+          "register-push-token",
+          "delete-push-token",
+          "get-unread-count"
+        ),
+      // Per-row actions are gated by ownership: a user may only view or
+      // mark-read their own notifications.
+      p.allow("user").to("view", "mark-read").whereOwner(),
+    ],
+  });
+
+interface SsoProviderResource {
+  id: string;
+  organizationId: string;
+}
+
+// Owner and admin org-roles can manage SSO providers for their tenant.
+// All operations are scoped to the resolved tenant org — cross-tenant access
+// is prevented by service-layer org enforcement (A4.4).
+export const ssoProviderAuthorization =
+  auth.createResource<SsoProviderResource>("sso_provider", {
+    actions: ["create", "read", "update", "delete", "rotate_secret"],
+    resolveOrganization: (resource) => resource.organizationId,
+    policies: (p) => [
+      p
+        .allow("*")
+        .to("create", "read", "update", "delete", "rotate_secret")
+        .withOrgRole("owner", "admin"),
+    ],
+  });
+
+interface CustomHostnameResource {
+  id: string;
+  organizationId: string;
+}
+
+// A5 — only org owners and admins can manage custom hostnames. Service-layer
+// scoping (A5.4) re-checks `actor.organizationId` against the row.
+export const customHostnameAuthorization =
+  auth.createResource<CustomHostnameResource>("custom_hostname", {
+    actions: ["create", "list", "verify", "remove"],
+    resolveOrganization: (resource) => resource.organizationId,
+    policies: (p) => [
+      p
+        .allow("*")
+        .to("create", "list", "verify", "remove")
+        .withOrgRole("owner", "admin"),
+    ],
+  });
 
 export const authorization = auth.buildRegistry({
   user: usersAuthorization,
   role: rolesAuthorization,
   "audit-log": auditLogsAuthorization,
   notification: notificationsAuthorization,
+  sso_provider: ssoProviderAuthorization,
+  custom_hostname: customHostnameAuthorization,
 });
 
 export const LEGACY_PERMISSION_KEYS = [

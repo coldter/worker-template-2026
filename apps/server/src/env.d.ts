@@ -9,4 +9,43 @@ declare global {
   }
 }
 
+// Tenancy env vars — not yet in wrangler.jsonc so they are not in the generated
+// worker-configuration.d.ts. Augment CloudflareBindings here until they are wired
+// in A3/A8.
+declare global {
+  interface CloudflareBindings {
+    ADMIN_HOST: string;
+    ALLOW_DEV_TENANT_HEADER?: string;
+    // JWKS endpoint URL for verifying incoming tenant JWTs in the
+    // auth-context middleware fast path. When unset, every request falls
+    // back to the AUTH RPC `getSession` call.
+    AUTH_JWKS_URL?: string;
+    // Base URL for tenant branding assets (logo CDN). Empty string when no
+    // CDN is configured — `/api/tenancy/current` returns logoUrl=null in
+    // that case. Full upload pipeline lands in B6 (D78).
+    BRANDING_BASE_URL?: string;
+    // Hostname (without scheme) of the branding CDN. Added to CSP `img-src`
+    // by the security-headers middleware (B4.8). Optional — when unset the
+    // CSP falls back to `'self' data:` only.
+    BRANDING_HOST?: string;
+    // A5 — CF for SaaS (D5, D7, D14).
+    CLOUDFLARE_API_TOKEN: string;
+    CLOUDFLARE_ZONE_ID: string;
+    CUSTOM_HOST_CNAME_TARGET: string;
+    CUSTOM_HOST_VERIFICATION_LABEL: string;
+    FALLBACK_HOST: string;
+    LOCAL_DEV_HOSTS?: string;
+    // Symmetric encryption key for oidc_config_encrypted (D13, D73).
+    // Passed via SET LOCAL app.sso_key inside each transaction that reads/writes
+    // the encrypted column. Must be declared as a secret in wrangler.
+    SSO_KEY: string;
+    // B4 (D40, D45) — service binding to the apps/app SPA worker. The
+    // catch-all in `server.ts` forwards every non-`/api/*` request here.
+    // Optional in env.d.ts so tests that don't exercise the catch-all can
+    // omit the stub, but production deploys MUST set it.
+    STATIC_ASSETS?: Fetcher;
+    WILDCARD_SUFFIX: string;
+  }
+}
+
 export type {};

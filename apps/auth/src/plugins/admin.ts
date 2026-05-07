@@ -62,16 +62,20 @@ function assertStatusMutationResult(result: StatusMutationResult): void {
 }
 
 /**
- * Admin Plugin
+ * Admin Status Plugin
  *
- * Provides endpoints for user management:
+ * Provides endpoints for user-status management:
  * - Deactivate user (admin sets user to inactive)
  * - Activate user (admin reactivates a user)
  * - Unlock user (admin unlocks a locked user)
+ *
+ * The plugin id is `admin-status` (NOT `admin`) so this plugin can coexist
+ * with Better Auth's official `admin` plugin if a future contributor adds
+ * it: BA throws on duplicate plugin ids at construction time.
  */
 export const adminPlugin = (apiBinding: ApiBindingRpc) => {
   return {
-    id: "admin",
+    id: "admin-status",
     endpoints: {
       /**
        * Deactivate a user - sets status to "inactive"

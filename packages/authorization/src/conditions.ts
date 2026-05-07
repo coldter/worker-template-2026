@@ -100,6 +100,54 @@ export function createRelationCondition<TResource>(
   };
 }
 
+/**
+ * Operator-side condition (D36 / D72). Allows the rule when the principal is
+ * a `global_admin` AND, if `subRoles` is non-empty, their `globalAdminRole`
+ * attribute is in the allow-list. Used together with the `OPERATOR_PERMISSIONS`
+ * matrix to keep the admin-panel authorization matrix declarative.
+ *
+ * `subRoles=[]` means "any global_admin sub-role allowed" (e.g. `view`/`list`
+ * actions). The condition only inspects the principal so it carries
+ * `effect: "principal_only"` and is safe to evaluate without a resource.
+ */
+export function createGlobalAdminRoleCondition<TResource = unknown>(
+  subRoles: readonly string[]
+): Condition<TResource> {
+  const frozenSubRoles = [...subRoles];
+  const label =
+    frozenSubRoles.length === 0
+      ? "globalAdminRole(*)"
+      : `globalAdminRole(${frozenSubRoles.join("|")})`;
+  return {
+    type: "globalAdminRole",
+    effect: "principal_only",
+    label,
+    params: { subRoles: frozenSubRoles },
+    evaluate(ctx: ConditionContext<TResource>): boolean {
+      if (!ctx.principal.roles.includes("global_admin")) {
+        return false;
+      }
+      // Defense in depth: a deactivated global_admin whose `globalAdminRole`
+      // attribute lingered in the principal must NOT pass this condition.
+      // The canonical pipeline already denies via `principalNotActive`, but
+      // this redundant check keeps the operator gate fail-closed even if a
+      // consumer forgets to wire the global deny.
+      const status = ctx.principal.attributes.status;
+      if (status !== "active") {
+        return false;
+      }
+      const sub = ctx.principal.attributes.globalAdminRole;
+      if (typeof sub !== "string" || sub.length === 0) {
+        return false;
+      }
+      if (frozenSubRoles.length === 0) {
+        return true;
+      }
+      return frozenSubRoles.includes(sub);
+    },
+  };
+}
+
 export function createOrgRoleCondition<TResource = unknown>(
   orgRoles: string[]
 ): Condition<TResource> {

@@ -1,0 +1,86 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "admin",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-04-30",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "workers_dev": false,
+  "preview_urls": false,
+  "placement": {
+    "mode": "smart"
+  },
+  "observability": {
+    "enabled": true,
+    "logs": {
+      "head_sampling_rate": 1
+    }
+  },
+  // Operator console at ${ADMIN_HOST}. Single custom domain — Cloudflare
+  // manages the cert + zone wiring. The placeholder host below mirrors the
+  // BASELINE_FIXTURE production value; update before deploying.
+  // TODO(deploy): verify zone wiring for the admin custom domain.
+  "routes": [
+    {
+      "pattern": "admin.example.com",
+      "custom_domain": true
+    }
+  ],
+  "assets": {
+    "binding": "ADMIN_UI",
+    "directory": "../admin-ui/dist",
+    "not_found_handling": "single-page-application",
+    "html_handling": "auto-trailing-slash",
+    "run_worker_first": [
+      "/api/*"
+    ]
+  },
+  "hyperdrive": [
+    {
+      "binding": "HYPERDRIVE",
+      "id": "placeholder-hyperdrive-id",
+      "localConnectionString": "postgresql://postgres:postgres@localhost:5432/app_dev"
+    }
+  ],
+  "kv_namespaces": [
+    {
+      "binding": "CACHE",
+      "id": "placeholder-kv-id",
+      "preview_id": "placeholder-kv-preview-id"
+    }
+  ],
+  "services": [
+    {
+      "binding": "API",
+      "service": "server",
+      "entrypoint": "AdminApiEntrypoint"
+    },
+    {
+      "binding": "AUTH",
+      "service": "auth",
+      "entrypoint": "AuthEntrypoint"
+    }
+  ],
+  "secrets": {
+    "required": [
+      "CF_ACCESS_AUD",
+      "CF_ACCESS_TEAM_DOMAIN"
+    ]
+  },
+  // ALLOW_DEV_ADMIN_AUTH and LOCAL_DEV_ADMIN_EMAIL are intentionally NOT
+  // committed here. They are injected by the dev-mode setup-env fragment
+  // (wrangler.jsonc.fragment.json) so a production deploy never ships with
+  // the dev-mode operator-auth bypass enabled (D52). A startup check in
+  // `apps/admin/src/server.ts` fails closed if either flag is present when
+  // NODE_ENV === "production".
+  "vars": {
+    "NODE_ENV": "development",
+    "ADMIN_HOST": "admin.lvh.me"
+  },
+  "triggers": {
+    "crons": [
+      "0 12 * * *"
+    ]
+  }
+}

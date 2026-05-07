@@ -7,9 +7,9 @@ import {
   uniqueIndex,
   varchar,
 } from "drizzle-orm/pg-core";
-import { createdAt, updatedAt } from "../helpers";
 import { generatePrefixedCuid, ID_PREFIXES } from "../ids";
 import { sessions, users } from "./auth";
+import { createdAt, updatedAt } from "./columns";
 
 // ============================================================
 // CONSTANTS

@@ -110,7 +110,24 @@ export function buildRegistryInstance<
     },
 
     async assertCan(principal, resource, action, opts) {
-      const decision = await this.can(principal, resource, action, opts);
+      // Evaluate once and reuse the decision -- previously this re-ran
+      // `can(...)` after the boolean check, doubling the policy walk and
+      // doubling any side-effects (resolveRelation calls, etc.). We accept
+      // an `assertCan` that does not need to return the decision; callers
+      // who need it should call `can()` directly.
+      const resourceDef = resources[resource];
+      const decision: PolicyDecision = resourceDef
+        ? await evaluate({
+            principal,
+            action,
+            resourceName: resource,
+            resource: opts?.resource,
+            globalPolicies: options.globalPolicies,
+            resourcePolicies: resourceDef.policies,
+            systemAdminRoles: options.systemAdminRoles,
+            resolveOrganization: resourceDef.resolveOrganization,
+          })
+        : { allowed: false, reason: "NO_MATCHING_POLICY" };
       if (!decision.allowed) {
         throw new AuthorizationError(decision.reason, decision.matchedPolicy);
       }
@@ -133,6 +150,25 @@ export function buildRegistryInstance<
             systemAdminRoles: options.systemAdminRoles,
             ignoreResourceConditions: true,
           });
+          // Surface evaluation errors so the UI gating downgrade is loud in
+          // logs/metrics. The capability check stays non-fatal -- the action
+          // is reported as `false` (fail-closed) and the caller continues.
+          // Authorization is a leaf package (no @repo/shared dep available
+          // due to the shared->authorization edge); a minimal structured
+          // console.warn keeps the package dependency-free.
+          if (!decision.allowed && decision.reason === "EVALUATION_ERROR") {
+            console.warn(
+              JSON.stringify({
+                level: "warn",
+                event: "EVALUATION_ERROR",
+                message:
+                  "evaluateCapabilities: policy evaluation threw; reporting capability as false",
+                resource: name,
+                action,
+                matchedPolicy: decision.matchedPolicy,
+              })
+            );
+          }
           capabilities[`${name}:${action}`] = decision.allowed;
         }
       }

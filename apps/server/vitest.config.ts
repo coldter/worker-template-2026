@@ -18,6 +18,13 @@ export default defineConfig({
         // middleware or use an auxiliary worker.
         serviceBindings: {
           AUTH: () => new Response("stub", { status: 503 }),
+          // B4 — apps/app SPA. Tests stub the binding (or override env per
+          // call); Miniflare still requires a default fetch handler so
+          // wrangler config validation passes.
+          STATIC_ASSETS: () =>
+            new Response("<!doctype html>", {
+              headers: { "content-type": "text/html" },
+            }),
         },
       },
     }),

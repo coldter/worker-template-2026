@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  createGlobalAdminRoleCondition,
   createOwnerCondition,
   createPredicateCondition,
   createSelfTargetCondition,
@@ -110,5 +111,95 @@ describe("createPredicateCondition", () => {
       principal: { id: "u1", roles: [], attributes: {} },
     };
     await expect(condition.evaluate(ctx)).resolves.toBe(true);
+  });
+});
+
+describe("createGlobalAdminRoleCondition", () => {
+  it("rejects principals without global_admin role", () => {
+    const cond = createGlobalAdminRoleCondition([]);
+    const ctx: ConditionContext = {
+      principal: {
+        id: "u1",
+        roles: ["user"],
+        attributes: { status: "active", globalAdminRole: "support" },
+      },
+    };
+    expect(cond.evaluate(ctx)).toBe(false);
+  });
+
+  it("allows global_admin with any sub-role when subRoles is empty and status active", () => {
+    const cond = createGlobalAdminRoleCondition([]);
+    const ctx: ConditionContext = {
+      principal: {
+        id: "g1",
+        roles: ["global_admin"],
+        attributes: { status: "active", globalAdminRole: "support" },
+      },
+    };
+    expect(cond.evaluate(ctx)).toBe(true);
+  });
+
+  it("allows when sub-role matches the allow-list", () => {
+    const cond = createGlobalAdminRoleCondition(["super_admin"]);
+    const ctx: ConditionContext = {
+      principal: {
+        id: "g1",
+        roles: ["global_admin"],
+        attributes: { status: "active", globalAdminRole: "super_admin" },
+      },
+    };
+    expect(cond.evaluate(ctx)).toBe(true);
+  });
+
+  it("denies when sub-role is not in the allow-list", () => {
+    const cond = createGlobalAdminRoleCondition(["super_admin"]);
+    const ctx: ConditionContext = {
+      principal: {
+        id: "g1",
+        roles: ["global_admin"],
+        attributes: { status: "active", globalAdminRole: "support" },
+      },
+    };
+    expect(cond.evaluate(ctx)).toBe(false);
+  });
+
+  // Status guard: a deactivated/locked global_admin must NEVER pass even if
+  // the globalAdminRole attribute lingered on the principal. This is the
+  // defense-in-depth check that pairs with the canonical principalNotActive
+  // global deny.
+  it("denies when status is not active even with valid sub-role", () => {
+    const cond = createGlobalAdminRoleCondition(["super_admin"]);
+    const ctx: ConditionContext = {
+      principal: {
+        id: "g1",
+        roles: ["global_admin"],
+        attributes: { status: "inactive", globalAdminRole: "super_admin" },
+      },
+    };
+    expect(cond.evaluate(ctx)).toBe(false);
+  });
+
+  it("denies when status is missing (treated as not-active)", () => {
+    const cond = createGlobalAdminRoleCondition([]);
+    const ctx: ConditionContext = {
+      principal: {
+        id: "g1",
+        roles: ["global_admin"],
+        attributes: { globalAdminRole: "support" },
+      },
+    };
+    expect(cond.evaluate(ctx)).toBe(false);
+  });
+
+  it("denies when globalAdminRole attribute is missing", () => {
+    const cond = createGlobalAdminRoleCondition([]);
+    const ctx: ConditionContext = {
+      principal: {
+        id: "g1",
+        roles: ["global_admin"],
+        attributes: { status: "active" },
+      },
+    };
+    expect(cond.evaluate(ctx)).toBe(false);
   });
 });

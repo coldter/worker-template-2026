@@ -1,6 +1,7 @@
 // Core authorization engine -- framework-agnostic, zero dependencies
 
 export {
+  createGlobalAdminRoleCondition,
   createOrgRoleCondition,
   createOwnerCondition,
   createPredicateCondition,
@@ -12,6 +13,24 @@ export {
 export { AuthorizationError } from "./errors";
 export type { EvaluateInput } from "./evaluator";
 export { evaluate } from "./evaluator";
+export type {
+  OperatorAuditLogger,
+  RequireOperatorOptions,
+} from "./hono-operator";
+export { requireOperator } from "./hono-operator";
+export type {
+  GlobalAdmin as OperatorGlobalAdmin,
+  GlobalAdminRole,
+  OperatorAction,
+  OperatorMatrix,
+  OperatorMatrixDriftReport,
+  OperatorMatrixRegistryLike,
+} from "./operator";
+export {
+  assertOperatorMatrixMatchesPolicies,
+  canOperator,
+  OPERATOR_PERMISSIONS,
+} from "./operator";
 export type {
   CapabilityKey,
   CapabilityMap,

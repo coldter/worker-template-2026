@@ -42,4 +42,18 @@ apps/server/worker-configuration.d.ts
 apps/auth/worker-configuration.d.ts
 
 # Storybook build output
-apps/web/storybook-static
+storybook-static
+
+.tmp
+
+# A7.4 — local TLS harness mints certs at bootstrap; never commit them.
+local-harness/certs/
+
+# A7.1 — generated worker-vars / dev-vars fragments derived from root .env.
+apps/server/wrangler.jsonc.fragment.json
+apps/auth/wrangler.jsonc.fragment.json
+apps/admin/wrangler.jsonc.fragment.json
+apps/server/.dev.vars.tenancy
+apps/auth/.dev.vars.tenancy
+apps/admin-ui/.env.development
+apps/app/.env.development

@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Find your team</title>
+  </head>
+  <body>
+    <main>
+      <h1>Find your team</h1>
+      <p>
+        Enter the email address you use to sign in and we'll send you a link to
+        your workspace.
+      </p>
+      <form action="/api/tenancy/find-team" method="post">
+        <label>Email <input name="email" type="email" required></label>
+        <button type="submit">Continue</button>
+      </form>
+    </main>
+  </body>
+</html>

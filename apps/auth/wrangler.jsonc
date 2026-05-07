@@ -2,10 +2,12 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "auth",
   "main": "src/index.ts",
-  "compatibility_date": "2026-04-01",
+  "compatibility_date": "2026-04-30",
   "compatibility_flags": [
     "nodejs_compat"
   ],
+  "workers_dev": false,
+  "preview_urls": false,
   "placement": {
     "mode": "smart"
   },
@@ -46,11 +48,15 @@
     "NODE_ENV": "development",
     "APP_URL": "http://localhost:8787",
     "CORS_ORIGINS": "http://localhost:3001",
+    "WILDCARD_SUFFIX": ".app.lvh.me",
+    "ADMIN_HOST": "admin.lvh.me",
+    "LOCAL_DEV_HOSTS": "localhost:3001,localhost:3002",
     "EMAIL_FROM": "noreply@example.com",
     "APP_NAME": "App",
     "COMPANY_NAME": "Acme Inc.",
     "SUPPORT_EMAIL": "support@example.com",
     "LOGO_TEXT": "App",
-    "BRAND_PRIMARY_COLOR": "#2563eb"
+    "BRAND_PRIMARY_COLOR": "#2563eb",
+    "FALLBACK_HOST": "fallback.lvh.me"
   }
 }

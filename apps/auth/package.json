@@ -11,10 +11,12 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
+    "@better-auth/sso": "^1.6.9",
     "@repo/authorization": "workspace:*",
     "@repo/db": "workspace:*",
     "@repo/email": "workspace:*",
     "@repo/shared": "workspace:*",
+    "@repo/tenancy": "workspace:*",
     "better-auth": "^1.6.9",
     "drizzle-orm": "^1.0.0-rc.2-33e80cd",
     "hono": "^4.12.16",

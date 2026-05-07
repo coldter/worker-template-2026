@@ -1,5 +1,7 @@
+import type { Context } from "hono";
 import { authorize } from "@/auth/middleware";
 import { commonErrorResponses } from "@/lib/common-response";
+import type { AppEnv } from "@/lib/context";
 import { createRouteConfig } from "@/lib/route-config";
 import {
   createUserBodySchema,
@@ -16,6 +18,19 @@ import {
   userParamsSchema,
 } from "./schema";
 import { userService } from "./service";
+
+async function loadTenantUserResource(c: Context<AppEnv>) {
+  const tenant = c.get("tenant");
+  if (!tenant) {
+    return null;
+  }
+  const userId = c.req.param("userId");
+  if (!userId) {
+    const user = c.get("user");
+    return user ? { id: user.id } : null;
+  }
+  return userService.findById(c.var.db, userId, tenant.organizationId);
+}
 
 const usersRoutes = {
   listUsers: createRouteConfig({
@@ -69,13 +84,7 @@ const usersRoutes = {
     path: "/{userId}",
     guard: [
       authorize("user", "view", {
-        loadResource: async (c) => {
-          const userId = c.req.param("userId");
-          if (!userId) {
-            return null;
-          }
-          return userService.findById(c.var.db, userId);
-        },
+        loadResource: loadTenantUserResource,
       }),
     ],
     tags: ["users"],
@@ -119,13 +128,7 @@ const usersRoutes = {
     path: "/{userId}",
     guard: [
       authorize("user", "update", {
-        loadResource: async (c) => {
-          const userId = c.req.param("userId");
-          if (!userId) {
-            return null;
-          }
-          return userService.findById(c.var.db, userId);
-        },
+        loadResource: loadTenantUserResource,
       }),
     ],
     tags: ["users"],
@@ -150,7 +153,11 @@ const usersRoutes = {
     operationId: "updateUserRoles",
     method: "patch",
     path: "/{userId}/roles",
-    guard: [authorize("user", "update")],
+    guard: [
+      authorize("user", "update", {
+        loadResource: loadTenantUserResource,
+      }),
+    ],
     tags: ["users"],
     summary: "Update user roles",
     description: "Updates user role assignments",
@@ -175,13 +182,7 @@ const usersRoutes = {
     path: "/{userId}/deactivate",
     guard: [
       authorize("user", "deactivate", {
-        loadResource: async (c) => {
-          const userId = c.req.param("userId");
-          if (!userId) {
-            return null;
-          }
-          return userService.findById(c.var.db, userId);
-        },
+        loadResource: loadTenantUserResource,
       }),
     ],
     tags: ["users"],
@@ -206,7 +207,11 @@ const usersRoutes = {
     operationId: "activateUser",
     method: "post",
     path: "/{userId}/activate",
-    guard: [authorize("user", "activate")],
+    guard: [
+      authorize("user", "activate", {
+        loadResource: loadTenantUserResource,
+      }),
+    ],
     tags: ["users"],
     summary: "Activate user",
     description: "Reactivates a deactivated user",
@@ -224,7 +229,11 @@ const usersRoutes = {
     operationId: "unlockUser",
     method: "post",
     path: "/{userId}/unlock",
-    guard: [authorize("user", "unlock")],
+    guard: [
+      authorize("user", "unlock", {
+        loadResource: loadTenantUserResource,
+      }),
+    ],
     tags: ["users"],
     summary: "Unlock user",
     description: "Unlocks a locked user and resets failed login attempts",

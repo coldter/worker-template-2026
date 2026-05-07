@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "paths": { "@/*": ["./src/*"] },
+    "types": ["@cloudflare/workers-types/2023-07-01"],
+    "noUnusedLocals": false
+  },
+  "include": ["src/**/*.ts", "__tests__/**/*.ts", "scripts/**/*.ts"],
+  "exclude": ["node_modules"]
+}

@@ -34,6 +34,7 @@ cat > apps/server/.dev.vars <<EOF
 FIREBASE_SERVICE_ACCOUNT_KEY_BASE64=$(get_var FIREBASE_SERVICE_ACCOUNT_KEY_BASE64)
 RESEND_API_KEY=$(get_var RESEND_API_KEY)
 VAULT_MASTER_KEY=$(get_var VAULT_MASTER_KEY)
+SSO_KEY=$(get_var SSO_KEY)
 EOF
 echo "  Generated apps/server/.dev.vars"
 
@@ -44,12 +45,12 @@ RESEND_API_KEY=$(get_var RESEND_API_KEY)
 EOF
 echo "  Generated apps/auth/.dev.vars"
 
-# --- apps/web/.env (Vite public vars) -----------------------------------------
-cat > apps/web/.env <<EOF
+# --- apps/admin-ui/.env (Vite public vars) ------------------------------------
+cat > apps/admin-ui/.env <<EOF
 NODE_ENV=$(get_var NODE_ENV)
 VITE_SERVER_URL=$(get_var VITE_SERVER_URL)
 EOF
-echo "  Generated apps/web/.env"
+echo "  Generated apps/admin-ui/.env"
 
 echo ""
 echo "Done. Worker .dev.vars (secrets) and .env files generated from root .env."

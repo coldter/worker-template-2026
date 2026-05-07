@@ -530,7 +530,9 @@ describe("evaluate", () => {
       expect(result.allowed).toBe(true);
     });
 
-    it("skips org check when resource is not provided", async () => {
+    it("skips org check when resource is not provided (capabilities mode)", async () => {
+      // ignoreResourceConditions = true is the capabilities path: nav/UI
+      // gating runs without a concrete resource by design.
       const result = await evaluate({
         ...defaults,
         principal: noOrgPrincipal,
@@ -538,8 +540,45 @@ describe("evaluate", () => {
         // no resource
         resourcePolicies: [allowRule(["member"], ["read"])],
         systemAdminRoles: [],
+        ignoreResourceConditions: true,
       });
       expect(result.allowed).toBe(true);
+    });
+
+    // RESOURCE_REQUIRED -- routes that forget loadResource() must fail closed
+    // when the resource declares resolveOrganization. Without this guard a
+    // broad role-only allow could leak across tenants.
+    it("denies with RESOURCE_REQUIRED when resolveOrganization is set but no resource provided", async () => {
+      const result = await evaluate({
+        ...defaults,
+        principal: orgPrincipal,
+        resolveOrganization,
+        // no resource provided
+        resourcePolicies: [allowRule(["member"], ["read"])],
+        systemAdminRoles: [],
+      });
+      expect(result).toEqual({ allowed: false, reason: "RESOURCE_REQUIRED" });
+    });
+
+    // Cross-tenant deny: when a deny policy WOULD have matched but the
+    // resource lives in a different tenant, the result must short-circuit to
+    // a DENY (TENANT_MISMATCH), not silently skip.
+    it("short-circuits a cross-tenant deny to TENANT_MISMATCH", async () => {
+      const result = await evaluate({
+        ...defaults,
+        principal: orgPrincipal,
+        resource: { orgId: "org_other" },
+        resolveOrganization,
+        resourcePolicies: [
+          denyRule(["member"], ["read"]),
+          allowRule(["member"], ["read"]),
+        ],
+        systemAdminRoles: [],
+      });
+      expect(result.allowed).toBe(false);
+      if (!result.allowed) {
+        expect(result.reason).toBe("TENANT_MISMATCH");
+      }
     });
   });
 

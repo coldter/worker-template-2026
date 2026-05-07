@@ -11,7 +11,7 @@ The auth worker isolates Better Auth and its secrets (`BETTER_AUTH_SECRET`, `RES
 ### Service Bindings
 
 - **Auth Worker** binds to `API` (the `ApiEntrypoint` class in `apps/server`). It calls RPC methods on that binding from `databaseHooks` to trigger domain-side effects (onboarding workflow, device notifications, status changes).
-- **API Worker** binds to `AUTH` (the `AuthEntrypoint` class in this worker). It calls `AUTH.getSession(headers)` to validate sessions per request, and proxies all `/api/auth/*` HTTP traffic directly to `AUTH.fetch(request)`.
+- **API Worker** binds to `AUTH` (the `AuthEntrypoint` class in this worker). It calls `AUTH.getSession(headers, tenant)` to validate sessions per request (the resolved tenant is threaded alongside the inbound headers so per-tenant `allowedHosts` and `trustedOrigins` apply), and forwards all `/api/auth/*` HTTP traffic via `AUTH.handleAuthRequest(request, tenant)` — which sanitises the request, pins the host to the resolved tenant, and runs the BA pipeline. Direct `AUTH.fetch(request)` returns **421 Misdirected Request** by design: the auth worker is reachable only through the typed RPC surface so a `tenant: null` BA instance never gets to mint apex JWTs (Wave-1 audit finding).
 
 ### Auth Worker handles all Better Auth logic
 
@@ -19,16 +19,16 @@ The auth worker isolates Better Auth and its secrets (`BETTER_AUTH_SECRET`, `RES
 
 ### API Worker proxies /api/auth/* and validates sessions via RPC
 
-In `apps/server/src/server.ts`, the route `/api/auth/*` is handled before any DB or auth middleware:
+In `apps/server/src/server.ts`, the route `/api/auth/*` is handled before any DB or auth middleware. The proxy resolves the tenant from the request host and forwards to the auth worker via the typed RPC entry:
 
 ```ts
 authProxy.all("/*", async (c) => {
-  return c.env.AUTH.fetch(c.req.raw);
+  return c.env.AUTH.handleAuthRequest(c.req.raw, c.var.tenant);
 });
 app.route("/api/auth", authProxy);
 ```
 
-Session validation for all other API routes uses the `authContextMiddleware`, which calls `c.env.AUTH.getSession(c.req.raw.headers)` via RPC.
+Session validation for all other API routes uses the `authContextMiddleware`, which calls `c.env.AUTH.getSession(c.req.raw.headers, tenant)` via RPC. The JWKS endpoint (`/api/auth/jwks`) is the single tenant-independent path: `handleAuthRequest` accepts `tenant === null` only on that path and serves the keys directly via `auth.api.getJwks`.
 
 ## Critical Rules
 
@@ -95,21 +95,29 @@ src/
 
 ## RPC Interface
 
-`AuthEntrypoint` in `src/index.ts` exposes three RPC methods callable by the API worker via the `AUTH` service binding:
+`AuthEntrypoint` in `src/index.ts` exposes the typed surface callable via the `AUTH` service binding from `apps/server` and `apps/admin`. Tenant `/api/auth/*` traffic reaches it through `apps/server` after tenancy resolution; direct fetch is intentionally NOT a usable surface.
 
 ### `fetch(request: Request): Promise<Response>`
 
-Handles all HTTP auth requests (sign-in, sign-up, verify email, etc.). The API worker routes `/api/auth/*` here directly.
+Returns **421 Misdirected Request** unconditionally. The auth worker has `workers_dev: false` and no public route; this default is the structural fail-safe so a leaked preview URL or accidental public binding cannot mint apex JWTs. Wave-1 audit finding.
 
-### `getSession(headers: Headers): Promise<SessionResult | null>`
+### `handleAuthRequest(request: Request, tenant: Tenant | null): Promise<Response>`
 
-Opens a per-call Postgres connection via Hyperdrive, creates a temporary auth instance, and delegates to `auth.api.getSession({ headers })`. Returns the full session object including the fields the API needs to build a principal, especially `user.roleSlugs`, user status fields, and session context such as `platform`, `expiresAt`, and optional org data. Returns `null` when no valid session exists. The API worker calls this from `authContextMiddleware` on every `/api/*` request.
+The HTTP entrypoint for `/api/auth/*` traffic. The server worker resolves the tenant from the request host via `tenancyMiddleware` and then calls this method. `handleAuthRequest`:
 
-### `getToken(headers: Headers): Promise<TokenResult | null>`
+1. If `tenant === null` AND the path is **not** `/api/auth/jwks`, returns 400.
+2. If `tenant === null` AND the path IS `/api/auth/jwks`, serves the keys directly via `auth.api.getJwks` scoped to a sentinel apex tenant. JWKS is intrinsically tenant-independent (verifier-side public key set used by `@repo/auth-tokens`), so this is the single allowed exception.
+3. Otherwise calls `sanitizedAuthRequest(request, tenant)` to pin Host/Origin to the tenant's canonical host, then dispatches into the Hono app so per-tenant `allowedHosts` and `trustedOrigins` enforce.
 
-Same pattern as `getSession` but delegates to `auth.api.getToken({ headers })`. Used by internal server/auth integration paths that need a signed token derived from the current auth session context.
+### `getSession(headers: Headers, tenant: Tenant | null): Promise<SessionResult | null>`
 
-Both `getSession` and `getToken` close the Postgres client with `ctx.waitUntil(client.end())` after the call, regardless of success or failure.
+Opens a per-call Postgres connection via Hyperdrive, builds a request-scoped auth instance bound to `tenant` and the tenant's `allowedHostsSnapshot`, and delegates to `auth.api.getSession({ headers })`. Returns the full session object so the API can build a principal (`user.roleSlugs`, user status fields, `platform`, `expiresAt`, optional org context). Returns `null` when no valid session exists. The API worker calls this from `authContextMiddleware` on every `/api/*` request.
+
+### `getToken(headers: Headers, tenant: Tenant | null): Promise<TokenResult | null>`
+
+Same pattern as `getSession`; delegates to `auth.api.getToken({ headers })` for internal callers that need a signed token.
+
+`getSession`, `getToken`, and `handleAuthRequest` close the Postgres client with `ctx.waitUntil(client.end())` after the call, regardless of success or failure.
 
 ## Event Hooks
 

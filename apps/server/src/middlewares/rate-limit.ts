@@ -4,6 +4,10 @@ import type { AppEnv } from "@/lib/context";
 const WINDOW_SECONDS = 60;
 const GUEST_LIMIT = 60;
 
+function isProductionEnv(nodeEnv: string): boolean {
+  return nodeEnv === "production";
+}
+
 export const rateLimitMiddleware = createMiddleware<AppEnv>(async (c, next) => {
   if (c.req.method === "OPTIONS") {
     return next();
@@ -14,7 +18,12 @@ export const rateLimitMiddleware = createMiddleware<AppEnv>(async (c, next) => {
     c.req.header("X-Forwarded-For")?.split(",")[0]?.trim() ??
     "unknown";
 
-  const identifier = `ip:${ip}`;
+  const host = (c.req.header("host") ?? "unknown").toLowerCase();
+
+  // Include the host in the identifier so a noisy tenant cannot exhaust the
+  // shared-IP budget for neighboring tenants (e.g., two sister tenants
+  // behind a corporate proxy that shares a single CF-Connecting-IP).
+  const identifier = `ip:${ip}:${host}`;
   const limit = GUEST_LIMIT;
 
   // DO-first approach
@@ -36,13 +45,35 @@ export const rateLimitMiddleware = createMiddleware<AppEnv>(async (c, next) => {
       return next();
     } catch (err) {
       const { logger } = await import("@repo/shared/logger");
-      logger.warn("Rate limiter DO unavailable, falling back to KV", {
+      logger.warn("Rate limiter DO unavailable", {
         error: err instanceof Error ? err.message : String(err),
       });
+      if (isProductionEnv(c.env.NODE_ENV)) {
+        return c.json(
+          {
+            error: {
+              code: "RATE_LIMIT_UNAVAILABLE",
+              message: "Rate limit unavailable",
+            },
+          },
+          503
+        );
+      }
     }
+  } else if (isProductionEnv(c.env.NODE_ENV)) {
+    return c.json(
+      {
+        error: {
+          code: "RATE_LIMIT_UNAVAILABLE",
+          message: "Rate limit unavailable",
+        },
+      },
+      503
+    );
   }
 
-  // Fallback: KV-based rate limiting
+  // Development/test fallback only. KV is eventually consistent and must not
+  // be used as the production enforcement path.
   const windowKey = `rl:${identifier}:${Math.floor(Date.now() / (WINDOW_SECONDS * 1000))}`;
   const raw = await c.env.CACHE.get(windowKey, "text");
   const count = raw ? Number.parseInt(raw, 10) : 0;

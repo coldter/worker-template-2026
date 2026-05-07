@@ -5,9 +5,9 @@ import {
   uniqueIndex,
   varchar,
 } from "drizzle-orm/pg-core";
-import { createdAt, updatedAt } from "../helpers";
 import { generatePrefixedCuid } from "../ids";
 import { users } from "./auth";
+import { createdAt, updatedAt } from "./columns";
 
 // ============================================================
 // NOTIFICATION PREFERENCES TABLE

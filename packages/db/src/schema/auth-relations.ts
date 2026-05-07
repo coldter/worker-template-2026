@@ -19,7 +19,9 @@ export const authRelationsTable = pgTable(
     objectType: text("object_type").notNull(),
     objectId: text("object_id").notNull(),
     createdBy: text("created_by").notNull(),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
   },
   (t) => [
     uniqueIndex("auth_rel_unique").on(

@@ -1,0 +1,46 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "app",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-04-30",
+  "workers_dev": false,
+  "preview_urls": false,
+  "observability": {
+    "enabled": true,
+    "logs": {
+      "head_sampling_rate": 1
+    }
+  },
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application"
+  },
+  // Public ingress for tenant traffic. The wildcard subdomain pattern uses a
+  // route (custom_domain is not supported on wildcard patterns), while the
+  // apex and the CF for SaaS fallback origin are wired via custom_domains so
+  // Cloudflare manages the cert + zone wiring automatically.
+  // TODO(deploy): verify zone wiring + replace the production hostnames below
+  // with the values from the active host-config / BASELINE_FIXTURE before the
+  // first production deploy.
+  "routes": [
+    {
+      "pattern": "*.app.example.com/*",
+      "zone_name": "example.com"
+    },
+    {
+      "pattern": "app.example.com",
+      "custom_domain": true
+    },
+    {
+      "pattern": "fallback.example.com",
+      "custom_domain": true
+    }
+  ],
+  "services": [
+    {
+      "binding": "API",
+      "service": "server"
+    }
+  ]
+}

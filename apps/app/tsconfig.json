@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "types": ["vite/client", "@cloudflare/workers-types"],
+    "allowArbitraryExtensions": true,
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  },
+  "include": [
+    "src/**/*",
+    "__tests__/**/*",
+    "vite.config.ts",
+    "vitest.config.ts"
+  ],
+  "exclude": ["**/node_modules", "**/dist"]
+}

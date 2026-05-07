@@ -13,7 +13,6 @@ import {
   varchar,
 } from "drizzle-orm/pg-core";
 import { generatePrefixedCuid, ID_PREFIXES } from "../ids";
-import { users } from "./auth";
 
 export const auditLogs = pgTable(
   "audit_logs",
@@ -24,10 +23,14 @@ export const auditLogs = pgTable(
 
     event: text("event").$type<AuditEventKey>().notNull(),
 
-    actorId: varchar("actor_id", { length: 255 }).references(() => users.id, {
-      onDelete: "set null",
-    }),
+    // Polymorphic actor: may hold users.id (usr_*), global_admins.id (gad_*), or NULL for system.
+    // FK deliberately omitted — see D30; actor_id must remain writable after user hard-delete.
+    actorId: varchar("actor_id", { length: 255 }),
     actorType: text("actor_type").$type<ActorType>().default("user").notNull(),
+
+    // Tenant scope — nullable so global-scope rows (organizationId IS NULL) remain expressible.
+    // FK deliberately omitted — audit rows must survive tenant hard-delete.
+    organizationId: varchar("organization_id", { length: 255 }),
 
     targetId: varchar("target_id", { length: 255 }),
     targetType: text("target_type").$type<TargetType>(),
@@ -46,6 +49,22 @@ export const auditLogs = pgTable(
     index("audit_logs_actor_id_idx").on(table.actorId),
     index("audit_logs_target_idx").on(table.targetId, table.targetType),
     index("audit_logs_created_at_idx").on(table.createdAt),
+    index("audit_logs_actor_type_created_at_idx").on(
+      table.actorType,
+      table.createdAt.desc()
+    ),
+    index("audit_logs_org_id_created_at_idx").on(
+      table.organizationId,
+      table.createdAt.desc()
+    ),
+    // Composite index for the per-tenant audit-log filter UI: lists rows for
+    // one organization filtered by `event` and ordered by recency. Run
+    // `bun run db:generate` to materialize the migration before merge.
+    index("audit_logs_org_event_created_at_idx").on(
+      table.organizationId,
+      table.event,
+      table.createdAt.desc()
+    ),
   ]
 );
 

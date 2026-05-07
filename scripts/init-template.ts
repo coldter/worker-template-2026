@@ -35,8 +35,11 @@ const QUOTE_PATTERN = /"/g;
 const README_HEADING_PATTERN = /^#\s+.*$/m;
 const YES_PATTERN = /^(y|yes)$/i;
 
-// Worker names currently set in each apps/*/wrangler.jsonc.
-const WORKER_APPS = ["server", "auth", "web"] as const;
+// Worker names currently set in each apps/*/wrangler.jsonc. `admin-ui` is a
+// Vite SPA (no wrangler.jsonc) — its package.json name is rewritten by the
+// generic scope/name pass via `collectTargetFiles` and is intentionally
+// omitted here so the worker-rename pass does not look for a missing config.
+const WORKER_APPS = ["server", "auth", "admin", "app"] as const;
 
 type Answers = {
   appName: string;
@@ -135,7 +138,7 @@ function gatherAnswers(): Answers {
     validateEmail
   );
   const renameWorkers = askYesNo(
-    `Prefix Cloudflare Worker names with "${appName}-" in each wrangler.jsonc? (deployed worker names will be "${appName}-server", "${appName}-auth", "${appName}-web")`,
+    `Prefix Cloudflare Worker names with "${appName}-" in each wrangler.jsonc? (deployed worker names will be "${appName}-server", "${appName}-auth", "${appName}-admin", "${appName}-app")`,
     true
   );
   return { appName, packageScope, companyName, supportEmail, renameWorkers };
@@ -338,7 +341,10 @@ async function main(): Promise<void> {
   // but rewrite them if a downstream fork has added them.
   await updateEnvExample(join(ROOT, "apps/server/.dev.vars.example"), answers);
   await updateEnvExample(join(ROOT, "apps/auth/.dev.vars.example"), answers);
-  await updateEnvExample(join(ROOT, "apps/web/.dev.vars.example"), answers);
+  await updateEnvExample(
+    join(ROOT, "apps/admin-ui/.dev.vars.example"),
+    answers
+  );
 
   console.info("Updating README...");
   await updateReadme(answers);

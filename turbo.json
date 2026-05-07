@@ -54,7 +54,11 @@
       "cache": true,
       "dependsOn": ["^generate-openapi"],
       "outputs": ["src/api.gen/**"],
-      "inputs": ["openapi-ts.config.ts", "../server/openapi.cache.json"]
+      "inputs": [
+        "openapi-ts.config.ts",
+        "../server/openapi.cache.json",
+        "../admin/openapi.cache.json"
+      ]
     },
     "test": {
       "cache": false,

@@ -6,7 +6,7 @@ import {
   deleteUserSessions,
   firstOrThrow,
 } from "@repo/db";
-import { accounts, users } from "@repo/db/schema";
+import { accounts, members, users } from "@repo/db/schema";
 import { hashPassword } from "better-auth/crypto";
 import {
   and,
@@ -42,11 +42,11 @@ import type {
 import { onUserStatusChange } from "./user-status-hooks";
 
 export const userService = {
-  async find(db: DrizzleClient, query: ListUsersQuery) {
+  async find(db: DrizzleClient, query: ListUsersQuery, organizationId: string) {
     const { search, status, role } = query;
     const { perPage, offset, sort, order } = getPaginationParams(query);
 
-    const conditions: SQL[] = [];
+    const conditions: SQL[] = [eq(members.organizationId, organizationId)];
 
     if (search) {
       const searchPattern = `%${search}%`;
@@ -90,11 +90,16 @@ export const userService = {
           updatedAt: users.updatedAt,
         })
         .from(users)
+        .innerJoin(members, eq(members.userId, users.id))
         .where(where)
         .orderBy(buildOrderBy(sortColumns, sort, order, users.createdAt))
         .limit(perPage)
         .offset(offset),
-      db.select({ total: count() }).from(users).where(where),
+      db
+        .select({ total: count() })
+        .from(users)
+        .innerJoin(members, eq(members.userId, users.id))
+        .where(where),
     ]);
 
     return createPaginatedResponse({
@@ -104,7 +109,23 @@ export const userService = {
     });
   },
 
-  async findById(db: DrizzleClient, id: string): Promise<UserRecord | null> {
+  async findById(
+    db: DrizzleClient,
+    id: string,
+    organizationId?: string
+  ): Promise<UserRecord | null> {
+    if (organizationId) {
+      const [row] = await db
+        .select({ user: users })
+        .from(users)
+        .innerJoin(members, eq(members.userId, users.id))
+        .where(
+          and(eq(users.id, id), eq(members.organizationId, organizationId))
+        )
+        .limit(1);
+      return row?.user ?? null;
+    }
+
     const [user] = await db
       .select()
       .from(users)
@@ -135,6 +156,7 @@ export const userService = {
   async create(
     db: DrizzleClient,
     input: CreateUserInput,
+    organizationId: string,
     actorId: string,
     auditContext: AuditContext
   ): Promise<UserRecord> {
@@ -166,6 +188,7 @@ export const userService = {
       audit.record({
         event: AUDIT_EVENTS.USER.CREATED.event,
         actorId,
+        organizationId,
         targetId: user.id,
         targetType: TARGET_TYPES.USER,
         metadata: {
@@ -181,12 +204,13 @@ export const userService = {
 
   async update(
     db: DrizzleClient,
+    organizationId: string,
     id: string,
     input: UpdateUserInput,
     actorId: string,
     auditContext: AuditContext
   ): Promise<UserRecord> {
-    const existingUser = await this.findById(db, id);
+    const existingUser = await this.findById(db, id, organizationId);
     if (!existingUser) {
       throw new UserNotFoundError(id);
     }
@@ -214,6 +238,7 @@ export const userService = {
         audit.record({
           event: AUDIT_EVENTS.USER.UPDATED.event,
           actorId,
+          organizationId,
           targetId: id,
           targetType: TARGET_TYPES.USER,
           metadata,
@@ -226,12 +251,13 @@ export const userService = {
 
   async updateRoles(
     db: DrizzleClient,
+    organizationId: string,
     id: string,
     input: UpdateUserRolesInput,
     actorId: string,
     auditContext: AuditContext
   ): Promise<UserRecord> {
-    const existingUser = await this.findById(db, id);
+    const existingUser = await this.findById(db, id, organizationId);
     if (!existingUser) {
       throw new UserNotFoundError(id);
     }
@@ -259,6 +285,7 @@ export const userService = {
       audit.record({
         event: AUDIT_EVENTS.ROLE.ASSIGNED.event,
         actorId,
+        organizationId,
         targetId: id,
         targetType: TARGET_TYPES.USER,
         metadata,
@@ -270,12 +297,13 @@ export const userService = {
 
   async deactivate(
     db: DrizzleClient,
+    organizationId: string,
     id: string,
     reason: string | null,
     actorId: string,
     auditContext: AuditContext
   ): Promise<void> {
-    const existingUser = await this.findById(db, id);
+    const existingUser = await this.findById(db, id, organizationId);
     if (!existingUser) {
       throw new UserNotFoundError(id);
     }
@@ -291,6 +319,7 @@ export const userService = {
       audit.record({
         event: AUDIT_EVENTS.USER.DEACTIVATED.event,
         actorId,
+        organizationId,
         targetId: id,
         targetType: TARGET_TYPES.USER,
         metadata: { reason },
@@ -307,11 +336,12 @@ export const userService = {
 
   async activate(
     db: DrizzleClient,
+    organizationId: string,
     id: string,
     actorId: string,
     auditContext: AuditContext
   ): Promise<void> {
-    const existingUser = await this.findById(db, id);
+    const existingUser = await this.findById(db, id, organizationId);
     if (!existingUser) {
       throw new UserNotFoundError(id);
     }
@@ -325,6 +355,7 @@ export const userService = {
       audit.record({
         event: AUDIT_EVENTS.USER.ACTIVATED.event,
         actorId,
+        organizationId,
         targetId: id,
         targetType: TARGET_TYPES.USER,
       });
@@ -335,11 +366,12 @@ export const userService = {
 
   async unlock(
     db: DrizzleClient,
+    organizationId: string,
     id: string,
     actorId: string,
     auditContext: AuditContext
   ): Promise<void> {
-    const existingUser = await this.findById(db, id);
+    const existingUser = await this.findById(db, id, organizationId);
     if (!existingUser) {
       throw new UserNotFoundError(id);
     }
@@ -353,6 +385,7 @@ export const userService = {
       audit.record({
         event: AUDIT_EVENTS.USER.UNLOCKED.event,
         actorId,
+        organizationId,
         targetId: id,
         targetType: TARGET_TYPES.USER,
       });

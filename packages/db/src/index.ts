@@ -6,7 +6,6 @@ export {
   type WithDrizzleClientOptions,
   withDrizzleClient,
 } from "./client";
-export { firstOrNull, firstOrThrow } from "./helpers";
 export type {
   AccountId,
   SessionId,
@@ -18,6 +17,11 @@ export {
   generatePrefixedCuid,
   ID_PREFIXES,
 } from "./ids";
+export {
+  type LiveOrganizations,
+  liveOrganizations,
+} from "./live-organizations";
+export { firstOrNull, firstOrThrow } from "./query-helpers";
 export { relations } from "./relations";
 export * from "./schema";
 export {

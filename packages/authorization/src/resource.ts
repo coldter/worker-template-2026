@@ -1,4 +1,5 @@
 import {
+  createGlobalAdminRoleCondition,
   createOrgRoleCondition,
   createOwnerCondition,
   createPredicateCondition,
@@ -176,6 +177,17 @@ export class PolicyRuleBuilder<
     this.conditions.push(
       createRelationCondition(relation, targetKey, resolveTarget)
     );
+    return this;
+  }
+
+  /**
+   * D36 / D72 — operator policy condition. Use within a resource policy to
+   * gate the rule on the principal's `globalAdminRole` attribute. With no
+   * arguments the rule allows any `global_admin` sub-role; with one or more
+   * arguments only the listed sub-roles match.
+   */
+  whereGlobalAdminRole(...subRoles: string[]): this {
+    this.conditions.push(createGlobalAdminRoleCondition<TResource>(subRoles));
     return this;
   }
 

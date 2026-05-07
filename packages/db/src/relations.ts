@@ -21,10 +21,8 @@ export const relations = defineRelations(schema, (r) => ({
       from: r.users.id,
       to: r.accounts.userId,
     }),
-    auditLogs: r.many.auditLogs({
-      from: r.users.id,
-      to: r.auditLogs.actorId,
-    }),
+    // auditLogs relation removed: actor_id is now polymorphic (users, global_admins, system)
+    // and no longer carries a FK to users. Query audit_logs.actor_id directly when needed.
     notifications: r.many.notifications({
       from: r.users.id,
       to: r.notifications.userId,
@@ -41,6 +39,10 @@ export const relations = defineRelations(schema, (r) => ({
       from: r.users.id,
       to: r.members.userId,
     }),
+    ssoProviders: r.many.ssoProviders({
+      from: r.users.id,
+      to: r.ssoProviders.userId,
+    }),
   },
   sessions: {
     user: r.one.users({
@@ -54,13 +56,9 @@ export const relations = defineRelations(schema, (r) => ({
       to: r.users.id,
     }),
   },
-  auditLogs: {
-    actor: r.one.users({
-      from: r.auditLogs.actorId,
-      to: r.users.id,
-      optional: true,
-    }),
-  },
+  // auditLogs has no typed relation to users: actor_id is polymorphic after A1.5.
+  // The FK was removed; do not re-add a relation here (see D30).
+  auditLogs: {},
   notifications: {
     user: r.one.users({
       from: r.notifications.userId,
@@ -88,6 +86,18 @@ export const relations = defineRelations(schema, (r) => ({
       from: r.organizations.id,
       to: r.invitations.organizationId,
     }),
+    tenantCustomHostnames: r.many.tenantCustomHostnames({
+      from: r.organizations.id,
+      to: r.tenantCustomHostnames.organizationId,
+    }),
+    ssoProviders: r.many.ssoProviders({
+      from: r.organizations.id,
+      to: r.ssoProviders.organizationId,
+    }),
+    reservedSlugs: r.many.reservedSlugs({
+      from: r.organizations.id,
+      to: r.reservedSlugs.organizationId,
+    }),
   },
   members: {
     user: r.one.users({
@@ -103,10 +113,50 @@ export const relations = defineRelations(schema, (r) => ({
     inviter: r.one.users({
       from: r.invitations.inviterId,
       to: r.users.id,
+      optional: true,
     }),
     organization: r.one.organizations({
       from: r.invitations.organizationId,
       to: r.organizations.id,
+    }),
+  },
+  tenantCustomHostnames: {
+    organization: r.one.organizations({
+      from: r.tenantCustomHostnames.organizationId,
+      to: r.organizations.id,
+    }),
+  },
+  ssoProviders: {
+    organization: r.one.organizations({
+      from: r.ssoProviders.organizationId,
+      to: r.organizations.id,
+      optional: true,
+    }),
+    user: r.one.users({
+      from: r.ssoProviders.userId,
+      to: r.users.id,
+      optional: true,
+    }),
+  },
+  reservedSlugs: {
+    organization: r.one.organizations({
+      from: r.reservedSlugs.organizationId,
+      to: r.organizations.id,
+      optional: true,
+    }),
+  },
+  globalAdmins: {
+    createdByAdmin: r.one.globalAdmins({
+      from: r.globalAdmins.createdBy,
+      to: r.globalAdmins.id,
+      alias: "createdBy",
+      optional: true,
+    }),
+    deactivatedByAdmin: r.one.globalAdmins({
+      from: r.globalAdmins.deactivatedBy,
+      to: r.globalAdmins.id,
+      alias: "deactivatedBy",
+      optional: true,
     }),
   },
 }));

@@ -18,6 +18,7 @@ export interface CriticalAuditLogInput {
   event: import("@repo/shared/audit").CriticalAuditEvent;
   ipAddress?: string;
   metadata?: import("@repo/shared/audit").AuditLogMetadata;
+  organizationId?: string;
   targetId?: string;
   targetType?: import("@repo/shared/audit").TargetType;
   userAgent?: string;
@@ -29,6 +30,7 @@ export interface BufferableAuditLogInput {
   event: import("@repo/shared/audit").BufferableAuditEvent;
   ipAddress?: string;
   metadata?: import("@repo/shared/audit").AuditLogMetadata;
+  organizationId?: string;
   targetId?: string;
   targetType?: import("@repo/shared/audit").TargetType;
   userAgent?: string;
@@ -40,6 +42,7 @@ export interface AuditLogQueueMessage {
   event: import("@repo/shared/audit").BufferableAuditEvent;
   ipAddress?: string;
   metadata?: import("@repo/shared/audit").AuditLogMetadata;
+  organizationId?: string;
   targetId?: string;
   targetType?: import("@repo/shared/audit").TargetType;
   timestamp: string;

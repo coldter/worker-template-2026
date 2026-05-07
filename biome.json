@@ -101,6 +101,16 @@
           }
         }
       }
+    },
+    {
+      "includes": ["apps/*/src/routes/**/*.tsx"],
+      "linter": {
+        "rules": {
+          "style": {
+            "useFilenamingConvention": "off"
+          }
+        }
+      }
     }
   ]
 }

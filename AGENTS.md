@@ -1,6 +1,6 @@
 # Project Guidelines
 
-Monorepo with a Cloudflare Worker API (`apps/server`), a dedicated auth worker (`apps/auth`), React web app (`apps/web`), and shared packages (`packages/*`). The database schema, Drizzle client, and migrations live in `packages/db` and are shared by both workers.
+Multi-tenant Cloudflare Workers monorepo. Four workers: a tenant SPA shell (`apps/app`), a private API worker reached through service bindings (`apps/server`), a private auth worker (`apps/auth`), and an operator console (`apps/admin`) that serves `apps/admin-ui`. Shared packages (`packages/*`) carry the Drizzle schema, tenancy resolver, JWT verifier, authorization engine, and runtime helpers.
 
 ## Critical Rules
 - Do not run `wrangler dev` or `bun dev` or start/stop servers (environment managed externally).
@@ -13,26 +13,34 @@ Monorepo with a Cloudflare Worker API (`apps/server`), a dedicated auth worker (
 ## Quick Reference
 - Package manager: Bun
 - Commands: see [.agent-docs/commands.md](.agent-docs/commands.md)
-- Shared database package: `packages/db` (`@repo/db`) - schema, Drizzle client, migrations
-- Authorization package: `packages/authorization` (`@repo/authorization`) - schema, resources, evaluator, Hono and Drizzle adapters
+- Shared database package: `packages/db` (`@repo/db`) — schema, Drizzle client, migrations, `liveOrganizations` read seam.
+- Tenancy package: `packages/tenancy` (`@repo/tenancy`) — host parsing, tenant resolution, cache invalidation.
+- Auth-tokens package: `packages/auth-tokens` (`@repo/auth-tokens`) — verifier-side JWT helpers.
+- Authorization package: `packages/authorization` (`@repo/authorization`) — schema, resources, evaluator, Hono and Drizzle adapters.
+- Generated host config — never hand-edit. Re-run `bun run setup:env`. CI fails on drift via `bun run check:hosts` (chained from `bun run check`).
+- Host-accurate local mode: `bun run setup:env && local-harness/bootstrap.sh && caddy run --config local-harness/Caddyfile`.
 
 ## Scoped Guides
-- [Server](apps/server/AGENTS.md)
-- [Auth](apps/auth/AGENTS.md)
-- [Web](apps/web/AGENTS.md)
+- [Admin worker](apps/admin/AGENTS.md)
+- [Admin UI](apps/admin-ui/AGENTS.md)
+- [App worker (tenant SPA shell)](apps/app/AGENTS.md)
+- [Auth worker](apps/auth/AGENTS.md)
+- [Server worker](apps/server/AGENTS.md)
+- [Auth-tokens package](packages/auth-tokens/AGENTS.md)
 - [Authorization package](packages/authorization/AGENTS.md)
+- [DB package](packages/db/AGENTS.md)
 - [Email package](packages/email/AGENTS.md)
 - [Shared package](packages/shared/AGENTS.md)
-
-
+- [Tenancy package](packages/tenancy/AGENTS.md)
 
 ## Detailed Instructions
-- [Monorepo architecture](.agent-docs/architecture.md)
-- [Auth architecture](.agent-docs/auth-architecture.md)
+- [Monorepo architecture (deployment topology)](.agent-docs/architecture.md)
+- [Auth architecture (multi-tenant, RPC-only auth worker)](.agent-docs/auth-architecture.md)
 - [TypeScript standards](.agent-docs/typescript.md)
 - [Error handling](.agent-docs/error-handling.md)
 - [Shared package usage](.agent-docs/shared-package.md)
 - [Response shapes](.agent-docs/response-shapes.md)
 - [Database transactions](.agent-docs/db-transactions.md)
 - [Audit logging](.agent-docs/audit-logging.md)
-- [Environment variables](.agent-docs/env-vars.md)
+- [Environment variables and host-config fragments](.agent-docs/env-vars.md)
+- [Commands](.agent-docs/commands.md)

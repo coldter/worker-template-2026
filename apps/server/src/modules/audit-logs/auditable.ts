@@ -14,6 +14,7 @@ export type AuditLogEntry = {
   event: CriticalAuditEvent;
   actorId: string;
   actorType?: ActorType;
+  organizationId?: string;
   targetId: string;
   targetType?: TargetType;
   metadata?: AuditLogMetadata;
@@ -53,6 +54,7 @@ export async function auditTransaction<T>(
           event: entry.event,
           actorId: entry.actorId,
           actorType: entry.actorType ?? "user",
+          organizationId: entry.organizationId,
           targetId: entry.targetId,
           targetType: entry.targetType,
           ipAddress: auditContext.ipAddress,

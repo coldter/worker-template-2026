@@ -1,0 +1,35 @@
+{
+  "success": true,
+  "errors": [],
+  "messages": [],
+  "result": {
+    "id": "0000000000000000000000000000000a",
+    "hostname": "app.acme.test",
+    "created_at": "2026-05-06T12:00:00Z",
+    "ssl": {
+      "id": "0000000000000000000000000000000b",
+      "type": "dv",
+      "method": "http",
+      "status": "pending_validation",
+      "settings": { "min_tls_version": "1.2" },
+      "validation_records": [
+        {
+          "status": "pending",
+          "http_url": "http://app.acme.test/.well-known/pki-validation/CFTOKEN.txt",
+          "http_body": "CFTOKEN-PHASE0"
+        }
+      ]
+    },
+    "ownership_verification": {
+      "type": "txt",
+      "name": "_cf-custom-hostname.app.acme.test",
+      "value": "OWNERSHIP-PHASE0"
+    },
+    "ownership_verification_http": {
+      "http_url": "http://app.acme.test/.well-known/cf-custom-hostname-challenge/CFTOKEN",
+      "http_body": "CFTOKEN-PHASE0"
+    },
+    "verification_errors": [],
+    "status": "pending"
+  }
+}

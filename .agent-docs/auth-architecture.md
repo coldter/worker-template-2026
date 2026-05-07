@@ -2,149 +2,143 @@
 
 ## System Overview
 
-The authentication system is split into a dedicated Cloudflare Worker (`apps/auth`) that runs separately from the main API server (`apps/server`). The two workers communicate via Cloudflare Service Bindings - direct in-process calls with no network hop.
+Authentication runs in a dedicated Cloudflare Worker (`apps/auth`) that is **never publicly addressable**. The worker has `workers_dev: false` and no public route. The default Hono fallback returns **421 Misdirected Request** on every direct fetch (`AuthEntrypoint.fetch`). All real tenant auth traffic arrives through the typed RPC surface on `AuthEntrypoint`, which is reached from `apps/server` after tenancy resolution.
 
 ```
 Browser / Mobile Client
-        |
-        | HTTP
-        v
-  apps/server (Hono)
-        |
-        |-- /api/auth/* --> AUTH Service Binding (fetch proxy) --> apps/auth (Better Auth)
-        |
-        |-- /api/*      --> AUTH Service Binding (RPC: getSession) --> apps/auth
-        |                     |
-        |                     v
-        |               PostgreSQL (via Hyperdrive)
-        |
-        v
-  PostgreSQL (via Hyperdrive)
+          |
+          | HTTP — tenant host, e.g. acme.app.example.com
+          v
+   apps/app (SPA worker)
+          |
+          |-- /api/*      --> env.API.fetch(...)          │  service binding,
+          \-- everything  --> env.ASSETS.fetch(...)       │  no public network hop
+                                                          v
+                              ┌──────────────┐    ┌──────────────┐
+                              │ apps/server  │    │  apps/auth   │
+                              │ (HTTP API +  │<──>│ (Better Auth │
+                              │ tenancy MW)  │    │  + plugins)  │
+                              └──────┬───────┘    └──────┬───────┘
+                                     │                    │
+                                     v                    v
+                            PostgreSQL via Hyperdrive (single DB, two bindings)
 ```
 
-Both workers connect to the same PostgreSQL database through separate Hyperdrive bindings, using the shared `@repo/db` package for schema, relations, and the Drizzle client factory.
+`apps/server` resolves the tenant from the request host via the `tenancyMiddleware` (`@repo/tenancy`), then forwards `/api/auth/*` to the auth worker through `AuthEntrypoint.handleAuthRequest(request, tenant)`. `handleAuthRequest` sanitises the request and pins the host so Better Auth only sees the tenant's canonical host — that is what makes per-tenant `allowedHosts` and `trustedOrigins` enforce correctly.
+
+`apps/admin` does not use Better Auth sessions at all: it relies on Cloudflare Access. The `AUTH` binding is wired so any operator-impersonation BA flow that may land later still has the same RPC surface available.
 
 ## Communication Patterns
 
-### HTTP Proxy for /api/auth/*
+### Service-binding RPC for `/api/auth/*`
 
-The server worker acts as a transparent HTTP proxy for all authentication routes. In `apps/server/src/server.ts`:
+`apps/server/src/server.ts` mounts `authProxyMiddleware` after `tenancyMiddleware` so every auth request has a resolved `Tenant`:
 
-- A Hono sub-app is mounted at `/api/auth`
-- Every request to `/api/auth/*` is forwarded verbatim via `c.env.AUTH.fetch(c.req.raw)`
-- This runs before the database middleware, so no server-side DB connection is opened for auth requests
-- The auth worker handles the request entirely: session creation, cookie setting, token issuance
+```ts
+// apps/server (sketch)
+app.all("/api/auth/*", async (c) => {
+  return c.env.AUTH.handleAuthRequest(c.req.raw, c.var.tenant);
+});
+```
 
-This means the client always talks to a single origin (the server worker). The auth worker is never exposed directly.
+`handleAuthRequest` lives on `AuthEntrypoint` (`apps/auth/src/index.ts`):
 
-### RPC for Session Validation
+- If `tenant === null` and the path is **not** `/api/auth/jwks`, returns 400 (`tenant required`).
+- If `tenant === null` and the path **is** `/api/auth/jwks`, serves the keys directly via `auth.api.getJwks` scoped to a sentinel "apex" tenant — JWKS is intrinsically tenant-independent (it is the verifier-side public key set used by `packages/auth-tokens/src/jwks.ts`), so this is the single allowed exception.
+- Otherwise `sanitizedAuthRequest(request, tenant)` rewrites the request so BA sees the tenant's canonical host, and the request is dispatched into the Hono app.
 
-The server worker calls the auth worker via RPC on every authenticated API request. In `apps/server/src/middlewares/auth-context.ts`:
+The legacy `c.env.AUTH.fetch(c.req.raw)` proxy pattern is **gone**: the auth worker's default fetch returns 421 by design so a `tenant: null` BA instance can never mint apex JWTs (Wave-1 audit finding).
 
-- `c.env.AUTH.getSession(c.req.raw.headers)` is called as an RPC method
-- The auth worker's `AuthEntrypoint` class (extends `WorkerEntrypoint`) exposes `getSession` and `getToken` as typed methods
-- Each RPC call opens its own `pg.Client` connection to the database (via Hyperdrive), calls `auth.api.getSession`, then closes the connection in `waitUntil`
-- The returned session object (user + session data) is stored in Hono context variables for downstream route handlers
+### RPC for session validation
 
-### Event Hooks for User Lifecycle
+`apps/server/src/middlewares/auth-context.ts` resolves the session via `c.env.AUTH.getSession(c.req.raw.headers, tenant)` on every authenticated `/api/*` request. The auth worker opens a per-call `pg.Client` through Hyperdrive, builds a request-scoped Better Auth instance (with the resolved tenant's `allowedHostsSnapshot`), calls `auth.api.getSession({ headers })`, and closes the client via `ctx.waitUntil(client.end())`.
 
-The auth worker calls back into the server worker using the `API` Service Binding when lifecycle events occur. The server's `ApiEntrypoint` class exposes three RPC methods:
+`getToken(headers, tenant)` mirrors the same pattern for callers that need a signed JWT for downstream service-to-service work.
 
-- `onUserCreated(user)` - triggered after a new user record is created in the `databaseHooks.user.create.after` hook; starts the onboarding workflow
-- `onNewDeviceLogin(params)` - triggered in the session create hook when sign-in is detected from a different device or IP; sends a security notification
-- `onUserStatusChange(params)` - triggered by the admin plugin when an admin changes a user's status; runs status-change business logic in the server
+### Forwarding from `apps/app`
 
-Most auth lifecycle hooks are wrapped in `ctx.waitUntil(...)` so they do not block auth responses.  
-`onUserStatusChange` (admin-triggered status transitions) is invoked synchronously so failures are surfaced to the caller.
+`apps/app/src/index.ts` is intentionally minimal:
+
+```ts
+if (url.pathname.startsWith("/api/"))      return env.API.fetch(req);
+return env.ASSETS.fetch(req);
+```
+
+`/api/auth/*` is part of the `/api/*` branch. It must go through `apps/server`, where tenancy middleware resolves a `Tenant` before `authProxyMiddleware` calls `AUTH.handleAuthRequest`. Direct `apps/app -> apps/auth` fetch traffic is not used because `AuthEntrypoint.fetch` is deliberately 421-only.
+
+### Event hooks for user lifecycle
+
+The auth worker calls back into the server worker through the `API` Service Binding. The server's `ApiEntrypoint` exposes:
+
+- `onUserCreated(user)` — `databaseHooks.user.create.after`. Starts the onboarding workflow (wrapped in `ctx.waitUntil`).
+- `onNewDeviceLogin(params)` — `databaseHooks.session.create.before` when sign-in comes from a new UA/IP. Sends a security notification (wrapped in `ctx.waitUntil`).
+- `onUserStatusChange(params)` — invoked synchronously from the `adminPlugin` (deactivate/activate) so failures surface to the operator.
 
 ## Session Model
 
 ### Web Sessions (Cookie-based)
 
-- Better Auth issues an `HttpOnly`, `SameSite=lax` cookie named `session_token_v1`
-- Web sessions expire after 1 hour (3600 seconds); the rolling window is 30 minutes
-- The session record in the database carries a `platform` field set to `"web"`
-- Cookie secure flag is auto-detected from `APP_URL` (https = secure)
+- `HttpOnly`, `SameSite=lax` cookie named `session_token_v1`.
+- Web sessions expire after 1 hour; rolling window is 30 minutes.
+- The session record carries `platform: "web"`.
+- Cookies are **host-only** (no `Domain` attribute). The auth worker's `sanitizedAuthRequest` pins the host to the tenant's canonical host, so each tenant gets isolated cookies — there is no cross-subdomain cookie scope by design (D15 / D65). Apex sign-in is not supported.
 
 ### Native / Mobile Sessions (Bearer Token)
 
-- Mobile clients authenticate using the `bearer` Better Auth plugin (`requireSignature: true`)
-- Mobile sessions expire after 7 days (604800 seconds); rolling window is 1 day
-- Platform detection uses the request `User-Agent` header (see Platform Detection below)
-- The `bearer` plugin validates the token signature on each request
-- The `getToken` RPC method on `AuthEntrypoint` is available for the server to retrieve a signed token for a session
+- Mobile clients use the `bearer` BA plugin (`requireSignature: true`).
+- Mobile sessions expire after 7 days; rolling window 1 day.
+- Platform detection from `User-Agent`; see `apps/auth/src/instance.ts#SESSION_CONFIG`.
 
 ### Organization Context (Multi-Tenancy)
 
-The auth worker includes Better Auth's `organization` plugin. It is opt-in and lazy:
+`apps/auth/src/plugins/organization-setup.ts` is opt-in and lazy:
 
-- On login, the `session.create.before` hook queries the user's latest org membership. If found, `activeOrganizationId` and `activeOrgRole` are set on the session. If the user has no orgs, these stay `null`.
-- When a user switches orgs via `POST /api/auth/organization/set-active`, Better Auth updates `activeOrganizationId`. Our hook updates `activeOrgRole` to match the membership role.
-- The server's `buildPrincipal` reads `activeOrganizationId` and `activeOrgRole` from the session and includes them in the `Principal.organization` field.
-- Resources with `resolveOrganization` get automatic tenant isolation. Resources without it work as single-tenant.
-- DB tables: `organization`, `member`, `invitation` (created by BA migration). Read-only Drizzle schemas in `packages/db/src/schema/organizations.ts`.
+- On login, `session.create.before` queries the user's latest org membership; `activeOrganizationId` and `activeOrgRole` end up on the session (or `null`).
+- `POST /api/auth/organization/set-active` updates `activeOrganizationId`; the hook updates `activeOrgRole` to match.
+- The server's `buildPrincipal` reads these fields and includes them in `Principal.organization`.
+- Resources with `resolveOrganization` get automatic tenant isolation via `@repo/authorization`.
+- DB tables: `organization`, `member`, `invitation`. Read-only Drizzle schemas in `packages/db/src/schema/organizations.ts`. Live reads must go through `liveOrganizations` (`@repo/db`).
 
 ### JWT for Downstream Services
 
-- The `jwt` Better Auth plugin issues short-lived JWTs (15-minute expiry)
-- JWT payload includes: `sub` (user id), `email`, `roleSlugs`, `platform`
-- JWKS rotation interval is 30 days
-- JWTs are intended for downstream service-to-service calls where a full session lookup is too expensive
+- The `jwt` BA plugin issues short-lived JWTs (15 minutes).
+- `aud` and `iss` are URL-form, scoped per-tenant (`https://${tenant.host}`). `org` claim carries `{ id, host, sessionVersion }` (D12).
+- Verifier helpers live in `@repo/auth-tokens` — `verifyTenantJwt` (DB-backed) and `verifyTenantJwtStateless` (caller-supplied).
+- JWKS rotation cadence: 30 days. `/api/auth/jwks` is the single tenant-independent path.
 
-## Provider Sign-in
+## Provider Sign-in / SSO
 
-The current auth worker configuration does not register OAuth/social providers in `apps/auth/src/instance.ts`.
-
-If provider sign-in is added later, it should still follow the same `/api/auth/*` proxy path through `apps/server`, so auth stays behind service bindings and clients keep a single public origin.
+`@better-auth/sso` plus `apps/auth/src/plugins/provision-user.ts` and `sso-callback-guard.ts` handle per-tenant SSO. SSO providers and domains are managed via `apps/server/src/modules/org-admin/sso/`. Callback path is `/api/auth/sso/callback/{providerId}` on the tenant host (see `scripts/lib/host-config.ts#oidcCallbackTemplate`). `/sso/callback` is **not** an `apps/app` route — it lives on the auth worker (D64).
 
 ## Service Binding Security Model
 
-Service Bindings in Cloudflare Workers provide a zero-network-hop RPC mechanism:
+- All RPC calls between workers ride the internal Cloudflare service-binding path. No TLS, no public network exposure.
+- `apps/auth` has no public route. `AuthEntrypoint.fetch` returns 421. There is no `app.all("/*")` fallback that would hand a request to a `tenant: null` BA instance — the structural fail-safe is enforced in `apps/auth/src/server.ts`.
+- `apps/server`'s `AUTH` binding targets `AuthEntrypoint`. `apps/auth`'s `API` binding targets `ApiEntrypoint`. `apps/admin`'s `API` binding targets `AdminApiEntrypoint`.
 
-- Calls between `apps/server` and `apps/auth` avoid public network exposure and use Cloudflare's internal service-binding path
-- There is no HTTP round-trip, no TLS, and no public network exposure
-- The auth worker (`apps/auth`) does not need a public route; it is only reachable via the server's binding
-- The server's `AUTH` binding targets the `AuthEntrypoint` class exported from `apps/auth/src/index.ts`
-- The auth worker's `API` binding targets the `ApiEntrypoint` class exported from `apps/server/src/index.ts`
-- This bidirectional binding means each worker can call typed RPC methods on the other
-
-Wrangler configuration in `apps/server/wrangler.jsonc`:
+`apps/server/wrangler.jsonc`:
 ```jsonc
-"services": [{ "binding": "AUTH", "service": "auth", "entrypoint": "AuthEntrypoint" }]
+"services": [
+  { "binding": "AUTH", "service": "auth", "entrypoint": "AuthEntrypoint" },
+  { "binding": "STATIC_ASSETS", "service": "app" }
+]
 ```
 
-Wrangler configuration in `apps/auth/wrangler.jsonc`:
+`apps/auth/wrangler.jsonc`:
 ```jsonc
-"services": [{ "binding": "API", "service": "server", "entrypoint": "ApiEntrypoint" }]
+"services": [
+  { "binding": "API", "service": "server", "entrypoint": "ApiEntrypoint" }
+]
 ```
 
-## Database Sharing Strategy
+## Database Sharing
 
-Both workers use the `@repo/db` package, which provides:
+Both workers consume `@repo/db`: `createDrizzleClient(pgClient)`, the `Executor` type, the schema (`@repo/db/schema`), and the prefixed CUID generator. Each worker has its own Hyperdrive binding pointing at the same Postgres. Per-request clients (never global) are closed via `ctx.waitUntil(client.end())`.
 
-- `createDrizzleClient(pgClient)` - creates a Drizzle ORM instance with the shared schema and relations
-- `@repo/db/schema` - all table definitions (auth tables, notifications, audit logs, etc.)
-- `@repo/db/client` - the client factory and type exports
-- `@repo/db/ids` - prefixed CUID generators per model
+## Rate-limit storage
 
-Each worker has its own Hyperdrive binding pointing to the same PostgreSQL database. Connections are created per request (not pooled at the worker level) and closed asynchronously via `ctx.waitUntil(client.end())`. This is the standard Cloudflare Workers pattern since isolates do not maintain long-lived connections across requests.
+Better Auth's rate-limit counters use `storage: "database"` (Postgres via Hyperdrive). The KV-backed alternative was ruled out: KV is eventually consistent and write-coalesced, which let attackers bypass the window by spreading requests across colos. Hyperdrive linearises counter writes. The same Drizzle adapter is wired below, so no extra plumbing is needed. (See the comment in `apps/auth/src/instance.ts` near the `rateLimit:` block.)
 
-The `@repo/db` package is a pure TypeScript library (no runtime worker code). It is consumed by both `apps/server` and `apps/auth` as a workspace dependency (`@repo/db: workspace:*`). Schema migrations are managed exclusively through `packages/db` using Drizzle Kit.
+## Platform Detection
 
-## Platform Detection Logic
-
-Platform is detected from the `User-Agent` header in the session create and session update database hooks within `apps/auth/src/instance.ts`.
-
-Detection matches against these patterns (case-insensitive):
-- `android`, `iphone`, `ipad`, `mobile` - standard mobile browser/OS strings
-- `okhttp`, `dart`, `flutter`, `react-native`, `expo` - common mobile SDK user agents
-
-If the user agent is absent or does not match any pattern, platform defaults to `"web"`.
-
-Platform affects:
-- Session expiry: web = 1 hour, mobile = 7 days
-- New-device detection: the `platform` value is included in the `onNewDeviceLogin` event payload
-- JWT payload: `platform` field is included so downstream services can distinguish session types
-- Session cookie handling: mobile clients typically ignore cookies and use the bearer token instead
-
-The `SESSION_CONFIG` object in `apps/auth/src/instance.ts` maps each platform to `expiresIn` and `updateAge` values. Session expiry is recalculated on every session update (rolling refresh) using the same detection logic.
+Platform is detected from `User-Agent` in the session create/update database hooks (`apps/auth/src/instance.ts`). Patterns: `android`, `iphone`, `ipad`, `mobile`, `okhttp`, `dart`, `flutter`, `react-native`, `expo`. Default is `"web"`. Platform affects session expiry, new-device detection, and the JWT `platform` claim.

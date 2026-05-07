@@ -25,6 +25,24 @@ function denyResponse(
   decisionOrReason: PolicyDecision | DenyReason
 ): HTTPException {
   const reason = denyReasonOf(decisionOrReason);
+  // RESOURCE_REQUIRED indicates a route-wiring bug: a resource declared
+  // `resolveOrganization` (so it is tenant-scoped) but the route did not
+  // pass `loadResource` to authorize(). Surfaces as a 500 so it is loud in
+  // logs/metrics and not silently masked behind a 403. The body code is
+  // kept generic to avoid leaking authorization internals.
+  if (reason === "RESOURCE_REQUIRED") {
+    const status = 500;
+    const code = "INTERNAL_ERROR";
+    const message = "Internal Server Error";
+    return new HTTPException(status, {
+      message:
+        "authorize() called for a tenant-scoped resource without `loadResource`",
+      res: new Response(JSON.stringify({ error: { code, message } }), {
+        status,
+        headers: { "Content-Type": "application/json" },
+      }),
+    });
+  }
   const status = reason === "UNAUTHENTICATED" ? 401 : 403;
   const message = status === 401 ? "Unauthorized" : "Forbidden";
   const code = status === 401 ? "UNAUTHORIZED" : "FORBIDDEN";

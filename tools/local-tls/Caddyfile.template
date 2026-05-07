@@ -1,0 +1,31 @@
+# Phase 0 / Phase A local TLS proxy. Generated from the root .env via
+# `bun scripts/setup-local-tls.ts` in Phase A. Spike ships the template
+# only; the generator lands in Phase A.
+#
+# Caddy listens on LOCAL_TLS_PORT and terminates TLS using the mkcert
+# wildcard certificate, then proxies to the wrangler dev ports.
+
+{
+  auto_https off
+  admin off
+}
+
+*.{$LOCAL_APP_WILDCARD_HOST}:{$LOCAL_TLS_PORT}, {$LOCAL_APP_WILDCARD_HOST}:{$LOCAL_TLS_PORT} {
+  tls ./certs/wildcard.pem ./certs/wildcard-key.pem
+  reverse_proxy http://127.0.0.1:8787
+}
+
+{$LOCAL_ADMIN_HOST}:{$LOCAL_TLS_PORT} {
+  tls ./certs/wildcard.pem ./certs/wildcard-key.pem
+  reverse_proxy http://127.0.0.1:8789
+}
+
+{$LOCAL_FALLBACK_HOST}:{$LOCAL_TLS_PORT} {
+  tls ./certs/wildcard.pem ./certs/wildcard-key.pem
+  reverse_proxy http://127.0.0.1:8787
+}
+
+{$DEFAULT_DEV_CUSTOM_HOST}:{$LOCAL_TLS_PORT} {
+  tls ./certs/wildcard.pem ./certs/wildcard-key.pem
+  reverse_proxy http://127.0.0.1:8787
+}

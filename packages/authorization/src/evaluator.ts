@@ -73,12 +73,34 @@ export async function evaluate(input: EvaluateInput): Promise<PolicyDecision> {
       }
     }
 
+    // Step 2.5 (fail-closed): if the resource declares `resolveOrganization`
+    // but no resource was loaded, refuse to evaluate. This prevents a route
+    // that forgets `loadResource` from bypassing tenant scoping when paired
+    // with broad org-role policies (e.g. `withOrgRole("admin")`). Capability
+    // evaluation deliberately ignores this requirement -- nav/UI gating runs
+    // without a concrete resource by design.
+    if (
+      resolveOrganization &&
+      resource === undefined &&
+      !ignoreResourceConditions
+    ) {
+      return { allowed: false, reason: "RESOURCE_REQUIRED" };
+    }
+
     // Track the best org-specific deny reason across policy evaluation.
     // If all policies are skipped due to org failures, return this instead
     // of a generic NO_MATCHING_POLICY.
     let orgDenyReason: DenyReason | undefined;
 
     // Step 3: Check resource deny policies (deny rules first)
+    //
+    // Cross-tenant deny semantics: when a deny policy WOULD match the
+    // request (role + action + conditions all align) but the resource lives
+    // in a different tenant than the principal, we still treat it as a
+    // DENY. The previous behaviour skipped the policy on TENANT_MISMATCH,
+    // letting deny rules silently miss across tenants. The deny is now
+    // short-circuited to a TENANT_MISMATCH outcome so cross-tenant reads
+    // are denied by tenant scoping itself.
     for (const policy of resourcePolicies) {
       if (policy.effect !== "deny") {
         continue;
@@ -93,6 +115,14 @@ export async function evaluate(input: EvaluateInput): Promise<PolicyDecision> {
         continue;
       }
 
+      const match = await matchPolicy(
+        policy,
+        principal,
+        action,
+        resource,
+        resolveRelation
+      );
+
       // Org scoping check (per-policy, not top-level)
       if (resolveOrganization && resource !== undefined) {
         const orgResult = checkOrgScoping(
@@ -102,20 +132,17 @@ export async function evaluate(input: EvaluateInput): Promise<PolicyDecision> {
           policy,
           systemAdminRoles
         );
-        // For deny policies, if org check fails the policy does not apply
         if (orgResult !== "pass") {
+          if (orgResult.skip === "TENANT_MISMATCH" && match) {
+            // Cross-tenant access on a policy that would have matched ->
+            // tenant scoping wins as a fail-closed outcome.
+            return { allowed: false, reason: "TENANT_MISMATCH" };
+          }
           orgDenyReason ??= orgResult.skip;
           continue;
         }
       }
 
-      const match = await matchPolicy(
-        policy,
-        principal,
-        action,
-        resource,
-        resolveRelation
-      );
       if (match) {
         return {
           allowed: false,
