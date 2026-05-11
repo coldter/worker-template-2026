@@ -14,24 +14,24 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@hono/zod-openapi": "^1.3.0",
+    "@hono/zod-openapi": "^1.4.0",
     "@repo/authorization": "workspace:*",
     "@repo/db": "workspace:*",
     "@repo/shared": "workspace:*",
     "@repo/tenancy": "workspace:*",
-    "drizzle-orm": "^1.0.0-rc.2-33e80cd",
-    "hono": "^4.12.16",
-    "jose": "^6.2.0",
+    "drizzle-orm": "^1.0.0-rc.2-e38a2ba",
+    "hono": "^4.12.18",
+    "jose": "^6.2.3",
     "pg": "^8.20.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20260101.0",
+    "@cloudflare/workers-types": "^4.20260511.1",
     "@types/pg": "^8.20.0",
     "@typescript/native-preview": "beta",
     "tsx": "^4.21.0",
     "typescript": "^6.0.3",
     "vitest": "^4.1.5",
-    "wrangler": "^4.87.0"
+    "wrangler": "^4.90.0"
   }
 }

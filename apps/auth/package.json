@@ -11,15 +11,15 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
-    "@better-auth/sso": "^1.6.9",
+    "@better-auth/sso": "^1.6.10",
     "@repo/authorization": "workspace:*",
     "@repo/db": "workspace:*",
     "@repo/email": "workspace:*",
     "@repo/shared": "workspace:*",
     "@repo/tenancy": "workspace:*",
-    "better-auth": "^1.6.9",
-    "drizzle-orm": "^1.0.0-rc.2-33e80cd",
-    "hono": "^4.12.16",
+    "better-auth": "^1.6.10",
+    "drizzle-orm": "^1.0.0-rc.2-e38a2ba",
+    "hono": "^4.12.18",
     "pg": "^8.20.0",
     "zod": "^4.4.3"
   },
@@ -28,6 +28,6 @@
     "@typescript/native-preview": "beta",
     "typescript": "^6.0.3",
     "vitest": "^4.1.5",
-    "wrangler": "^4.87.0"
+    "wrangler": "^4.90.0"
   }
 }

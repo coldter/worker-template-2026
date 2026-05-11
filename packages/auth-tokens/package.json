@@ -13,7 +13,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "jose": "^6.2.0"
+    "jose": "^6.2.3"
   },
   "devDependencies": {
     "@typescript/native-preview": "beta",

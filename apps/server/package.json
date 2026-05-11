@@ -24,35 +24,35 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
-    "@hono/zod-openapi": "^1.3.0",
+    "@hono/zod-openapi": "^1.4.0",
     "@repo/auth-tokens": "workspace:*",
     "@repo/authorization": "workspace:*",
     "@repo/db": "workspace:*",
-    "@repo/tenancy": "workspace:*",
     "@repo/email": "workspace:*",
     "@repo/shared": "workspace:*",
-    "@scalar/hono-api-reference": "^0.10.13",
-    "better-auth": "^1.6.9",
-    "drizzle-orm": "^1.0.0-rc.2-33e80cd",
-    "hono": "^4.12.16",
+    "@repo/tenancy": "workspace:*",
+    "@scalar/hono-api-reference": "^0.10.14",
+    "better-auth": "^1.6.10",
+    "drizzle-orm": "^1.0.0-rc.2-e38a2ba",
+    "hono": "^4.12.18",
     "pg": "^8.20.0",
     "pg-error-enum": "^2.0.1",
-    "react": "^19.2.5",
-    "react-dom": "^19.2.5",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6",
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@cloudflare/vitest-pool-workers": "^0.15.2",
+    "@cloudflare/vitest-pool-workers": "^0.16.3",
     "@faker-js/faker": "^10.4.0",
-    "@inquirer/prompts": "^8.4.2",
+    "@inquirer/prompts": "^8.4.3",
     "@types/pg": "^8.20.0",
     "@typescript/native-preview": "beta",
     "chalk": "^5.6.2",
     "cli-highlight": "^2.1.11",
-    "drizzle-kit": "^1.0.0-rc.2-33e80cd",
+    "drizzle-kit": "^1.0.0-rc.2-e38a2ba",
     "type-fest": "^5.6.0",
     "typescript": "^6.0.3",
     "vitest": "^4.1.5",
-    "wrangler": "^4.87.0"
+    "wrangler": "^4.90.0"
   }
 }
