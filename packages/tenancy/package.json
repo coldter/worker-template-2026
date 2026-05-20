@@ -14,14 +14,14 @@
   },
   "dependencies": {
     "@repo/db": "workspace:*",
-    "drizzle-orm": "^1.0.0-rc.2-e38a2ba",
-    "hono": "^4.12.18"
+    "drizzle-orm": "^1.0.0-rc.4-5d5b77c",
+    "hono": "^4.12.21"
   },
   "devDependencies": {
     "@types/pg": "^8.20.0",
     "@typescript/native-preview": "beta",
-    "pg": "^8.20.0",
+    "pg": "^8.21.0",
     "typescript": "^6.0.3",
-    "vitest": "^4.1.5"
+    "vitest": "^4.1.7"
   }
 }
