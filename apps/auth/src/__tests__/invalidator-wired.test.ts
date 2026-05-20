@@ -44,7 +44,10 @@ vi.mock("cloudflare:workers", () => ({
 }));
 
 describe("A2.6 / A2.9 auth-worker invalidator RPC", () => {
-  it("AuthEntrypoint exposes invalidateTenant + bumpTenantCacheVersion", async () => {
+  // Cold-import of `../index` can exceed the 5s default under parallel load.
+  it("AuthEntrypoint exposes invalidateTenant + bumpTenantCacheVersion", {
+    timeout: 30_000,
+  }, async () => {
     const { AuthEntrypoint } = await import("../index");
     expect(typeof AuthEntrypoint.prototype.invalidateTenant).toBe("function");
     expect(typeof AuthEntrypoint.prototype.bumpTenantCacheVersion).toBe(

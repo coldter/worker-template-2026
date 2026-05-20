@@ -17,7 +17,7 @@ type Signer = {
 let signer: Signer;
 
 async function makeSigner(): Promise<Signer> {
-  const { privateKey, publicKey } = await generateKeyPair("ES256", {
+  const { privateKey, publicKey } = await generateKeyPair("EdDSA", {
     extractable: true,
   });
   const pubJwk = await exportJWK(publicKey);
@@ -27,14 +27,14 @@ async function makeSigner(): Promise<Signer> {
   ) => {
     const exp = Math.floor(Date.now() / 1000) + (opts?.expSecondsFromNow ?? 60);
     return await new SignJWT(claims)
-      .setProtectedHeader({ alg: "ES256", kid: "k1" })
+      .setProtectedHeader({ alg: "EdDSA", kid: "k1" })
       .setExpirationTime(exp)
       .sign(privateKey);
   };
   // boundary: jose's importJWK returns a CryptoKey/KeyObject union that
   // satisfies our JWKSResolver's KeyLike alias structurally.
   const jwks: JWKSResolver = async () =>
-    (await importJWK(pubJwk, "ES256")) as Awaited<ReturnType<JWKSResolver>>;
+    (await importJWK(pubJwk, "EdDSA")) as Awaited<ReturnType<JWKSResolver>>;
   return { sign, jwks };
 }
 
@@ -157,6 +157,23 @@ describe("verifyTenantJwtStateless — 5 invariants", () => {
     const other = await makeSigner();
     const token = await other.sign(validClaims());
     const r = await verifyTenantJwtStateless(token, {
+      expectedHost: HOST,
+      expectedOrgId: ORG,
+      expectedMinSessionVersion: 5,
+      jwks: signer.jwks,
+    });
+    expect("kind" in r && r.kind).toBe("bad_signature");
+  });
+
+  it("rejects HS256-signed tokens even when the HMAC secret would otherwise verify (alg-confusion guard)", async () => {
+    const secret = new TextEncoder().encode(
+      "any-symmetric-secret-attacker-controls"
+    );
+    const hsToken = await new SignJWT(validClaims())
+      .setProtectedHeader({ alg: "HS256", kid: "k1" })
+      .setExpirationTime(Math.floor(Date.now() / 1000) + 60)
+      .sign(secret);
+    const r = await verifyTenantJwtStateless(hsToken, {
       expectedHost: HOST,
       expectedOrgId: ORG,
       expectedMinSessionVersion: 5,

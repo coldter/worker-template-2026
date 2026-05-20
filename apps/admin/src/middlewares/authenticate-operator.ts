@@ -1,5 +1,6 @@
 import type { DrizzleClient } from "@repo/db";
 import { type GlobalAdmin, globalAdmins } from "@repo/db/schema";
+import { safeWaitUntil } from "@repo/shared/safe-wait-until";
 import { and, eq, isNull, sql } from "drizzle-orm";
 import { jwtVerify } from "jose";
 import type { AuthFailure } from "@/lib/auth-failure";
@@ -52,13 +53,14 @@ function finalizeAdmin(
       .set({ lastActiveAt: new Date() })
       .where(eq(globalAdmins.id, admin.id))
   );
+  // Hono's `c.executionCtx` getter throws synchronously in tests with no ctx.
+  let execCtx: AuthenticateOperatorContext["executionCtx"] | undefined;
   try {
-    c.executionCtx.waitUntil(ping);
+    execCtx = c.executionCtx;
   } catch {
-    ping.catch(() => {
-      // Drop ping errors silently; lastActiveAt is best-effort.
-    });
+    execCtx = undefined;
   }
+  safeWaitUntil(execCtx, ping);
 
   return { ok: true, admin };
 }

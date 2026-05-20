@@ -14,15 +14,17 @@ export const LOCKOUT_CONFIG = {
 /**
  * Better-auth rate limiting configuration
  *
- * Set higher than LOCKOUT_CONFIG to ensure our custom lockout kicks in first.
- * Better-auth rate limit: 10/min for sign-in > our 3 attempt lockout
+ * Per-IP cap combined with the per-account lockout above: keep max strictly
+ * greater than LOCKOUT_CONFIG.maxFailedAttempts so the lockout fires before
+ * a 429 on a single mistyped password, while still throttling credential
+ * stuffing that rotates emails behind one IP.
  */
 export const RATE_LIMIT_CONFIG = {
   signIn: {
     /** Time window in seconds */
     window: 60,
-    /** Max requests in window - higher than lockout maxFailedAttempts */
-    max: 100,
+    /** Max requests in window per IP */
+    max: 10,
   },
   global: {
     /** Time window in seconds */

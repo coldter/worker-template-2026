@@ -7,7 +7,7 @@ import {
   timestamp,
   varchar,
 } from "drizzle-orm/pg-core";
-import { generatePrefixedCuid, ID_PREFIXES } from "../ids";
+import { generatePrefixedCuid, ID_PREFIXES, idFor } from "../ids";
 
 export const users = pgTable("users", {
   id: varchar("id", { length: 255 })
@@ -132,7 +132,7 @@ export const verifications = pgTable(
 export const jwkss = pgTable("jwks", {
   id: varchar("id", { length: 255 })
     .primaryKey()
-    .$defaultFn(() => generatePrefixedCuid("jwk")),
+    .$defaultFn(() => idFor("jwk")),
   publicKey: text("public_key").notNull(),
   privateKey: text("private_key").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true })
@@ -150,7 +150,7 @@ export const twoFactors = pgTable(
   {
     id: varchar("id", { length: 255 })
       .primaryKey()
-      .$defaultFn(() => generatePrefixedCuid("2fa")),
+      .$defaultFn(() => idFor("twoFactor")),
     userId: varchar("user_id", { length: 255 })
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),

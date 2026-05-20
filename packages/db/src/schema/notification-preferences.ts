@@ -5,7 +5,7 @@ import {
   uniqueIndex,
   varchar,
 } from "drizzle-orm/pg-core";
-import { generatePrefixedCuid } from "../ids";
+import { idFor } from "../ids";
 import { users } from "./auth";
 import { createdAt, updatedAt } from "./columns";
 
@@ -21,7 +21,7 @@ export const notificationPreferences = pgTable(
   {
     id: varchar("id", { length: 255 })
       .primaryKey()
-      .$defaultFn(() => generatePrefixedCuid("ntfp")),
+      .$defaultFn(() => idFor("notificationPreference")),
 
     userId: varchar("user_id", { length: 255 })
       .notNull()

@@ -34,6 +34,10 @@ export function disableSignUpHook(): DisableSignUpHookResult {
         const session = (
           ctx as { context?: { session?: { user?: unknown } } } | null
         )?.context?.session;
+        // TODO(audit): bypass is "any session.user present" — broader than
+        // ideal. Narrowing (e.g. require admin roleSlug or a body sentinel)
+        // requires confirming what BA attaches to ctx.context.session on the
+        // `auth.api.createUser` RPC path. Do not narrow without verifying.
         const isAdminPath = session?.user != null;
         if (!isAdminPath) {
           throw new APIError("FORBIDDEN", { message: "Sign-up is disabled" });

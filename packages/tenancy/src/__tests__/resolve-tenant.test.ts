@@ -34,7 +34,7 @@ class FakeKV {
 const env = {
   WILDCARD_SUFFIX: ".app.example.com",
   ADMIN_HOST: "admin.example.com",
-  FALLBACK_HOST: "app.example.com",
+  FALLBACK_HOST: "fallback.example.com",
   LOCAL_DEV_HOSTS: "",
   NODE_ENV: "test",
 };
@@ -192,6 +192,70 @@ describe("A2.5 resolveTenant", () => {
       waitUntil: (_p) => {},
     });
     expect(cachedR).toMatchObject({ organizationId: "org_acme" });
+  });
+
+  it("treats malformed cache entries as a miss and evicts them", async () => {
+    const cfg = loadHostConfigOnce(env);
+    const cacheKey = new Request(
+      "https://tenancy/cache:tenant:v0:acme.app.example.com"
+    );
+    await cache.put(
+      cacheKey,
+      new Response(JSON.stringify({ kind: "unexpected_shape", oops: true }), {
+        headers: {
+          "cache-control": "max-age=60",
+          "content-type": "application/json",
+        },
+      })
+    );
+    const evicted: string[] = [];
+    const cacheWithDelete = {
+      match: (req: Request) => cache.match(req),
+      put: (req: Request, res: Response) => cache.put(req, res),
+      delete: async (req: Request) => {
+        evicted.push(req.url);
+        return await cache.delete(req);
+      },
+    };
+    const r = await resolveTenant("acme.app.example.com", {
+      db,
+      cache: cacheWithDelete,
+      kv,
+      config: cfg,
+      waitUntil: (_p) => {},
+    });
+    expect(r).toMatchObject({
+      organizationId: "org_acme",
+      slug: "acme",
+      kind: "subdomain",
+    });
+    expect(evicted).toContain(cacheKey.url);
+    await client.end();
+  });
+
+  it("falls back to DB on unparseable cache text (non-JSON)", async () => {
+    const cfg = loadHostConfigOnce(env);
+    const cacheKey = new Request(
+      "https://tenancy/cache:tenant:v0:acme.app.example.com"
+    );
+    await cache.put(
+      cacheKey,
+      new Response("not-json-at-all", {
+        headers: {
+          "cache-control": "max-age=60",
+          "content-type": "application/json",
+        },
+      })
+    );
+    const r = await resolveTenant("acme.app.example.com", {
+      db,
+      cache,
+      kv,
+      config: cfg,
+      waitUntil: (_p) => {},
+    });
+    expect(r).toMatchObject({ organizationId: "org_acme" });
+    await client.end();
   });
 
   it("version bump invalidates entries under old version", async () => {

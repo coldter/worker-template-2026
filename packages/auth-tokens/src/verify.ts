@@ -30,9 +30,15 @@ async function decodeAndCheckSignature(
   try {
     // boundary: jose's `jwtVerify` second argument has a generic resolver
     // shape; our `JWKSResolver` matches it structurally at runtime.
+    //
+    // Security: pin `algorithms` to EdDSA to block alg-confusion attacks
+    // where an attacker signs HS256 tokens with the JWKS public-key bytes
+    // as the HMAC secret. Must stay in lock-step with the minter alg in
+    // `apps/auth/src/instance.ts`.
     const verified = await jwtVerify(
       token,
-      jwks as unknown as Parameters<typeof jwtVerify>[1]
+      jwks as unknown as Parameters<typeof jwtVerify>[1],
+      { algorithms: ["EdDSA"] }
     );
     const audClaim = verified.payload.aud;
     const aud = Array.isArray(audClaim) ? audClaim[0] : audClaim;

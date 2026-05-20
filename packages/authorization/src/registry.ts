@@ -14,6 +14,21 @@ export interface RegistryOptions {
 }
 
 /**
+ * Shared by `can` and `assertCan` so a new resolver cannot silently drop
+ * on one path. Do not inline this shape on either signature.
+ */
+export interface RegistryEvaluateOpts {
+  resolveRelation?: (
+    subjectType: string,
+    subjectId: string,
+    relation: string,
+    objectType: string,
+    objectId: string
+  ) => Promise<boolean>;
+  resource?: unknown;
+}
+
+/**
  * Typed capability map keyed by `${ResourceName}:${ActionName}`. Powers
  * autocomplete on `caps["user:list"]` while still degrading to `boolean`
  * for keys outside the registry's vocabulary at the value-level shape.
@@ -33,22 +48,13 @@ export interface RegistryInstance<
     principal: Principal | null | undefined,
     resource: K,
     action: ActionsOf<TResources[K]>,
-    opts?: { resource?: unknown }
+    opts?: RegistryEvaluateOpts
   ): Promise<void>;
   can<K extends keyof TResources & string>(
     principal: Principal | null | undefined,
     resource: K,
     action: ActionsOf<TResources[K]>,
-    opts?: {
-      resolveRelation?: (
-        subjectType: string,
-        subjectId: string,
-        relation: string,
-        objectType: string,
-        objectId: string
-      ) => Promise<boolean>;
-      resource?: unknown;
-    }
+    opts?: RegistryEvaluateOpts
   ): Promise<PolicyDecision>;
 
   /**
@@ -110,11 +116,8 @@ export function buildRegistryInstance<
     },
 
     async assertCan(principal, resource, action, opts) {
-      // Evaluate once and reuse the decision -- previously this re-ran
-      // `can(...)` after the boolean check, doubling the policy walk and
-      // doubling any side-effects (resolveRelation calls, etc.). We accept
-      // an `assertCan` that does not need to return the decision; callers
-      // who need it should call `can()` directly.
+      // Inline the evaluation so resolveRelation and other side-effects
+      // run exactly once (delegating to `can()` would double them).
       const resourceDef = resources[resource];
       const decision: PolicyDecision = resourceDef
         ? await evaluate({
@@ -126,6 +129,7 @@ export function buildRegistryInstance<
             resourcePolicies: resourceDef.policies,
             systemAdminRoles: options.systemAdminRoles,
             resolveOrganization: resourceDef.resolveOrganization,
+            resolveRelation: opts?.resolveRelation,
           })
         : { allowed: false, reason: "NO_MATCHING_POLICY" };
       if (!decision.allowed) {

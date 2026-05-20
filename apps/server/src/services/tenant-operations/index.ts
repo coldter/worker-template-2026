@@ -52,6 +52,19 @@ export type {
   TenantOperator,
 } from "./types";
 
+// Own enumerable `code`/`organizationId` so the error survives Workers RPC
+// serialization on the apps/server <-> apps/admin service binding; admin maps
+// `TENANT_NOT_FOUND` to 404 without string-matching the message.
+export class OrganizationNotFoundError extends Error {
+  readonly code = "TENANT_NOT_FOUND" as const;
+  readonly organizationId: string;
+  constructor(organizationId: string) {
+    super(`Organization not found: ${organizationId}`);
+    this.name = "OrganizationNotFoundError";
+    this.organizationId = organizationId;
+  }
+}
+
 type TenantOpsDb = Pick<DrizzleClient, "transaction">;
 
 /**
@@ -172,7 +185,7 @@ export class TenantOperations {
       async (tx) => {
         const row = await lockOrgRow(tx, organizationId);
         if (!row) {
-          throw new Error(`Organization not found: ${organizationId}`);
+          throw new OrganizationNotFoundError(organizationId);
         }
 
         if (row.suspendedAt) {
@@ -251,7 +264,7 @@ export class TenantOperations {
       async (tx) => {
         const row = await lockOrgRow(tx, organizationId);
         if (!row) {
-          throw new Error(`Organization not found: ${organizationId}`);
+          throw new OrganizationNotFoundError(organizationId);
         }
 
         if (!row.suspendedAt) {
@@ -327,7 +340,7 @@ export class TenantOperations {
     await this.deps.db.transaction(async (tx) => {
       const row = await lockOrgRow(tx, organizationId);
       if (!row) {
-        throw new Error(`Organization not found: ${organizationId}`);
+        throw new OrganizationNotFoundError(organizationId);
       }
 
       await tx

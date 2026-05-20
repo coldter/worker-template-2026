@@ -45,8 +45,12 @@ function RootComponent() {
         </OperatorProvider>
         <Toaster richColors />
       </ThemeProvider>
-      <ReactQueryDevtools initialIsOpen={false} />
-      <TanStackRouterDevtools position="bottom-left" />
+      {import.meta.env.DEV ? (
+        <ReactQueryDevtools initialIsOpen={false} />
+      ) : null}
+      {import.meta.env.DEV ? (
+        <TanStackRouterDevtools position="bottom-left" />
+      ) : null}
     </StrictMode>
   );
 }

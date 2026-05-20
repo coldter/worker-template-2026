@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 import { formatDate } from "@/lib/utils";
 import { Pagination } from "@/modules/common/pagination";
 import { useOperator } from "@/modules/operator/provider";
@@ -21,7 +21,6 @@ interface TenantsListPageProps {
 }
 
 export function TenantsListPage({ page, setPage }: TenantsListPageProps) {
-  const navigate = useNavigate();
   const { can } = useOperator();
   const tenants = useQuery(tenantListQueryOptions({ page }));
 
@@ -64,17 +63,16 @@ export function TenantsListPage({ page, setPage }: TenantsListPageProps) {
               </TableRow>
             ) : null}
             {tenants.data?.data.map((tenant) => (
-              <TableRow
-                className="cursor-pointer"
-                key={tenant.id}
-                onClick={() =>
-                  navigate({
-                    to: "/tenants/$slug",
-                    params: { slug: tenant.slug },
-                  })
-                }
-              >
-                <TableCell className="font-medium">{tenant.slug}</TableCell>
+              <TableRow key={tenant.id}>
+                <TableCell className="font-medium">
+                  <Link
+                    className="text-primary underline-offset-4 hover:underline"
+                    params={{ slug: tenant.slug }}
+                    to="/tenants/$slug"
+                  >
+                    {tenant.slug}
+                  </Link>
+                </TableCell>
                 <TableCell>{tenant.name}</TableCell>
                 <TableCell>
                   <Badge

@@ -2,6 +2,7 @@ import type { DrizzleClient } from "@repo/db";
 import { firstOrNull, liveOrganizations } from "@repo/db";
 import { organizations, tenantCustomHostnames } from "@repo/db/schema";
 import { and, eq, isNull } from "drizzle-orm";
+import { z } from "zod";
 import { KV_VERSION_KEY, tenantCacheRequest } from "./cache-key";
 import type { HostConfig } from "./host-config";
 import { parseHostname } from "./parse-hostname";
@@ -17,6 +18,8 @@ export type ResolveDeps = Readonly<{
   cache: {
     match(req: Request): Promise<Response | undefined>;
     put(req: Request, res: Response): Promise<void>;
+    // Optional: when absent, corrupt cache entries remain until TTL expiry.
+    delete?(req: Request): Promise<boolean>;
   };
   kv: { get(key: string): Promise<string | null> };
   config: HostConfig;
@@ -26,10 +29,37 @@ export type ResolveDeps = Readonly<{
 const POSITIVE_TTL = 60;
 const NEGATIVE_TTL = 5;
 
-type CachedShape =
-  | { kind: "found"; tenant: Tenant }
-  | { kind: "not_found"; host: string }
-  | { kind: "suspended"; tenant: Tenant };
+// Dates round-trip through JSON as ISO strings; accept both and normalise.
+const cachedDateSchema = z.union([
+  z.date(),
+  z
+    .string()
+    .refine(
+      (s) => !Number.isNaN(new Date(s).getTime()),
+      "must be a parseable ISO date string"
+    )
+    .transform((s) => new Date(s)),
+]);
+const cachedNullableDateSchema = z.union([cachedDateSchema, z.null()]);
+
+const cachedTenantSchema = z.object({
+  organizationId: z.string(),
+  slug: z.union([z.string(), z.null()]),
+  host: z.string(),
+  kind: z.union([z.literal("subdomain"), z.literal("custom")]),
+  enforceSSO: z.boolean(),
+  sessionVersion: z.number(),
+  suspendedAt: cachedNullableDateSchema,
+  deletedAt: cachedNullableDateSchema,
+});
+
+const cachedShapeSchema = z.discriminatedUnion("kind", [
+  z.object({ kind: z.literal("found"), tenant: cachedTenantSchema }),
+  z.object({ kind: z.literal("not_found"), host: z.string() }),
+  z.object({ kind: z.literal("suspended"), tenant: cachedTenantSchema }),
+]);
+
+type CachedShape = z.infer<typeof cachedShapeSchema>;
 
 export async function resolveTenant(
   rawHost: string,
@@ -52,9 +82,36 @@ export async function resolveTenant(
   const hit = await deps.cache.match(req);
   if (hit) {
     const text = await hit.text();
-    // boundary: Cache API stores opaque text; we parse JSON we wrote ourselves.
-    const cached = JSON.parse(text) as CachedShape;
-    return cached.kind === "found" ? cached.tenant : cached;
+    // boundary: Cache API returns opaque text; validate against the schema
+    // before trusting it (legacy/corrupt rows could otherwise crash callers).
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(text) as unknown;
+    } catch {
+      parsed = undefined;
+    }
+    const result = cachedShapeSchema.safeParse(parsed);
+    if (result.success) {
+      const cached = result.data;
+      return cached.kind === "found" ? cached.tenant : cached;
+    }
+    // Evict invalid entries so the next request skips the parse-and-fail cost.
+    const cacheDelete = deps.cache.delete;
+    if (cacheDelete) {
+      deps.waitUntil(cacheDelete.call(deps.cache, req));
+    }
+    // eslint-disable-next-line no-console
+    console.warn(
+      JSON.stringify({
+        event: "tenancy.cache.invalid_shape",
+        host: canonicalHost,
+        cacheKey: req.url,
+        issues: result.error.issues.map((i) => ({
+          path: i.path.join("."),
+          code: i.code,
+        })),
+      })
+    );
   }
   let found: Awaited<ReturnType<typeof lookupBySlug>>;
   if (parsed.kind === "subdomain") {

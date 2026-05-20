@@ -105,6 +105,13 @@ export class AuthEntrypoint extends WorkerEntrypoint<CloudflareBindings> {
           { status: 400, headers: { "content-type": "application/json" } }
         );
       }
+      // JWKS is read-only; reject non-GET/HEAD with 405 before BA sees it.
+      if (request.method !== "GET" && request.method !== "HEAD") {
+        return new Response(null, {
+          status: 405,
+          headers: { Allow: "GET, HEAD" },
+        });
+      }
       return this.serveJwks();
     }
 

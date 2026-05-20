@@ -1,4 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
+import { useEffect, useRef, useState } from "react";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { formatDate } from "@/lib/utils";
 import { Pagination } from "@/modules/common/pagination";
 import { Input } from "@/modules/ui/input";
@@ -22,6 +24,8 @@ interface AuditLogsPageProps {
   page: number;
 }
 
+const FILTER_DEBOUNCE_MS = 300;
+
 export function AuditLogsPage({
   page,
   event,
@@ -31,6 +35,29 @@ export function AuditLogsPage({
   const logs = useQuery(
     auditLogListQueryOptions({ page, event, organizationId })
   );
+
+  const [eventInput, setEventInput] = useState(event ?? "");
+  const [orgInput, setOrgInput] = useState(organizationId ?? "");
+  const debouncedEvent = useDebouncedValue(eventInput, FILTER_DEBOUNCE_MS);
+  const debouncedOrg = useDebouncedValue(orgInput, FILTER_DEBOUNCE_MS);
+
+  // Avoid navigating on mount or when upstream prop drives local state.
+  const lastSentEvent = useRef(event ?? "");
+  const lastSentOrg = useRef(organizationId ?? "");
+
+  useEffect(() => {
+    if (debouncedEvent !== lastSentEvent.current) {
+      lastSentEvent.current = debouncedEvent;
+      onChange({ event: debouncedEvent, page: 1 });
+    }
+  }, [debouncedEvent, onChange]);
+
+  useEffect(() => {
+    if (debouncedOrg !== lastSentOrg.current) {
+      lastSentOrg.current = debouncedOrg;
+      onChange({ organizationId: debouncedOrg, page: 1 });
+    }
+  }, [debouncedOrg, onChange]);
 
   return (
     <div className="space-y-4">
@@ -45,20 +72,18 @@ export function AuditLogsPage({
           <Label htmlFor="event-filter">Event</Label>
           <Input
             id="event-filter"
-            onChange={(e) => onChange({ event: e.target.value, page: 1 })}
+            onChange={(e) => setEventInput(e.target.value)}
             placeholder="e.g. tenant.suspend"
-            value={event ?? ""}
+            value={eventInput}
           />
         </div>
         <div className="space-y-1">
           <Label htmlFor="org-filter">Tenant</Label>
           <Input
             id="org-filter"
-            onChange={(e) =>
-              onChange({ organizationId: e.target.value, page: 1 })
-            }
+            onChange={(e) => setOrgInput(e.target.value)}
             placeholder="organization id"
-            value={organizationId ?? ""}
+            value={orgInput}
           />
         </div>
       </div>

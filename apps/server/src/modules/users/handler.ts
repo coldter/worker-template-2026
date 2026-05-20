@@ -1,11 +1,11 @@
 import { OpenAPIHono } from "@hono/zod-openapi";
-import type { Context } from "hono";
 import { HTTPException } from "hono/http-exception";
 
 import { isValidRole } from "@/auth/principal";
 import { auth } from "@/auth/schema";
 import type { AppEnv } from "@/lib/context";
 import { triggerWorkflow } from "@/lib/events";
+import { requireCurrentUser, requireTenant } from "@/lib/guards";
 import { notificationService } from "@/modules/notifications";
 import { defaultHook } from "@/utils/default-hook";
 import { UserNotFoundError } from "./errors";
@@ -18,25 +18,6 @@ import usersRoutes from "./routes";
 import { userService } from "./service";
 
 const app = new OpenAPIHono<AppEnv>({ defaultHook });
-function requireCurrentUser(
-  c: Context<AppEnv>
-): NonNullable<AppEnv["Variables"]["user"]> {
-  const currentUser = c.get("user");
-  if (!currentUser) {
-    throw new HTTPException(401, { message: "Unauthorized" });
-  }
-  return currentUser;
-}
-
-function requireTenant(
-  c: Context<AppEnv>
-): NonNullable<AppEnv["Variables"]["tenant"]> {
-  const tenant = c.get("tenant");
-  if (!tenant) {
-    throw new HTTPException(403, { message: "Tenant required" });
-  }
-  return tenant;
-}
 
 function handleUserNotFound(error: unknown): never {
   if (error instanceof UserNotFoundError) {

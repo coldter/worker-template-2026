@@ -1,6 +1,10 @@
-import { queryOptions, useMutation } from "@tanstack/react-query";
+import {
+  queryOptions,
+  useMutation,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api";
-import { queryClient } from "@/query/query-client";
+import { invalidateForTenantAction } from "./invalidations";
 import type {
   AdminTenant,
   AdminTenantListResponse,
@@ -39,6 +43,7 @@ export const tenantDetailQueryOptions = (slug: string) =>
   });
 
 export function useCreateTenant() {
+  const qc = useQueryClient();
   return useMutation({
     mutationFn: (input: CreateTenantInput) =>
       apiFetch<AdminTenant>("/api/admin/tenants", {
@@ -46,12 +51,13 @@ export function useCreateTenant() {
         body: input,
       }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["tenants", "list"] });
+      invalidateForTenantAction(qc, "create", {});
     },
   });
 }
 
 export function useSuspendTenant() {
+  const qc = useQueryClient();
   return useMutation({
     mutationFn: ({
       organizationId,
@@ -65,30 +71,30 @@ export function useSuspendTenant() {
         body: reason ? { reason } : undefined,
       }),
     onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["tenants", "list"] });
-      queryClient.invalidateQueries({
-        queryKey: ["tenants", "detail", variables.organizationId],
+      invalidateForTenantAction(qc, "suspend", {
+        organizationId: variables.organizationId,
       });
     },
   });
 }
 
 export function useRestoreTenant() {
+  const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ organizationId }: { organizationId: string }) =>
       apiFetch<void>(`/api/admin/tenants/${organizationId}/restore`, {
         method: "POST",
       }),
     onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["tenants", "list"] });
-      queryClient.invalidateQueries({
-        queryKey: ["tenants", "detail", variables.organizationId],
+      invalidateForTenantAction(qc, "restore", {
+        organizationId: variables.organizationId,
       });
     },
   });
 }
 
 export function useDeleteTenant() {
+  const qc = useQueryClient();
   return useMutation({
     mutationFn: ({
       organizationId,
@@ -102,7 +108,7 @@ export function useDeleteTenant() {
         body: reason ? { reason } : undefined,
       }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["tenants"] });
+      invalidateForTenantAction(qc, "delete", {});
     },
   });
 }

@@ -4,6 +4,7 @@ import {
   type DrizzleClient,
   deactivateUser,
   deleteUserSessions,
+  type Executor,
   firstOrThrow,
 } from "@repo/db";
 import { accounts, members, users } from "@repo/db/schema";
@@ -40,6 +41,20 @@ import type {
   UserRecord,
 } from "./types";
 import { onUserStatusChange } from "./user-status-hooks";
+
+async function findByIdInTx(
+  tx: Executor,
+  organizationId: string,
+  id: string
+): Promise<UserRecord | null> {
+  const [row] = await tx
+    .select({ user: users })
+    .from(users)
+    .innerJoin(members, eq(members.userId, users.id))
+    .where(and(eq(users.id, id), eq(members.organizationId, organizationId)))
+    .limit(1);
+  return row?.user ?? null;
+}
 
 export const userService = {
   async find(db: DrizzleClient, query: ListUsersQuery, organizationId: string) {
@@ -210,12 +225,12 @@ export const userService = {
     actorId: string,
     auditContext: AuditContext
   ): Promise<UserRecord> {
-    const existingUser = await this.findById(db, id, organizationId);
-    if (!existingUser) {
-      throw new UserNotFoundError(id);
-    }
-
     return auditTransaction(db, auditContext, async (tx, audit) => {
+      const existingUser = await findByIdInTx(tx, organizationId, id);
+      if (!existingUser) {
+        throw new UserNotFoundError(id);
+      }
+
       const updatedUser = await firstOrThrow(
         tx
           .update(users)
@@ -257,12 +272,12 @@ export const userService = {
     actorId: string,
     auditContext: AuditContext
   ): Promise<UserRecord> {
-    const existingUser = await this.findById(db, id, organizationId);
-    if (!existingUser) {
-      throw new UserNotFoundError(id);
-    }
-
     return auditTransaction(db, auditContext, async (tx, audit) => {
+      const existingUser = await findByIdInTx(tx, organizationId, id);
+      if (!existingUser) {
+        throw new UserNotFoundError(id);
+      }
+
       const updatedUser = await firstOrThrow(
         tx
           .update(users)
@@ -303,35 +318,36 @@ export const userService = {
     actorId: string,
     auditContext: AuditContext
   ): Promise<void> {
-    const existingUser = await this.findById(db, id, organizationId);
-    if (!existingUser) {
-      throw new UserNotFoundError(id);
-    }
+    const { previousStatus } = await auditTransaction(
+      db,
+      auditContext,
+      async (tx, audit) => {
+        const existingUser = await findByIdInTx(tx, organizationId, id);
+        if (!existingUser) {
+          throw new UserNotFoundError(id);
+        }
 
-    await auditTransaction(db, auditContext, async (tx, audit) => {
-      const updated = await deactivateUser(tx, id, actorId, reason);
-      if (!updated) {
-        throw new UserNotFoundError(id);
+        const updated = await deactivateUser(tx, id, actorId, reason);
+        if (!updated) {
+          throw new UserNotFoundError(id);
+        }
+
+        await deleteUserSessions(tx, id);
+
+        audit.record({
+          event: AUDIT_EVENTS.USER.DEACTIVATED.event,
+          actorId,
+          organizationId,
+          targetId: id,
+          targetType: TARGET_TYPES.USER,
+          metadata: { reason },
+        });
+
+        return { previousStatus: existingUser.status };
       }
-
-      await deleteUserSessions(tx, id);
-
-      audit.record({
-        event: AUDIT_EVENTS.USER.DEACTIVATED.event,
-        actorId,
-        organizationId,
-        targetId: id,
-        targetType: TARGET_TYPES.USER,
-        metadata: { reason },
-      });
-    });
-
-    await onUserStatusChange(
-      id,
-      USER_STATUS.INACTIVE,
-      existingUser.status,
-      reason
     );
+
+    await onUserStatusChange(id, USER_STATUS.INACTIVE, previousStatus, reason);
   },
 
   async activate(
@@ -341,27 +357,33 @@ export const userService = {
     actorId: string,
     auditContext: AuditContext
   ): Promise<void> {
-    const existingUser = await this.findById(db, id, organizationId);
-    if (!existingUser) {
-      throw new UserNotFoundError(id);
-    }
+    const { previousStatus } = await auditTransaction(
+      db,
+      auditContext,
+      async (tx, audit) => {
+        const existingUser = await findByIdInTx(tx, organizationId, id);
+        if (!existingUser) {
+          throw new UserNotFoundError(id);
+        }
 
-    await auditTransaction(db, auditContext, async (tx, audit) => {
-      const updated = await activateUser(tx, id);
-      if (!updated) {
-        throw new UserNotFoundError(id);
+        const updated = await activateUser(tx, id);
+        if (!updated) {
+          throw new UserNotFoundError(id);
+        }
+
+        audit.record({
+          event: AUDIT_EVENTS.USER.ACTIVATED.event,
+          actorId,
+          organizationId,
+          targetId: id,
+          targetType: TARGET_TYPES.USER,
+        });
+
+        return { previousStatus: existingUser.status };
       }
+    );
 
-      audit.record({
-        event: AUDIT_EVENTS.USER.ACTIVATED.event,
-        actorId,
-        organizationId,
-        targetId: id,
-        targetType: TARGET_TYPES.USER,
-      });
-    });
-
-    await onUserStatusChange(id, USER_STATUS.ACTIVE, existingUser.status, null);
+    await onUserStatusChange(id, USER_STATUS.ACTIVE, previousStatus, null);
   },
 
   async unlock(
@@ -371,26 +393,36 @@ export const userService = {
     actorId: string,
     auditContext: AuditContext
   ): Promise<void> {
-    const existingUser = await this.findById(db, id, organizationId);
-    if (!existingUser) {
-      throw new UserNotFoundError(id);
-    }
+    const { previousStatus } = await auditTransaction(
+      db,
+      auditContext,
+      async (tx, audit) => {
+        const existingUser = await findByIdInTx(tx, organizationId, id);
+        if (!existingUser) {
+          throw new UserNotFoundError(id);
+        }
 
-    await auditTransaction(db, auditContext, async (tx, audit) => {
-      const updated = await clearUserLockout(tx, id);
-      if (!updated) {
-        throw new UserNotFoundError(id);
+        const updated = await clearUserLockout(tx, id);
+        if (!updated) {
+          throw new UserNotFoundError(id);
+        }
+
+        audit.record({
+          event: AUDIT_EVENTS.USER.UNLOCKED.event,
+          actorId,
+          organizationId,
+          targetId: id,
+          targetType: TARGET_TYPES.USER,
+        });
+
+        return { previousStatus: existingUser.status };
       }
+    );
 
-      audit.record({
-        event: AUDIT_EVENTS.USER.UNLOCKED.event,
-        actorId,
-        organizationId,
-        targetId: id,
-        targetType: TARGET_TYPES.USER,
-      });
-    });
-
-    await onUserStatusChange(id, USER_STATUS.ACTIVE, existingUser.status, null);
+    await onUserStatusChange(id, USER_STATUS.ACTIVE, previousStatus, null);
   },
+};
+
+export const __testing = {
+  findByIdInTx,
 };

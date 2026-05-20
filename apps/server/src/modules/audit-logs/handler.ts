@@ -1,6 +1,7 @@
 import { OpenAPIHono } from "@hono/zod-openapi";
 
 import type { AppEnv } from "@/lib/context";
+import { requireTenant } from "@/lib/guards";
 import { defaultHook } from "@/utils/default-hook";
 
 import auditLogsRoutes from "./routes";
@@ -12,10 +13,7 @@ const auditLogsHandler = app.openapi(
   auditLogsRoutes.listAuditLogs,
   async (c) => {
     const query = c.req.valid("query");
-    const tenant = c.get("tenant");
-    if (!tenant) {
-      return c.json({ error: { code: "TENANT_REQUIRED" } }, 403);
-    }
+    const tenant = requireTenant(c);
     const result = await auditLogService.find(c.var.db, query, {
       organizationId: tenant.organizationId,
     });

@@ -34,6 +34,7 @@ export {
 export type {
   CapabilityKey,
   CapabilityMap,
+  RegistryEvaluateOpts,
   RegistryInstance,
   RegistryOptions,
 } from "./registry";

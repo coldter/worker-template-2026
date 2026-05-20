@@ -49,7 +49,7 @@ export const auditLogSchema = z.object({
   targetType: z.enum(TARGET_TYPE_VALUES).nullable(),
   ipAddress: z.string().nullable(),
   userAgent: z.string().nullable(),
-  metadata: z.record(z.string(), z.any()).nullable(),
+  metadata: z.record(z.string(), z.unknown()).nullable(),
   createdAt: z.string().datetime(),
 });
 

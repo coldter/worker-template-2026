@@ -1,3 +1,4 @@
+import { safeWaitUntil } from "@repo/shared/safe-wait-until";
 import { createMiddleware } from "hono/factory";
 import type { AppEnv } from "@/lib/context";
 
@@ -85,19 +86,25 @@ export const rateLimitMiddleware = createMiddleware<AppEnv>(async (c, next) => {
     );
   }
 
+  // Hono's `executionCtx` getter throws when no `ExecutionContext` is
+  // wired (e.g., test environment). Guard the property read so we still
+  // schedule the increment with a silent `.catch` attached.
+  let execCtx: { waitUntil(p: Promise<unknown>): void } | undefined;
   try {
-    c.executionCtx.waitUntil(
-      (async () => {
-        const current = await c.env.CACHE.get(windowKey, "text");
-        const n = current ? Number.parseInt(current, 10) : 0;
-        await c.env.CACHE.put(windowKey, String(n + 1), {
-          expirationTtl: WINDOW_SECONDS * 2,
-        });
-      })()
-    );
+    execCtx = c.executionCtx;
   } catch {
-    // executionCtx not available in test environment
+    execCtx = undefined;
   }
+  safeWaitUntil(
+    execCtx,
+    (async () => {
+      const current = await c.env.CACHE.get(windowKey, "text");
+      const n = current ? Number.parseInt(current, 10) : 0;
+      await c.env.CACHE.put(windowKey, String(n + 1), {
+        expirationTtl: WINDOW_SECONDS * 2,
+      });
+    })()
+  );
 
   await next();
 });

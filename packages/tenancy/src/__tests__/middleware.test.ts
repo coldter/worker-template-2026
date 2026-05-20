@@ -23,7 +23,7 @@ type MakeDepOptions = {
 const baseEnvProd = {
   WILDCARD_SUFFIX: ".app.example.com",
   ADMIN_HOST: "admin.example.com",
-  FALLBACK_HOST: "app.example.com",
+  FALLBACK_HOST: "fallback.example.com",
   LOCAL_DEV_HOSTS: "",
   NODE_ENV: "test",
   ALLOW_DEV_TENANT_HEADER: undefined as string | undefined,

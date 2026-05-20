@@ -6,6 +6,7 @@ export const ID_PREFIXES = {
   role: "rol",
   auditLog: "aud",
   notification: "ntf",
+  notificationPreference: "ntfp",
   pushToken: "ptk",
   relation: "rel",
   tenantHostname: "tnh",
@@ -15,6 +16,8 @@ export const ID_PREFIXES = {
   globalAdmin: "gad",
   organization: "org",
   invitation: "inv",
+  twoFactor: "2fa",
+  jwk: "jwk",
 } as const;
 
 declare const __brand: unique symbol;
@@ -39,6 +42,17 @@ export function generatePrefixedCuid<P extends string>(
     .join("");
 
   return `${prefix}_${timestampHex}${randomHex}`;
+}
+
+type IdModelKey = keyof typeof ID_PREFIXES;
+
+/**
+ * Type-safe wrapper around `generatePrefixedCuid` keyed by model name, so
+ * typos in `$defaultFn` callsites become compile errors instead of silently
+ * minting IDs under an unregistered prefix.
+ */
+export function idFor<K extends IdModelKey>(model: K): string {
+  return generatePrefixedCuid(ID_PREFIXES[model]);
 }
 
 export const createUserId = (): UserId =>

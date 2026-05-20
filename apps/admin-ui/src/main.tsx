@@ -12,7 +12,6 @@ const router = createRouter({
   defaultPendingComponent: () => <FullPageLoadingState />,
   defaultErrorComponent: AppError,
   context: { queryClient },
-  defaultPendingMinMs: 0,
   defaultPreload: "intent",
   defaultPreloadStaleTime: 0,
 });

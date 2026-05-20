@@ -5,6 +5,7 @@ import {
   pushTokens,
 } from "@repo/db/schema";
 import { and, asc, count, desc, eq, type SQL, sql } from "drizzle-orm";
+import { HTTPException } from "hono/http-exception";
 import {
   buildOrderBy,
   createPaginatedResponse,
@@ -228,7 +229,13 @@ export const notificationService = {
       .limit(1);
 
     if (existing) {
-      // Update existing token
+      // Reject token-takeover: a leaked FCM token must not be rebindable to
+      // a different user.
+      if (existing.userId !== userId) {
+        throw new HTTPException(409, {
+          message: "Push token already registered to a different user",
+        });
+      }
       const [updated] = await db
         .update(pushTokens)
         .set({
@@ -240,7 +247,9 @@ export const notificationService = {
           isActive: true,
           lastUsedAt: new Date(),
         })
-        .where(eq(pushTokens.id, existing.id))
+        .where(
+          and(eq(pushTokens.id, existing.id), eq(pushTokens.userId, userId))
+        )
         .returning();
       return updated ?? existing;
     }

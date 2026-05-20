@@ -1,6 +1,5 @@
-import { Link, Outlet, useRouterState } from "@tanstack/react-router";
+import { Link, Outlet } from "@tanstack/react-router";
 import { brand } from "@/lib/brand";
-import { cn } from "@/lib/utils";
 import { useOperator } from "@/modules/operator/provider";
 import { Badge } from "@/modules/ui/badge";
 import { Separator } from "@/modules/ui/separator";
@@ -20,17 +19,6 @@ const NAV: NavItem[] = [
 
 export function OperatorLayout() {
   const { operator } = useOperator();
-  const pathname = useRouterState({ select: (s) => s.location.pathname });
-  // boundary: tests mock @tanstack/react-router and return a router state
-  // object even when a selector is passed, so widen at runtime.
-  const path = typeof pathname === "string" ? pathname : "/";
-
-  const isActive = (to: string) => {
-    if (to === "/") {
-      return path === "/";
-    }
-    return path === to || path.startsWith(`${to}/`);
-  };
 
   return (
     <div className="grid min-h-svh grid-cols-[16rem_1fr]">
@@ -41,12 +29,12 @@ export function OperatorLayout() {
         <nav className="flex flex-col gap-1">
           {NAV.map((item) => (
             <Link
-              className={cn(
-                "rounded-md px-3 py-2 text-sm transition-colors",
-                isActive(item.to)
-                  ? "bg-primary text-primary-foreground"
-                  : "text-foreground hover:bg-accent"
-              )}
+              activeOptions={{ exact: item.to === "/" }}
+              activeProps={{
+                "aria-current": "page",
+                className: "bg-primary text-primary-foreground",
+              }}
+              className="rounded-md px-3 py-2 text-sm text-foreground transition-colors hover:bg-accent"
               key={item.to}
               to={item.to}
             >

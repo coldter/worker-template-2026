@@ -700,7 +700,7 @@ export function createAuth(
           async sendOTP({ user, otp }, reqCtx) {
             // debugging (remove in production)
             if (env.NODE_ENV === "development") {
-              logger.info(`OPT: ${otp} for user ${user.id} (${user.email})`); // Log OTP for
+              logger.info(`OTP: ${otp} for user ${user.id} (${user.email})`); // Log OTP for
             }
             logger.info(`Sending 2FA OTP to ${user.email}`);
 

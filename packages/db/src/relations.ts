@@ -56,9 +56,7 @@ export const relations = defineRelations(schema, (r) => ({
       to: r.users.id,
     }),
   },
-  // auditLogs has no typed relation to users: actor_id is polymorphic after A1.5.
-  // The FK was removed; do not re-add a relation here (see D30).
-  auditLogs: {},
+  // No auditLogs entry: actor_id is polymorphic (users, global_admins, system) and has no FK.
   notifications: {
     user: r.one.users({
       from: r.notifications.userId,

@@ -15,7 +15,8 @@
     "./brand": "./src/brand.ts",
     "./logger": "./src/logger.ts",
     "./logger-drizzle": "./src/logger-drizzle.ts",
-    "./kv-cache": "./src/kv-cache.ts"
+    "./kv-cache": "./src/kv-cache.ts",
+    "./safe-wait-until": "./src/safe-wait-until.ts"
   },
   "scripts": {
     "check-types": "tsgo --noEmit",

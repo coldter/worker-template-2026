@@ -46,10 +46,11 @@ export class RateLimiter extends DurableObject<CloudflareBindings> {
     windowMs: number = DEFAULT_WINDOW_MS
   ): Promise<{ allowed: boolean; remaining: number }> {
     if (!Number.isFinite(limit) || limit <= 0) {
-      return { allowed: false, remaining: 0 };
+      // Throw on invalid args so caller bugs surface instead of silently denying.
+      throw new TypeError("rateLimiter: limit must be > 0");
     }
     if (!Number.isFinite(windowMs) || windowMs <= 0) {
-      return { allowed: false, remaining: 0 };
+      throw new TypeError("rateLimiter: windowMs must be > 0");
     }
 
     const now = Date.now();

@@ -16,6 +16,8 @@ declare global {
   interface CloudflareBindings {
     API: Fetcher;
     ASSETS: Fetcher;
+    // Injected via `--var NODE_ENV:production`; gates dev-only edge headers.
+    NODE_ENV?: string;
   }
 }
 

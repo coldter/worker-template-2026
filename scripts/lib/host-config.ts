@@ -3,9 +3,10 @@
 // so callers can either write or diff them.
 
 import { readFileSync } from "node:fs";
+// Shared with the runtime tenancy parser so validation matches byte-for-byte.
+import { SLUG_RE } from "@repo/tenancy";
 
 const HOST_RE = /^[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?$/;
-const SLUG_RE = /^[a-z0-9-]+$/;
 
 export type RootHostEnv = Readonly<{
   rootDomain: string;

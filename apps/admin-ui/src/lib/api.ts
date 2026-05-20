@@ -77,6 +77,7 @@ export async function apiFetch<TResponse>(
   });
 
   if (response.status === 204) {
+    // boundary: 204 No Content has no body; caller declares TResponse=void.
     return undefined as TResponse;
   }
 

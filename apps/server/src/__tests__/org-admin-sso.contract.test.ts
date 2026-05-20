@@ -239,7 +239,7 @@ const mockEnv = {
   SSO_KEY: "test-sso-key",
   WILDCARD_SUFFIX: ".app.localhost",
   ADMIN_HOST: "admin.localhost",
-  FALLBACK_HOST: "app.localhost",
+  FALLBACK_HOST: "fallback.localhost",
   LOCAL_DEV_HOSTS: "",
   NODE_ENV: "development",
   APP_URL: "http://localhost:8787",

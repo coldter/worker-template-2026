@@ -63,14 +63,24 @@ export function TenantDetailPage({ slug }: TenantDetailPageProps) {
   const onSuspend = () => {
     suspend.mutate(
       { organizationId: id, reason: reason || undefined },
-      { onSuccess: () => toast.success("Tenant suspended") }
+      {
+        onSuccess: () => {
+          toast.success("Tenant suspended");
+          setReason("");
+        },
+      }
     );
   };
 
   const onRestore = () => {
     restore.mutate(
       { organizationId: id },
-      { onSuccess: () => toast.success("Tenant restored") }
+      {
+        onSuccess: () => {
+          toast.success("Tenant restored");
+          setReason("");
+        },
+      }
     );
   };
 
@@ -84,6 +94,7 @@ export function TenantDetailPage({ slug }: TenantDetailPageProps) {
       {
         onSuccess: () => {
           toast.success("Tenant deleted");
+          setReason("");
           navigate({ to: "/tenants" });
         },
         onSettled: () => setConfirmingDelete(false),

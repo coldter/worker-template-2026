@@ -4,6 +4,7 @@ import {
   principalAttribute,
   principalNotActive,
 } from "@repo/authorization";
+import { logger } from "./logger";
 import { SYSTEM_ROLE_SLUG_VALUES, SYSTEM_ROLES } from "./roles";
 
 export { SYSTEM_ROLE_SLUG_VALUES, SYSTEM_ROLES } from "./roles";
@@ -79,9 +80,13 @@ export function buildAuthorizationPrincipal(
   const droppedRoles = allSlugs.filter((role) => !isAuthorizationRole(role));
 
   if (droppedRoles.length > 0) {
-    console.warn(
-      `[auth] Dropped unknown roles for user ${user.id}: ${droppedRoles.join(", ")}`
-    );
+    for (const roleSlug of droppedRoles) {
+      logger.warn("Unknown role slug", {
+        event: "authorization.unknown_role_slug",
+        roleSlug,
+        userId: user.id,
+      });
+    }
   }
 
   const requestedStatus = user.status ?? "active";

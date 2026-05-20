@@ -1,4 +1,9 @@
 import { OpenAPIHono } from "@hono/zod-openapi";
+import {
+  ADMIN_CONSOLE_CSP,
+  cspProfileToHonoOption,
+  HSTS_VALUE,
+} from "@repo/shared";
 import { createMiddleware } from "hono/factory";
 import { secureHeaders } from "hono/secure-headers";
 import { trimTrailingSlash } from "hono/trailing-slash";
@@ -14,19 +19,34 @@ import tenantsHandler from "@/modules/tenants/handler";
 
 const app = new OpenAPIHono<AdminEnv>();
 
-// Fail-closed startup gate (Audit-fix #8). If a production deploy ever ships
-// with `ALLOW_DEV_ADMIN_AUTH` or `LOCAL_DEV_ADMIN_EMAIL` set the dev-mode
-// operator bypass in `cfAccessMiddleware` would skip CF Access entirely. Both
-// flags are stripped from the committed wrangler.jsonc and only injected by
-// the dev fragment, but a misconfigured secret store could still surface them
-// in env. This middleware refuses every request before any auth code runs so
-// the worker boots into a permanent 500 state until the misconfiguration is
-// removed.
+// Fail-closed gate (Audit-fix #8): dev-auth flags only valid on a dev host.
+const DEV_HOST_PATTERNS: readonly RegExp[] = [
+  /\.lvh\.me(?::\d+)?$/i,
+  /\.localhost(?::\d+)?$/i,
+  /^localhost(?::\d+)?$/i,
+  /^127\.0\.0\.1(?::\d+)?$/,
+];
+
+function isDevHost(host: string): boolean {
+  return DEV_HOST_PATTERNS.some((re) => re.test(host));
+}
+
 const productionDevFlagGuard = createMiddleware<AdminEnv>(async (c, next) => {
-  if (
-    c.env.NODE_ENV === "production" &&
-    (c.env.ALLOW_DEV_ADMIN_AUTH || c.env.LOCAL_DEV_ADMIN_EMAIL)
-  ) {
+  const devFlagOn = Boolean(
+    c.env.ALLOW_DEV_ADMIN_AUTH || c.env.LOCAL_DEV_ADMIN_EMAIL
+  );
+  if (c.env.NODE_ENV === "production" && devFlagOn) {
+    return c.json(
+      {
+        error: {
+          code: "MISCONFIGURED",
+          message: "Dev-mode operator-auth flags must not be set in production",
+        },
+      },
+      500
+    );
+  }
+  if (devFlagOn && !isDevHost(c.env.ADMIN_HOST.toLowerCase())) {
     return c.json(
       {
         error: {
@@ -43,7 +63,14 @@ const productionDevFlagGuard = createMiddleware<AdminEnv>(async (c, next) => {
 // Outermost: production fail-closed guard, shared HTTP hygiene, host guard.
 app.use("*", productionDevFlagGuard);
 app.use("*", trimTrailingSlash());
-app.use("*", secureHeaders());
+// admin-ui Vite injects runtime <style> tags — 'unsafe-inline' on style-src.
+app.use(
+  "*",
+  secureHeaders({
+    contentSecurityPolicy: cspProfileToHonoOption(ADMIN_CONSOLE_CSP),
+    strictTransportSecurity: HSTS_VALUE,
+  })
+);
 app.use("*", hostGuardMiddleware);
 
 // Auth perimeter (D19 / D26 / D31). DB attaches first so cfAccessMiddleware

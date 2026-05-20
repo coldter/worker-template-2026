@@ -14,17 +14,17 @@ export function setupDocs(app: OpenAPIHono<AppEnv>): void {
       "Authentication cookie. Copy the cookie from your network tab and paste it here.",
   });
 
-  app.doc31("/openapi.json", {
-    servers: [{ url: env.APP_URL }],
-    info: {
-      title: "Server API",
-      version: "v1",
-      description: "API documentation",
-    },
-    openapi: "3.1.0",
-  });
-
   if (String(env.NODE_ENV) !== "production") {
+    app.doc31("/openapi.json", {
+      servers: [{ url: env.APP_URL }],
+      info: {
+        title: "Server API",
+        version: "v1",
+        description: "API documentation",
+      },
+      openapi: "3.1.0",
+    });
+
     app.get("/docs", (c) =>
       Scalar<AppEnv>({
         url: "openapi.json",

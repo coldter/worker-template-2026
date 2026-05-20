@@ -10,19 +10,19 @@ let jwks: JWKSResolver;
 let sign: (claims: Record<string, unknown>) => Promise<string>;
 
 beforeAll(async () => {
-  const { privateKey, publicKey } = await generateKeyPair("ES256", {
+  const { privateKey, publicKey } = await generateKeyPair("EdDSA", {
     extractable: true,
   });
   const pubJwk = await exportJWK(publicKey);
   sign = async (c) =>
     await new SignJWT(c)
-      .setProtectedHeader({ alg: "ES256", kid: "k1" })
+      .setProtectedHeader({ alg: "EdDSA", kid: "k1" })
       .setExpirationTime(Math.floor(Date.now() / 1000) + 60)
       .sign(privateKey);
   // boundary: importJWK returns a CryptoKey/KeyObject union that satisfies
   // our resolver's KeyLike alias structurally.
   jwks = async () =>
-    (await importJWK(pubJwk, "ES256")) as Awaited<ReturnType<JWKSResolver>>;
+    (await importJWK(pubJwk, "EdDSA")) as Awaited<ReturnType<JWKSResolver>>;
 });
 
 const validClaims = (sessionVersion = 5) => ({

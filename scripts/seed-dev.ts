@@ -11,6 +11,9 @@
 // works without needing scripts/ to be a workspace member. The script-level
 // `bun run seed:dev` wraps that command.
 //
+// TODO: promote `scripts/` to a workspace member with `@repo/db` as a dep so
+// this file can use the alias instead of the relative `../packages/db/src` path.
+//
 // Password hashing uses Node's scrypt with the same envelope shape Better
 // Auth uses (`<salt>:<key>` hex), so the resulting `accounts.password`
 // row verifies under BA's email/password adapter without further work.
@@ -26,6 +29,7 @@ import {
   users,
   withDrizzleClient,
 } from "../packages/db/src";
+import { assertSeedAllowed } from "./lib/assert-seed-allowed";
 
 export type SeedDevEnv = Readonly<{
   defaultDevTenantSlug: string;
@@ -229,10 +233,19 @@ export async function seedDev(
 }
 
 if (import.meta.main) {
-  const env = loadSeedDevEnv(process.env);
   const connectionString =
     process.env.DATABASE_URL ??
     "postgresql://postgres:postgres@localhost:5432/app_dev";
+  const allowed = assertSeedAllowed({
+    nodeEnv: process.env.NODE_ENV,
+    argv: process.argv,
+    connectionString,
+  });
+  if (!allowed.ok) {
+    process.stderr.write(`${allowed.reason}\n`);
+    process.exit(1);
+  }
+  const env = loadSeedDevEnv(process.env);
   const result = await withDrizzleClient(
     connectionString,
     async (db) => await seedDev(db, env)

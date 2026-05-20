@@ -1,8 +1,8 @@
 import { OpenAPIHono } from "@hono/zod-openapi";
-import type { Context } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { extractAuditContext } from "@/lib/audit-context";
 import type { AppEnv } from "@/lib/context";
+import { requireCurrentUser, requireTenant } from "@/lib/guards";
 import { defaultHook } from "@/utils/default-hook";
 import ssoProviderRoutes from "./routes";
 import {
@@ -16,21 +16,7 @@ import {
 
 const app = new OpenAPIHono<AppEnv>({ defaultHook });
 
-function requireTenant(c: Context<AppEnv>) {
-  const tenant = c.get("tenant");
-  if (!tenant) {
-    throw new HTTPException(403, { message: "Tenant required" });
-  }
-  return tenant;
-}
-
-function requireUser(c: Context<AppEnv>) {
-  const user = c.get("user");
-  if (!user) {
-    throw new HTTPException(401, { message: "Unauthorized" });
-  }
-  return user;
-}
+const requireUser = requireCurrentUser;
 
 function toResponse(provider: SsoProviderRow) {
   return {

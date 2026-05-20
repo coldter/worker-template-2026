@@ -18,6 +18,13 @@ type Env = {
 
 const configCache = new WeakMap<object, HostConfig>();
 
+function requireLowercaseNFC(name: string, value: string): string {
+  if (value !== value.toLowerCase() || value !== value.normalize("NFC")) {
+    throw new Error(`${name} must be lowercase NFC`);
+  }
+  return value;
+}
+
 export function loadHostConfigOnce(env: Env): HostConfig {
   const cached = configCache.get(env);
   if (cached) {
@@ -25,23 +32,31 @@ export function loadHostConfigOnce(env: Env): HostConfig {
   }
   const wildcardSuffix = env.WILDCARD_SUFFIX;
   const adminHost = env.ADMIN_HOST;
+  const fallbackHost = env.FALLBACK_HOST;
   if (!wildcardSuffix.startsWith(".")) {
     throw new Error(
       "WILDCARD_SUFFIX must have a leading dot (e.g. '.app.example.com')"
     );
   }
-  if (
-    adminHost !== adminHost.toLowerCase() ||
-    adminHost !== adminHost.normalize("NFC")
-  ) {
-    throw new Error("ADMIN_HOST must be lowercase NFC");
-  }
-  if (
-    adminHost === wildcardSuffix.slice(1) ||
-    adminHost.endsWith(wildcardSuffix)
-  ) {
+  requireLowercaseNFC("ADMIN_HOST", adminHost);
+  requireLowercaseNFC("FALLBACK_HOST", fallbackHost);
+  const wildcardBase = wildcardSuffix.slice(1);
+  if (adminHost === wildcardBase || adminHost.endsWith(wildcardSuffix)) {
     throw new Error("ADMIN_HOST and WILDCARD_SUFFIX collide");
   }
+  if (fallbackHost === adminHost) {
+    throw new Error("FALLBACK_HOST and ADMIN_HOST collide");
+  }
+  if (fallbackHost === wildcardBase || fallbackHost.endsWith(wildcardSuffix)) {
+    throw new Error("FALLBACK_HOST and WILDCARD_SUFFIX collide");
+  }
+  const localDevHostsRaw = (env.LOCAL_DEV_HOSTS ?? "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const localDevHosts = localDevHostsRaw.map((host) =>
+    requireLowercaseNFC("LOCAL_DEV_HOSTS entry", host)
+  );
   const nodeEnv =
     env.NODE_ENV === "development" || env.NODE_ENV === "test"
       ? env.NODE_ENV
@@ -49,13 +64,8 @@ export function loadHostConfigOnce(env: Env): HostConfig {
   const config: HostConfig = Object.freeze({
     wildcardSuffix,
     adminHost,
-    fallbackHost: env.FALLBACK_HOST,
-    localDevHosts: Object.freeze(
-      (env.LOCAL_DEV_HOSTS ?? "")
-        .split(",")
-        .map((s) => s.trim())
-        .filter(Boolean)
-    ),
+    fallbackHost,
+    localDevHosts: Object.freeze(localDevHosts),
     allowDevTenantHeader: env.ALLOW_DEV_TENANT_HEADER === "true",
     nodeEnv,
   });

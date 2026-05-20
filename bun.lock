@@ -6,6 +6,7 @@
       "name": "repo",
       "devDependencies": {
         "@biomejs/biome": "^2.4.15",
+        "@repo/tenancy": "workspace:*",
         "@types/node": "^25.9.1",
         "@typescript/native-preview": "beta",
         "jsonc-parser": "^3.3.1",
@@ -55,6 +56,7 @@
         "@tanstack/react-router": "^1.170.5",
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
+        "lucide-react": "^1.16.0",
         "react": "^19.2.6",
         "react-dom": "^19.2.6",
         "react-top-loading-bar": "^3.0.2",
@@ -265,6 +267,7 @@
         "@repo/db": "workspace:*",
         "drizzle-orm": "^1.0.0-rc.4-5d5b77c",
         "hono": "^4.12.21",
+        "zod": "^4.4.3",
       },
       "devDependencies": {
         "@types/pg": "^8.20.0",
@@ -1317,6 +1320,8 @@
     "log-symbols": ["log-symbols@7.0.1", "", { "dependencies": { "is-unicode-supported": "^2.0.0", "yoctocolors": "^2.1.1" } }, "sha512-ja1E3yCr9i/0hmBVaM0bfwDjnGy8I/s6PP4DFp+yP+a+mrHO4Rm7DtmnqROTUkHIkqffC84YY7AeqX6oFk0WFg=="],
 
     "lru-cache": ["lru-cache@11.3.5", "", {}, "sha512-NxVFwLAnrd9i7KUBxC4DrUhmgjzOs+1Qm50D3oF1/oL+r1NpZ4gA7xvG0/zJ8evR7zIKn4vLf7qTNduWFtCrRw=="],
+
+    "lucide-react": ["lucide-react@1.16.0", "", { "peerDependencies": { "react": "^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0" } }, "sha512-dYwyPzb4MEKpGUmNYk3WKWPnMrHs3FKM+q94kAnJrcDIqqn1hq2xY8scaS2ovsOCM5D51ey2gaRG3PBb1vgoYQ=="],
 
     "lz-string": ["lz-string@1.5.0", "", { "bin": { "lz-string": "bin/bin.js" } }, "sha512-h5bgJWpxJNswbU7qCrV0tIKQCaS3blPDrqKWx+QxzuzL1zGUzij9XCWLrSLsJPu5t+eWA/ycetzYAO5IOMcWAQ=="],
 
