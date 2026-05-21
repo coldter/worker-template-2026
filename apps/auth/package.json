@@ -15,17 +15,17 @@
     "@repo/db": "workspace:*",
     "@repo/email": "workspace:*",
     "@repo/shared": "workspace:*",
-    "better-auth": "^1.6.9",
-    "drizzle-orm": "^1.0.0-rc.2-33e80cd",
-    "hono": "^4.12.16",
-    "pg": "^8.20.0",
+    "better-auth": "^1.6.11",
+    "drizzle-orm": "^1.0.0-rc.4-5d5b77c",
+    "hono": "^4.12.21",
+    "pg": "^8.21.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {
     "@types/pg": "^8.20.0",
     "@typescript/native-preview": "beta",
     "typescript": "^6.0.3",
-    "vitest": "^4.1.5",
-    "wrangler": "^4.87.0"
+    "vitest": "^4.1.7",
+    "wrangler": "^4.93.1"
   }
 }
