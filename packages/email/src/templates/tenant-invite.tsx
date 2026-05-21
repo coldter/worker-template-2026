@@ -2,14 +2,6 @@ import { Button, Heading, Section, Text } from "@react-email/components";
 import React from "react";
 import { BaseLayout } from "../components/base-layout";
 
-/**
- * B2 — operator-led tenant admin invitation. Sent after the operator submits
- * `POST /api/admin/tenants`. The button points at the tenant SPA's
- * `/accept-invite/:invitationId` route (B4), where the user supplies a name
- * and password to claim their primary-admin seat. Per D60 the SPA accept
- * flow recovers from BA's `USER_ALREADY_EXISTS` so existing users can be
- * auto-linked when they click the same link.
- */
 export interface TenantInviteEmailProps {
   acceptUrl: string;
   expiresInHours: number;

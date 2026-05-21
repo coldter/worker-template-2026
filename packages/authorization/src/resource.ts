@@ -111,7 +111,6 @@ export class PolicyRuleBuilder<
     this._validOrgRoles = opts.validOrgRoles;
   }
 
-  /** Computed label that reflects the current builder state. */
   get label(): string {
     const roleLabel = this.roles === "*" ? "*" : this.roles.join(",");
     const actionLabel =
@@ -270,13 +269,6 @@ export class PolicyBuilder<
   }
 }
 
-/**
- * Creates a ResourceDef from a ResourceConfig.
- *
- * Instantiates a PolicyBuilder scoped to the resource type and passes
- * it to the `policies` callback so consumers can use the fluent
- * `allow() / deny()` API.
- */
 export function createResourceDefinition<
   TResource,
   TRole extends string,

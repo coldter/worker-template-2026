@@ -17,9 +17,6 @@ import {
 } from "../constants";
 import { userStatusSchema } from "./user-status";
 
-/**
- * Auth error codes for client handling
- */
 export const AUTH_ERROR_CODES = {
   ACCOUNT_DELETED: "ACCOUNT_DELETED",
   ACCOUNT_INACTIVE: "ACCOUNT_INACTIVE",
@@ -27,18 +24,8 @@ export const AUTH_ERROR_CODES = {
   INVALID_CREDENTIALS: "INVALID_CREDENTIALS",
 } as const;
 
-/**
- * Login Security Plugin
- *
- * Handles all login security concerns within better-auth's plugin system:
- * - User status validation (deleted, inactive, locked)
- * - Failed login attempt tracking
- * - Account lockout after max failed attempts
- * - Lockout expiry and auto-unlock
- * - Reset failed attempts on successful login
- */
-export const loginSecurityPlugin = (db: DrizzleClient) => {
-  return {
+export const loginSecurityPlugin = (db: DrizzleClient) =>
+  ({
     id: "login-security",
 
     hooks: {
@@ -111,7 +98,6 @@ export const loginSecurityPlugin = (db: DrizzleClient) => {
                 });
               }
 
-              // Lockout expired - auto-unlock
               await clearUserLockout(db, user.id);
             }
           }),
@@ -130,7 +116,6 @@ export const loginSecurityPlugin = (db: DrizzleClient) => {
             const isFailure = returned instanceof APIError;
 
             if (isFailure) {
-              // Handle failed login attempt
               const user = await db.query.users.findFirst({
                 where: { email: { eq: body.email as UserEmail } },
               });
@@ -169,5 +154,4 @@ export const loginSecurityPlugin = (db: DrizzleClient) => {
         },
       ],
     },
-  } satisfies BetterAuthPlugin;
-};
+  }) satisfies BetterAuthPlugin;

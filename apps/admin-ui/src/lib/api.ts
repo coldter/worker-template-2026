@@ -1,16 +1,11 @@
 /**
- * Minimal typed fetch wrapper for the admin worker.
- *
- * The admin worker serves this SPA same-origin. Cloudflare Access verifies
- * the operator JWT at the edge before any request reaches the worker, so we
- * just call relative URLs and let the browser forward the
+ * Same-origin fetch helper. Cloudflare Access verifies the operator JWT at
+ * the edge, so we use relative URLs and let the browser forward the
  * `cf-access-jwt-assertion` cookie.
  *
- * TODO(api-gen): Wave 1 generated `src/api.gen` from the server worker spec
- * (`apps/server/openapi.cache.json`). The admin worker has its own OpenAPI
- * surface that has not been wired into `bun run generate-client` yet —
- * `apps/admin/openapi.cache.json` does not exist on disk. Until then,
- * operator pages talk to the admin worker through this typed fetch helper.
+ * TODO(api-gen): wire `apps/admin/openapi.cache.json` into
+ * `bun run generate-client` so operator pages can use the generated client
+ * instead of this typed fetch wrapper.
  */
 
 export interface ApiErrorBody {
@@ -90,9 +85,7 @@ export async function apiFetch<TResponse>(
   }
 
   if (!response.ok) {
-    // boundary: server contract reserves `error.message` and `error.code`;
-    // we treat the body as `ApiErrorBody` with optional fields rather than
-    // running a full Zod parse on every error response.
+    // boundary: error body shape is contract-defined (optional code/message).
     const errBody = (parsed ?? {}) as ApiErrorBody;
     throw new ApiError(
       response.status,

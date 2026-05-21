@@ -19,7 +19,7 @@ import tenantsHandler from "@/modules/tenants/handler";
 
 const app = new OpenAPIHono<AdminEnv>();
 
-// Fail-closed gate (Audit-fix #8): dev-auth flags only valid on a dev host.
+// Dev-auth flags must only be active on dev hosts; production must fail closed.
 const DEV_HOST_PATTERNS: readonly RegExp[] = [
   /\.lvh\.me(?::\d+)?$/i,
   /\.localhost(?::\d+)?$/i,
@@ -60,10 +60,9 @@ const productionDevFlagGuard = createMiddleware<AdminEnv>(async (c, next) => {
   return await next();
 });
 
-// Outermost: production fail-closed guard, shared HTTP hygiene, host guard.
 app.use("*", productionDevFlagGuard);
 app.use("*", trimTrailingSlash());
-// admin-ui Vite injects runtime <style> tags — 'unsafe-inline' on style-src.
+// admin-ui Vite injects runtime <style> tags, requiring 'unsafe-inline' on style-src.
 app.use(
   "*",
   secureHeaders({
@@ -73,15 +72,12 @@ app.use(
 );
 app.use("*", hostGuardMiddleware);
 
-// Auth perimeter (D19 / D26 / D31). DB attaches first so cfAccessMiddleware
-// can resolve the global-admin row (production CF Access path AND dev-mode
-// email lookup) in the same request via `authenticateOperator` /
-// `authenticateOperatorByEmail`.
+// DB must attach before cfAccessMiddleware so the operator lookup (production
+// CF Access path and dev-mode email lookup) can resolve in the same request.
 app.use("/api/admin/*", dbMiddleware);
 app.use("/api/admin/*", cfAccessMiddleware);
 app.use("/api/admin/*", adminOriginMiddleware);
 
-// Routes (full handler bodies arrive in B2; B1 ships read stubs).
 app.get("/api/admin/me", (c) => {
   const admin = c.get("globalAdmin");
   return c.json({
@@ -96,8 +92,6 @@ app.route("/api/admin/global-admins", globalAdminsHandler);
 app.route("/api/admin/audit-logs", auditLogsHandler);
 app.route("/api/admin/system", systemHandler);
 
-// SPA fallback (D63): non-/api/* requests are forwarded to the ADMIN_UI
-// assets binding which serves the admin-ui Vite build (../admin-ui/dist).
 // /api/* paths fall through to the OpenAPI notFound below so unknown API
 // routes still return JSON errors rather than the SPA shell.
 app.get("*", async (c) => {

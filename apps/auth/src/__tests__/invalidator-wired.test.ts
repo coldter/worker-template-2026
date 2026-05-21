@@ -43,7 +43,7 @@ vi.mock("cloudflare:workers", () => ({
   },
 }));
 
-describe("A2.6 / A2.9 auth-worker invalidator RPC", () => {
+describe("auth-worker invalidator RPC", () => {
   // Cold-import of `../index` can exceed the 5s default under parallel load.
   it("AuthEntrypoint exposes invalidateTenant + bumpTenantCacheVersion", {
     timeout: 30_000,

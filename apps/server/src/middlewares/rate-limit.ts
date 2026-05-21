@@ -27,7 +27,6 @@ export const rateLimitMiddleware = createMiddleware<AppEnv>(async (c, next) => {
   const identifier = `ip:${ip}:${host}`;
   const limit = GUEST_LIMIT;
 
-  // DO-first approach
   const doBinding = c.env.RATE_LIMITER;
   if (doBinding) {
     try {

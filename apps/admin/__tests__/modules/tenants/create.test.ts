@@ -48,8 +48,7 @@ function buildApp(opts: {
     opts.createTenantOnBehalfOf ??
     vi.fn(async () => ({ orgId: "org_1", invitationId: "inv_1" }));
 
-  // boundary: tests inject a partial admin bindings object — only API.* and
-  // a couple of NODE_ENV-shaped keys are read by the handler.
+  // boundary: tests inject a partial admin bindings object.
   const env = {
     API: { createTenantOnBehalfOf },
     NODE_ENV: "test",

@@ -1,13 +1,6 @@
-// apps/app — tenant-facing SPA worker (D40, D45, D58).
-//
-// Public ingress for tenant traffic. Reachable via Cloudflare routes on
-// `*.${APP_WILDCARD_HOST}` (the wildcard subdomain), the apex of
-// `${APP_WILDCARD_HOST}`, and `${FALLBACK_HOST}` (CF for SaaS fallback origin
-// for tenant custom hostnames).
-//
-// Routing:
-//   - `/api/*`      -> `env.API.fetch(request)`  (server worker via service binding)
-//   - everything else -> `env.ASSETS.fetch(request)` (static SPA)
+// Tenant-facing SPA worker. Public ingress for tenant traffic via Cloudflare
+// routes on `*.${APP_WILDCARD_HOST}`, the apex of `${APP_WILDCARD_HOST}`, and
+// `${FALLBACK_HOST}` (CF for SaaS fallback origin for tenant custom hostnames).
 //
 // `apps/server` and `apps/auth` are NOT directly addressable from the public
 // internet. Auth traffic also goes through `apps/server` so tenancy middleware
@@ -25,7 +18,6 @@ function isHtmlResponse(res: Response): boolean {
   return contentType.toLowerCase().includes("text/html");
 }
 
-// HTML responses get the full set; JSON/assets get HSTS + nosniff only.
 function withSecurityHeaders(res: Response): Response {
   const headers = new Headers(res.headers);
   headers.set("Strict-Transport-Security", HSTS);

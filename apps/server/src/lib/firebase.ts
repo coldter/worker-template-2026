@@ -1,10 +1,6 @@
 import { env } from "cloudflare:workers";
 import { logger } from "@repo/shared/logger";
 
-// ============================================================
-// TYPES
-// ============================================================
-
 interface PushMessage {
   data: Record<string, string>;
   token: string;
@@ -33,10 +29,6 @@ interface CachedToken {
   expiresAt: number;
 }
 
-// ============================================================
-// CONSOLE PROVIDER (development)
-// ============================================================
-
 class ConsolePushProvider implements PushProvider {
   async send(message: PushMessage): Promise<PushSendResult> {
     logger.info("Console push provider: would send push notification", {
@@ -48,10 +40,6 @@ class ConsolePushProvider implements PushProvider {
     return { success: true, messageId: `console_${Date.now()}` };
   }
 }
-
-// ============================================================
-// FCM HTTP v1 PROVIDER
-// ============================================================
 
 const FCM_SCOPE = "https://www.googleapis.com/auth/firebase.messaging";
 const TOKEN_URL = "https://oauth2.googleapis.com/token";
@@ -291,10 +279,6 @@ class FcmHttpProvider implements PushProvider {
     };
   }
 }
-
-// ============================================================
-// SINGLETON
-// ============================================================
 
 let pushProvider: PushProvider | null = null;
 

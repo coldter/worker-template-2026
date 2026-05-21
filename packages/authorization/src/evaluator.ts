@@ -47,12 +47,10 @@ export async function evaluate(input: EvaluateInput): Promise<PolicyDecision> {
       ignoreResourceConditions = false,
     } = input;
 
-    // Step 1: No principal = UNAUTHENTICATED
     if (!principal) {
       return { allowed: false, reason: "UNAUTHENTICATED" };
     }
 
-    // Step 2: Check global deny policies
     for (const policy of globalPolicies) {
       if (policy.effect !== "deny") {
         continue;
@@ -73,12 +71,12 @@ export async function evaluate(input: EvaluateInput): Promise<PolicyDecision> {
       }
     }
 
-    // Step 2.5 (fail-closed): if the resource declares `resolveOrganization`
-    // but no resource was loaded, refuse to evaluate. This prevents a route
-    // that forgets `loadResource` from bypassing tenant scoping when paired
-    // with broad org-role policies (e.g. `withOrgRole("admin")`). Capability
-    // evaluation deliberately ignores this requirement -- nav/UI gating runs
-    // without a concrete resource by design.
+    // Fail-closed: if the resource declares `resolveOrganization` but no
+    // resource was loaded, refuse to evaluate. Prevents a route that forgets
+    // `loadResource` from bypassing tenant scoping when paired with broad
+    // org-role policies (e.g. `withOrgRole("admin")`). Capability evaluation
+    // intentionally skips this check — nav/UI gating runs without a concrete
+    // resource by design.
     if (
       resolveOrganization &&
       resource === undefined &&
@@ -92,8 +90,6 @@ export async function evaluate(input: EvaluateInput): Promise<PolicyDecision> {
     // of a generic NO_MATCHING_POLICY.
     let orgDenyReason: DenyReason | undefined;
 
-    // Step 3: Check resource deny policies (deny rules first)
-    //
     // Cross-tenant deny semantics: when a deny policy WOULD match the
     // request (role + action + conditions all align) but the resource lives
     // in a different tenant than the principal, we still treat it as a
@@ -123,7 +119,6 @@ export async function evaluate(input: EvaluateInput): Promise<PolicyDecision> {
         resolveRelation
       );
 
-      // Org scoping check (per-policy, not top-level)
       if (resolveOrganization && resource !== undefined) {
         const orgResult = checkOrgScoping(
           principal,
@@ -152,14 +147,11 @@ export async function evaluate(input: EvaluateInput): Promise<PolicyDecision> {
       }
     }
 
-    // Step 4: Check resource allow policies
     for (const policy of resourcePolicies) {
       if (policy.effect !== "allow") {
         continue;
       }
 
-      // Skip policies with resource conditions if no resource loaded
-      // (unless ignoreResourceConditions is set for capabilities evaluation)
       if (
         hasResourceConditions(policy) &&
         resource === undefined &&
@@ -168,7 +160,6 @@ export async function evaluate(input: EvaluateInput): Promise<PolicyDecision> {
         continue;
       }
 
-      // Org scoping check (per-policy)
       if (resolveOrganization && resource !== undefined) {
         const orgResult = checkOrgScoping(
           principal,
@@ -177,7 +168,6 @@ export async function evaluate(input: EvaluateInput): Promise<PolicyDecision> {
           policy,
           systemAdminRoles
         );
-        // If org check fails, skip this policy
         if (orgResult !== "pass") {
           orgDenyReason ??= orgResult.skip;
           continue;
@@ -197,7 +187,6 @@ export async function evaluate(input: EvaluateInput): Promise<PolicyDecision> {
       }
     }
 
-    // Step 5: Default deny -- use org-specific reason when available
     if (orgDenyReason) {
       return { allowed: false, reason: orgDenyReason };
     }
@@ -233,24 +222,19 @@ async function matchPolicy(
   resolveRelation?: EvaluateInput["resolveRelation"],
   ignoreResourceConditions = false
 ): Promise<boolean> {
-  // Check role match
   if (!roleMatches(policy, principal)) {
     return false;
   }
 
-  // Check action match
   if (!actionMatches(policy, action)) {
     return false;
   }
 
-  // Check all conditions (AND)
   for (const condition of policy.conditions) {
-    // When ignoreResourceConditions is set, treat resource conditions as passing
     if (condition.effect === "requires_resource" && ignoreResourceConditions) {
       continue;
     }
 
-    // A requires_resource condition with no resource means this policy cannot match
     if (condition.effect === "requires_resource" && resource === undefined) {
       return false;
     }
@@ -296,17 +280,14 @@ function checkOrgScoping(
     return "pass";
   }
 
-  // Principal must have an active org
   const org = principal.organization;
   if (!org) {
     return { skip: "ORG_CONTEXT_MISSING" };
   }
 
-  // Resource must resolve to an org. resolveOrganization is typed
-  // (resource: never) => ... for covariant assignment from concrete
-  // ResourceDef signatures; the actual runtime value is the resource
-  // shape the caller defined.
-  // boundary: covariant function-pointer variance
+  // boundary: resolveOrganization is typed (resource: never) => ... for
+  // covariant assignment from concrete ResourceDef signatures; the runtime
+  // value is the resource shape the caller defined.
   const resourceOrgId = (
     resolveOrganization as (r: unknown) => string | null | undefined
   )(resource);
@@ -314,7 +295,6 @@ function checkOrgScoping(
     return { skip: "ORG_RESOLUTION_FAILED" };
   }
 
-  // Org IDs must match
   if (org.id !== resourceOrgId) {
     return { skip: "TENANT_MISMATCH" };
   }

@@ -54,7 +54,7 @@ const stubCtx = {
   passThroughOnException: () => undefined,
 };
 
-describe("A4.2 BA accountLinking config", () => {
+describe("BA accountLinking config", () => {
   it("disables allowDifferentEmails and pins trustedProviders to []", () => {
     // Silence drizzleAdapter warnings during options construction.
     const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});

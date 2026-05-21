@@ -1,20 +1,3 @@
-/**
- * B2 / Task 2.6 — operator-led onboarding integration check.
- *
- * The admin worker's POST /api/admin/tenants validates the body, then dispatches
- * to the server's AdminApiEntrypoint over the API service binding. The
- * server-side entrypoint thin-wraps `createTenantOnBehalfOf`, which performs
- * org + invitation + dual-scope audit inserts in one transaction.
- *
- * This integration test wires the admin handler to a fake-but-realistic
- * binding that runs the *actual* `createTenantOnBehalfOf` lib against an
- * in-memory fake transaction so we exercise the full code path the worker
- * runs, including: zod validation, requireOperator gate, RPC dispatch, and
- * the lib's transactional behavior. A real Postgres + miniflare round-trip
- * lives downstream of this phase (per repo testing conventions, DB-backed
- * integration tests use docker-compose harnesses outside this scope).
- */
-
 import { OpenAPIHono } from "@hono/zod-openapi";
 import type { GlobalAdmin } from "@repo/db/schema";
 import type {
@@ -24,11 +7,6 @@ import type {
 } from "@repo/shared/api-binding";
 import { describe, expect, it, vi } from "vitest";
 
-// We capture the dual-scope audit call so the test can assert both halves of
-// the audit pair. In production the server worker performs this write inside
-// the org+invitation transaction via `auditLogService.createDualScope` (see
-// apps/server/src/lib/tenants/create-tenant.ts). Here we stub the same shape
-// inside the fake API binding below.
 type DualScopeInput = {
   event: string;
   actorType: string;
@@ -56,10 +34,6 @@ import tenantsHandler from "@/modules/tenants/handler";
 type Insert = { index: number; values: Record<string, unknown> };
 
 function makeFakeServerBinding() {
-  // We model the server's transaction by running the same lib logic the
-  // server-side AdminApiEntrypoint runs. Importing the lib directly would
-  // pull a Drizzle client, so we instead re-implement just enough of the
-  // contract (org + invitation + dual-scope audit) and stamp generated ids.
   const inserts: Insert[] = [];
 
   const createTenantOnBehalfOf = vi.fn(
@@ -85,8 +59,6 @@ function makeFakeServerBinding() {
           status: "pending",
         },
       });
-      // Server-side dual-scope audit (D25): one global-scope row + one
-      // tenant-scope row, both event=tenant.created actor=global_admin.
       await auditCalls.createDualScope({
         event: "tenant.created",
         actorType: "global_admin",
@@ -168,9 +140,6 @@ describe("operator-led onboarding (integration)", () => {
     expect(body.orgId.startsWith("org_")).toBe(true);
     expect(body.invitationId.startsWith("inv_")).toBe(true);
 
-    // RPC was called with the operator identity + validated payload. The
-    // wire shape is the structural `AdminApiOperatorIdentity` (id/email/role)
-    // — the server worker rebuilds the full `GlobalAdminActor` from it.
     expect(createTenantOnBehalfOf).toHaveBeenCalledWith(
       expect.objectContaining({
         id: "gad_dev",
@@ -184,14 +153,11 @@ describe("operator-led onboarding (integration)", () => {
       }
     );
 
-    // Two row inserts captured: org first, invitation second.
     expect(inserts).toHaveLength(2);
     expect(inserts[0]?.values.slug).toBe("acme");
     expect(inserts[1]?.values.role).toBe("owner");
     expect(inserts[1]?.values.status).toBe("pending");
 
-    // Dual-scope audit: createDualScope writes BOTH the operator-scope
-    // (organizationId=null) and tenant-scope rows in one call (D25).
     expect(auditCalls.createDualScope).toHaveBeenCalledTimes(1);
     const call = auditCalls.createDualScope.mock.calls[0];
     if (!call) {

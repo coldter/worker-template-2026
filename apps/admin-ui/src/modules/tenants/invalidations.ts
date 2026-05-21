@@ -8,7 +8,6 @@ interface TenantInvalidationContext {
   organizationId?: string;
 }
 
-// Single source of truth for tenant-mutation query invalidations.
 export function invalidateForTenantAction(
   qc: QueryClient,
   action: TenantMutationAction,

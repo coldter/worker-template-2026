@@ -1,4 +1,3 @@
-// packages/authorization/src/schema.ts
 import { buildRegistryInstance, type RegistryInstance } from "./registry";
 import {
   createResourceDefinition,
@@ -9,17 +8,14 @@ import type { Condition, PolicyRule } from "./types";
 
 export type { ResourceConfig, ResourceDef } from "./resource";
 
-// Type-level marker for principal attributes
 export function principalAttribute<T>(): { __type: T } {
   return {} as { __type: T };
 }
 
-// Extract attribute types from the principal config
 type ExtractAttributes<T extends Record<string, { __type: unknown }>> = {
   [K in keyof T]: T[K]["__type"];
 };
 
-// Global policy builder (no resource conditions - only principal-level conditions)
 class GlobalPolicyRuleBuilder<TRole extends string> {
   private readonly rule: Partial<PolicyRule>;
 
@@ -70,7 +66,6 @@ class GlobalPolicyBuilder<TRole extends string> {
   }
 }
 
-// Schema type returned by createAuthSchema
 export interface AuthSchema<
   TRole extends string,
   TRelation extends string,
@@ -126,7 +121,6 @@ export type AnyResourceDef<
   readonly resolveOwner?: (resource: never) => string;
 };
 
-// Re-export RegistryInstance for consumers
 export type { RegistryInstance } from "./registry";
 
 export function createAuthSchema<

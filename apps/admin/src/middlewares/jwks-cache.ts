@@ -3,28 +3,19 @@ import type { createRemoteJWKSet } from "jose";
 export type RemoteJwks = ReturnType<typeof createRemoteJWKSet>;
 
 /**
- * Audit-fix #6 — cooldown between consecutive JWKS rebuilds. Three forged
- * tokens delivered in rapid succession to the same isolate must NOT trigger
- * three back-to-back JWKS refetches; the strikes accumulate, but the rebuild
- * itself is gated by this window so an attacker cannot weaponize the cache
- * into an outbound DoS against the team's `/cdn-cgi/access/certs` endpoint.
+ * Cooldown between JWKS rebuilds. Forged tokens delivered in rapid succession
+ * accumulate strikes, but the rebuild is gated by this window so an attacker
+ * cannot weaponize the cache into an outbound DoS against the team's
+ * `/cdn-cgi/access/certs` endpoint.
  */
 const REBUILD_BACKOFF_MS = 30_000;
 
 /**
- * Cache for the team's CF Access JWKS (D69). On three consecutive verification
- * failures the next `get()` rebuilds the JWKSet — handles silent key rotation
- * without enabling DoS via a flood of forged tokens. A successful verification
- * resets the strike counter so the rebuild only fires when failures genuinely
- * accumulate.
- *
- * Audit-fix #6 — concurrent `get()` calls during a cold-start or rebuild
- * de-duplicate onto a single in-flight factory promise, and consecutive
- * rebuilds are throttled by `REBUILD_BACKOFF_MS` so a flood of failed
- * verifications cannot pin the worker to a JWKS refetch loop.
- *
- * The class is generic over the cached value so unit tests can stub the
- * factory without touching `jose`.
+ * Cache for the team's CF Access JWKS. Three consecutive verification failures
+ * trigger a rebuild on the next `get()` to handle silent key rotation; a
+ * successful verification resets the strike counter so the rebuild only fires
+ * when failures genuinely accumulate. Concurrent `get()` calls de-duplicate
+ * onto a single in-flight factory promise.
  */
 export class JwksCache<T = RemoteJwks> {
   private cached: T | null = null;
@@ -61,9 +52,8 @@ export class JwksCache<T = RemoteJwks> {
   }
 
   /**
-   * Force-refresh the JWKS. Public callers should prefer `recordFailure()`
-   * which gates the rebuild via the strike + backoff policy. Internal use
-   * only — kept exported for tests that want to clear state explicitly.
+   * Force-refresh the JWKS. Prefer `recordFailure()` which gates the rebuild
+   * via the strike + backoff policy; this is exported only for tests.
    */
   reset(): void {
     this.cached = null;
@@ -76,10 +66,8 @@ export class JwksCache<T = RemoteJwks> {
     if (this.strikes < 3) {
       return;
     }
-    // Strike threshold met. Only actually trigger the rebuild if at least
-    // `REBUILD_BACKOFF_MS` has passed since the last rebuild — otherwise the
-    // strike accumulator stays satisfied but the cache is preserved so a
-    // burst of forged tokens cannot cause repeated outbound JWKS fetches.
+    // Gate the rebuild by `REBUILD_BACKOFF_MS` so a burst of forged tokens
+    // cannot cause repeated outbound JWKS fetches.
     if (this.now() - this.lastRebuildAt < REBUILD_BACKOFF_MS) {
       return;
     }

@@ -17,7 +17,7 @@ function rejectOrigin() {
 }
 
 /**
- * Mutation `Origin` header check (Audit-fix #5).
+ * Mutation `Origin` header check (CSRF defence).
  *
  * - Safe methods skip the check (no CSRF surface).
  * - Non-safe methods MUST present an `Origin` matching `ADMIN_HOST`. When

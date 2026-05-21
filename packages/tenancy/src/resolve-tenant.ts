@@ -186,12 +186,9 @@ async function lookupBySlug(db: DrizzleClient, slug: string) {
 }
 
 async function lookupByCustomHost(db: DrizzleClient, host: string) {
-  // Custom-host lookups join through tenant_custom_hostnames; the relational
-  // query API does not surface this projection, so we hand-write the
-  // builder here. The `isNull(organizations.deletedAt)` predicate is
-  // explicit (matches what `liveOrganizations` would inject) and is
-  // enforced by the structural test in
-  // `packages/db/__tests__/live-organizations.spec.ts` allowlist.
+  // The `isNull(organizations.deletedAt)` predicate is explicit (matches
+  // what `liveOrganizations` would inject) because the relational query
+  // API does not surface this join projection.
   return firstOrNull(
     db
       .select({

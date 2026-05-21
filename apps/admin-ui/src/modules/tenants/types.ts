@@ -1,9 +1,5 @@
-/**
- * Tenant DTO emitted by the admin worker. Mirrors the durable subset of
- * the `organizations` row that the admin tenants list/detail handlers
- * project. Once `apps/admin/openapi.cache.json` is generated, swap this
- * for the @hey-api type. TODO(api-gen).
- */
+// TODO(api-gen): replace with the @hey-api type once
+// `apps/admin/openapi.cache.json` is generated.
 export interface AdminTenant {
   createdAt: string;
   id: string;

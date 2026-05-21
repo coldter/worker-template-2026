@@ -1,11 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { JwksCache } from "@/middlewares/jwks-cache";
 
-/**
- * `now` is injected via the constructor so tests can step the clock without
- * relying on `vi.useFakeTimers`. The cache itself reads only `now()` for the
- * 30-second rebuild backoff.
- */
 function buildClock(start = 1_000_000) {
   let t = start;
   return {

@@ -1,7 +1,6 @@
-// Render a minimal "find your team" placeholder when the SPA hits an origin
-// that is not associated with any tenant. The apex of `APP_WILDCARD_HOST`
-// has its own static page (`public/apex/index.html`, D76); this component is
-// the SPA-side fallback (e.g. a brand-new wildcard subdomain).
+// The apex of `APP_WILDCARD_HOST` has its own static page
+// (`public/apex/index.html`); this component is the SPA-side fallback for
+// wildcard subdomains that are not associated with any tenant.
 import { createRoot } from "react-dom/client";
 
 export function renderTenantNotFound(): void {

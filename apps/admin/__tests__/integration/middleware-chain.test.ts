@@ -9,11 +9,6 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-// Integration test for the full middleware chain. We mock the per-request
-// DB middleware to inject a stub Drizzle client preloaded with a seeded
-// super_admin so the request travels:
-//   hostGuard -> cfAccess (dev fallback) -> dbMiddleware (mocked) ->
-//   globalAdminMiddleware -> requireOperator -> tenantsHandler.
 describe("admin middleware chain (integration)", () => {
   it("allows a seeded super_admin to GET /api/admin/tenants in dev mode", async () => {
     const seeded: GlobalAdmin = {

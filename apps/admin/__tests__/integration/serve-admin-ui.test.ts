@@ -2,10 +2,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 beforeEach(() => {
   vi.resetModules();
-  // dbMiddleware now mounts before cfAccessMiddleware so the perimeter can
-  // resolve `global_admins` rows. These SPA-fallback tests don't go through
-  // the perimeter (or fail it intentionally), so we stub the db attach so
-  // requests don't hit a real Hyperdrive binding.
   vi.doMock("@/middlewares/db", async () => {
     const { createMiddleware } = await import("hono/factory");
     return {
@@ -27,7 +23,7 @@ const baseEnv = {
   CF_ACCESS_TEAM_DOMAIN: "https://team.cloudflareaccess.com",
 };
 
-describe("apps/admin SPA fallback (D63)", () => {
+describe("apps/admin SPA fallback", () => {
   it("forwards non-/api/* GET requests to ADMIN_UI.fetch", async () => {
     const { default: app } = await import("@/server");
     const fetchMock = vi.fn(
@@ -37,8 +33,7 @@ describe("apps/admin SPA fallback (D63)", () => {
           headers: { "content-type": "text/html" },
         })
     );
-    // boundary: tests inject a minimal Fetcher-compatible stub for the
-    // ADMIN_UI binding; production wires a real assets binding via wrangler.
+    // boundary: tests inject a minimal Fetcher-compatible stub for ADMIN_UI.
     const env = {
       ...baseEnv,
       ADMIN_UI: { fetch: fetchMock } as unknown as Fetcher,
@@ -60,7 +55,7 @@ describe("apps/admin SPA fallback (D63)", () => {
     const fetchMock = vi.fn();
     const env = {
       ...baseEnv,
-      // boundary: see above; ADMIN_UI must not be invoked on /api/* paths.
+      // boundary: see above.
       ADMIN_UI: { fetch: fetchMock } as unknown as Fetcher,
     };
 
@@ -70,8 +65,6 @@ describe("apps/admin SPA fallback (D63)", () => {
       env
     );
 
-    // Without a CF Access token the request 403s before the fallback runs;
-    // either way ADMIN_UI must not be invoked.
     expect(fetchMock).not.toHaveBeenCalled();
     expect([403, 404]).toContain(res.status);
   });
@@ -81,7 +74,7 @@ describe("apps/admin SPA fallback (D63)", () => {
     const fetchMock = vi.fn();
     const env = {
       ...baseEnv,
-      // boundary: same Fetcher stub pattern; host guard runs first.
+      // boundary: same Fetcher stub pattern.
       ADMIN_UI: { fetch: fetchMock } as unknown as Fetcher,
     };
 

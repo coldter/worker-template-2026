@@ -160,7 +160,6 @@ export const AUDIT_EVENTS = {
       description: "Custom hostname provisioning failed",
       kind: "bufferable",
     },
-    // A5 lifecycle events.
     REQUESTED: {
       event: "tenancy.custom_hostname.requested",
       description: "Custom hostname request created (TXT pre-verification)",
@@ -331,7 +330,6 @@ export const AUDIT_EVENTS = {
   Record<string, { event: string; description: string; kind: AuditEventKind }>
 >;
 
-// Narrow type: union of all event entries from AUDIT_EVENTS
 type AuditEventObject = {
   [K in keyof typeof AUDIT_EVENTS]: {
     [E in keyof (typeof AUDIT_EVENTS)[K]]: (typeof AUDIT_EVENTS)[K][E];
@@ -344,10 +342,6 @@ export type AuditEventKey = AuditEventObject extends { event: infer E }
     : string
   : string;
 
-// Type-level filter: extract events matching a given kind. This is the
-// counterpart to the runtime `Object.values(...).filter(...)` derivation
-// below; both flow from the `kind` field on each entry, so adding a new event
-// requires only one change (the entry itself).
 type AuditEventOfKind<K extends AuditEventKind> = Extract<
   AuditEventObject,
   { kind: K }
@@ -369,14 +363,9 @@ export interface AuditLogMetadata {
 
 /**
  * Run the audit-log metadata payload through the same redactor used for
- * structured logs (see `@repo/shared/logger#redact`). Audit rows persist to
- * the database and may be replayed in support tooling, so any sensitive
- * field that leaks into `metadata` would otherwise outlive the request.
- *
- * The audit-log service in `apps/server` should call this on every payload
- * before passing it to Drizzle. The shape of `AuditLogMetadata` is
- * preserved (top-level keys remain) and only sensitive *values* are
- * replaced with the `[REDACTED]` sentinel.
+ * structured logs. Audit rows persist to the database and may be replayed in
+ * support tooling, so sensitive fields that leak into `metadata` would
+ * otherwise outlive the request.
  */
 // boundary: redact() walks an arbitrary JSON-shaped value and rebuilds it.
 // The runtime contract preserves AuditLogMetadata's shape -- top-level keys
@@ -388,10 +377,6 @@ export function redactAuditMetadata(
   return redact(metadata) as AuditLogMetadata;
 }
 
-/**
- * Flat list of every entry in AUDIT_EVENTS. Computed once so the derivations
- * below can re-use it without re-flattening.
- */
 const ALL_AUDIT_ENTRIES = Object.values(AUDIT_EVENTS).flatMap((group) =>
   Object.values(group)
 ) as readonly {
@@ -400,20 +385,11 @@ const ALL_AUDIT_ENTRIES = Object.values(AUDIT_EVENTS).flatMap((group) =>
   kind: AuditEventKind;
 }[];
 
-/**
- * Events that occur alongside a database write. Derived from AUDIT_EVENTS
- * by filtering on `kind === "critical"`. Adding a new critical event is a
- * single edit: append the entry with `kind: "critical"`.
- */
 export const CRITICAL_EVENTS: readonly CriticalAuditEvent[] =
   ALL_AUDIT_ENTRIES.filter((e) => e.kind === "critical").map(
     (e) => e.event
   ) as readonly CriticalAuditEvent[];
 
-/**
- * Observational events with no accompanying business write. Derived from
- * AUDIT_EVENTS by filtering on `kind === "bufferable"`.
- */
 export const BUFFERABLE_EVENTS: readonly BufferableAuditEvent[] =
   ALL_AUDIT_ENTRIES.filter((e) => e.kind === "bufferable").map(
     (e) => e.event

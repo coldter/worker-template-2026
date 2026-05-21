@@ -69,8 +69,7 @@ function makeFakeDb(opts: {
     })),
   }));
 
-  // First call from claim path uses .returning(), second call (waitUntil ping)
-  // doesn't. Differentiate by tracking call count.
+  // The claim path uses .returning(); the subsequent waitUntil ping does not.
   let updateCount = 0;
   const update = vi.fn(() => {
     updateCount += 1;

@@ -44,7 +44,6 @@ export async function withDrizzleClient<T>(
   }
 }
 
-// Type inference
 function _inferType() {
   return createDrizzleClient(null as never);
 }

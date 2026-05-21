@@ -112,7 +112,7 @@ function getJwtPluginConfig(options: {
   }
 }
 
-describe("A6.3 BA JWT plugin per-tenant config", () => {
+describe("BA JWT plugin per-tenant config", () => {
   it("subdomain tenant: aud/iss are URL-form for tenant.host", () => {
     const cfg = getJwtPluginConfig({
       tenant: subdomainTenant,

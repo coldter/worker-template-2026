@@ -11,9 +11,7 @@ export interface Logger {
 /**
  * Field names whose values must never appear in structured log output. The
  * comparison is case-insensitive and matches both camelCase and snake_case
- * variants. Add new entries when introducing new sensitive fields. C4 — D56
- * relies on this redactor to keep `withDecryptedSecret` plaintext out of
- * logs even when callers accidentally interpolate it.
+ * variants. Add new entries when introducing new sensitive fields.
  */
 export const REDACT_KEYS: ReadonlySet<string> = new Set([
   "secret",
@@ -25,34 +23,28 @@ export const REDACT_KEYS: ReadonlySet<string> = new Set([
   "apikey",
   "api_key",
   "authorization",
-  // SSO config blobs (D13/D73). Stored encrypted at rest; the decrypted
-  // form must never appear in logs even when callers interpolate it.
+  // SSO config blobs. Stored encrypted at rest; the decrypted form must
+  // never appear in logs even when callers interpolate it.
   "oidcconfig",
   "oidc_config",
   "oidcconfigencrypted",
   "oidc_config_encrypted",
-  // Asymmetric keys (JWT/JWKS). The privateKey column in `jwks` carries
-  // the signing key; redact across both casings.
   "privatekey",
   "private_key",
-  // OAuth/OIDC token material from the `accounts` table. Refresh tokens
-  // and id tokens are bearer credentials; access tokens are also redacted
-  // upstream by the `authorization` key but we keep both spellings here.
+  // OAuth/OIDC bearer credentials.
   "refreshtoken",
   "refresh_token",
   "idtoken",
   "id_token",
-  // Verification tokens (account verification, password reset, etc.).
   "verificationtoken",
   "verification_token",
   // 2FA backup codes -- single-use credentials, redact unconditionally.
   "backupcodes",
   "backup_codes",
-  // Note: `cf_access_sub` / `cfAccessSub` is the Cloudflare Access subject
-  // identifier (a stable user pseudonym, not really a secret). It is not
-  // redacted here -- redaction would inflate log volume and obscure
-  // identity-correlation telemetry. Operators who consider it sensitive
-  // can pass it via the `extraKeys` option at the callsite.
+  // Note: `cf_access_sub` / `cfAccessSub` (Cloudflare Access subject id) is
+  // intentionally NOT redacted -- it is a stable user pseudonym used for
+  // identity-correlation telemetry. Operators who consider it sensitive can
+  // pass it via the `extraKeys` option at the callsite.
 ]);
 
 const REDACTED = "[REDACTED]";
@@ -83,7 +75,6 @@ function buildMatcher(
   if (extra === undefined || extra.size === 0) {
     return (k) => REDACT_KEYS.has(k.toLowerCase());
   }
-  // Lowercase the extras once at construction time.
   const lowered = new Set<string>();
   for (const k of extra) {
     lowered.add(k.toLowerCase());

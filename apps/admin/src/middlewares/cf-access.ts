@@ -24,14 +24,6 @@ function jwksFor(teamDomain: string): JwksCache<RemoteJwks> {
   return created;
 }
 
-/**
- * D52 / D38 — admin-perimeter middleware. Thin wrapper around
- * `authenticateOperator` (production CF Access path) and
- * `authenticateOperatorByEmail` (dev-mode email-resolution path). Both routes
- * funnel through the same finalize step inside `authenticate-operator.ts` so
- * `c.var.globalAdmin` is populated by exactly one code path. JWKS-cache
- * acquisition and `AuthFailure -> Response` mapping live here.
- */
 export const cfAccessMiddleware = createMiddleware<AdminEnv>(
   async (c, next) => {
     if (

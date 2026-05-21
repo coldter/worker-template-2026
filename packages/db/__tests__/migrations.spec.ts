@@ -18,9 +18,6 @@ afterAll(async () => {
   }
 });
 
-// ---------------------------------------------------------------------------
-// A1.1 tenant_custom_hostnames
-// ---------------------------------------------------------------------------
 describe("A1.1 tenant_custom_hostnames", () => {
   it("has all expected columns with correct types", async () => {
     const res = await client.query<{
@@ -152,9 +149,6 @@ describe("A1.1 tenant_custom_hostnames", () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// A1.2 sso_providers
-// ---------------------------------------------------------------------------
 describe("A1.2 sso_providers", () => {
   it("has all expected columns with correct types", async () => {
     const res = await client.query<{
@@ -274,9 +268,6 @@ describe("A1.2 sso_providers", () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// A1.3 reserved_slugs
-// ---------------------------------------------------------------------------
 describe("A1.3 reserved_slugs", () => {
   it("has all expected columns", async () => {
     const res = await client.query<{
@@ -357,9 +348,6 @@ describe("A1.3 reserved_slugs", () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// A1.4 organization columns
-// ---------------------------------------------------------------------------
 describe("A1.4 organization columns", () => {
   it("has enforce_sso boolean NOT NULL DEFAULT false", async () => {
     const res = await client.query(
@@ -432,14 +420,10 @@ describe("A1.4 organization columns", () => {
     expect(res.rows[0].enforce_sso).toBe(false);
     expect(res.rows[0].session_version).toBe(0);
     expect(res.rows[0].branding).toEqual({});
-    // cleanup
     await client.query("DELETE FROM organization WHERE id = $1", [testId]);
   });
 });
 
-// ---------------------------------------------------------------------------
-// A1.5 audit_logs reshape
-// ---------------------------------------------------------------------------
 describe("A1.5 audit_logs reshape", () => {
   it("has organization_id varchar(255) nullable", async () => {
     const res = await client.query(
@@ -486,9 +470,6 @@ describe("A1.5 audit_logs reshape", () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// A1.6 audit_logs append-only trigger
-// ---------------------------------------------------------------------------
 describe("A1.6 audit_logs append-only", () => {
   it("rejects UPDATE with ERRCODE P0001", async () => {
     const id = `aud_trigger_test_${Date.now()}`;
@@ -540,9 +521,6 @@ describe("A1.6 audit_logs append-only", () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// A1.7 pgcrypto sso encryption
-// ---------------------------------------------------------------------------
 describe("A1.7 pgcrypto sso encryption", () => {
   it("pgcrypto extension is present", async () => {
     const res = await client.query(
@@ -627,9 +605,6 @@ describe("A1.7 pgcrypto sso encryption", () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// A1.8 invitations.inviter_id nullable
-// ---------------------------------------------------------------------------
 describe("A1.8 invitations.inviter_id nullable", () => {
   it("inviter_id is nullable in information_schema", async () => {
     const res = await client.query(
@@ -641,7 +616,6 @@ describe("A1.8 invitations.inviter_id nullable", () => {
   });
 
   it("allows INSERT with inviter_id = NULL", async () => {
-    // First insert an org so FK on organization_id works
     const orgId = `org_inv_test_${Date.now()}`;
     await client.query(
       `INSERT INTO organization (id, name) VALUES ($1, 'Inv Test Org')`,
@@ -657,15 +631,11 @@ describe("A1.8 invitations.inviter_id nullable", () => {
       )
     ).resolves.toBeDefined();
 
-    // cleanup
     await client.query("DELETE FROM invitation WHERE id = $1", [invId]);
     await client.query("DELETE FROM organization WHERE id = $1", [orgId]);
   });
 });
 
-// ---------------------------------------------------------------------------
-// member.role / invitation.role CHECK constraints (role_check_constraints)
-// ---------------------------------------------------------------------------
 describe("member.role and invitation.role CHECK constraints", () => {
   it("member_role_check is registered on the member table", async () => {
     const res = await client.query<{ constraint_name: string }>(

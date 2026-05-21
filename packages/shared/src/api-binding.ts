@@ -35,9 +35,9 @@ export interface ApiBindingRpc {
   onUserCreated(params: OnUserCreatedParams): Promise<{ workflowId: string }>;
 }
 
-// B2 / D35 — payload + result shapes for the admin worker's RPC into the
-// server's AdminApiEntrypoint. Kept in @repo/shared so both apps reference the
-// same structural type without crossing the worker boundary at compile time.
+// Payload + result shapes for the admin worker's RPC into the server's
+// AdminApiEntrypoint. Kept in @repo/shared so both apps reference the same
+// structural type without crossing the worker boundary at compile time.
 export type AdminApiCreateTenantPayload = {
   slug: string;
   name: string;
@@ -50,11 +50,10 @@ export type AdminApiCreateTenantResult = {
 };
 
 /**
- * Operator identity payload sent across the service binding from
- * apps/admin to apps/server's `AdminApiEntrypoint`. The admin worker has the
- * full `GlobalAdmin` row in `c.var.globalAdmin`; only the durable subset is
- * forwarded so the wire format does not couple to the DB row layout. The
- * server worker rebuilds the `GlobalAdminActor` it needs from this payload.
+ * Operator identity payload sent across the service binding from the admin
+ * worker to the server's `AdminApiEntrypoint`. Only the durable subset of the
+ * `GlobalAdmin` row is forwarded so the wire format does not couple to the DB
+ * row layout; the server rebuilds the actor it needs from this payload.
  */
 export type AdminApiOperatorIdentity = {
   id: string;
@@ -64,34 +63,31 @@ export type AdminApiOperatorIdentity = {
 
 export interface AdminApiBindingRpc {
   /**
-   * B2 / D35 / Audit-fix #2 — operator-led tenant creation. The full operator
-   * identity (id/email/role) is forwarded so the server-side audit row records
-   * the actor's email and role rather than synthesizing `email: ""` /
-   * `role: "support"`. Mirrors the suspend/restore/delete payload shape.
+   * Operator-led tenant creation. The full operator identity (id/email/role)
+   * is forwarded so the server-side audit row records the actor's email and
+   * role rather than synthesizing defaults.
    */
   createTenantOnBehalfOf(
     operator: AdminApiOperatorIdentity,
     payload: AdminApiCreateTenantPayload
   ): Promise<AdminApiCreateTenantResult>;
   /**
-   * C5 / D54 — operator-led tenant soft-delete. Tombstones the slug and
-   * revokes sessions; idempotent at the service layer.
+   * Operator-led tenant soft-delete. Tombstones the slug and revokes
+   * sessions; idempotent at the service layer.
    */
   deleteTenant(
     organizationId: string,
     operator: AdminApiOperatorIdentity,
     reason?: string
   ): Promise<void>;
-  /**
-   * C5 / D34 / D54 — operator-led tenant restore. Idempotent.
-   */
+  /** Operator-led tenant restore. Idempotent. */
   restoreTenant(
     organizationId: string,
     operator: AdminApiOperatorIdentity
   ): Promise<void>;
   /**
-   * C5 / D34 / D54 — operator-led tenant suspend. Idempotent at the service
-   * layer; admin worker maps both first-suspend and re-suspend to 204.
+   * Operator-led tenant suspend. Idempotent at the service layer; admin
+   * worker maps both first-suspend and re-suspend to 204.
    */
   suspendTenant(
     organizationId: string,
@@ -105,8 +101,7 @@ export interface AdminApiBindingRpc {
  * cannot be assigned. The HTTP boundary maps each to a 409 response with
  * `{ code: <CODE> }` JSON. Workers RPC preserves `name` + own-enumerable
  * properties on thrown errors, but not class identity — callers must
- * structurally narrow on `code` / `name` (see `tenantConflictCode` helper in
- * apps/server/src/lib/tenants/errors.ts; mirrored here for cross-worker use).
+ * structurally narrow on `code` / `name`.
  */
 export type TenantConflictCode = "SLUG_RESERVED" | "SLUG_TAKEN";
 

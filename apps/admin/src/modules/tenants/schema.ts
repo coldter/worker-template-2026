@@ -1,13 +1,9 @@
 import { isValidSlug } from "@repo/tenancy";
 import { z } from "zod";
 
-/**
- * B2 — request body for `POST /api/admin/tenants`. Slug is shape-checked
- * AND filtered against the built-in reserved list (e.g. "admin", "api")
- * before the entrypoint runs, so the server-side insert never has to roll
- * back over a reserved name. The DB-backed `reserved_slugs` table is still
- * consulted server-side as the authoritative gate (D32 / A1c).
- */
+// Pre-filters slugs against the built-in reserved list so the server-side
+// insert avoids rolling back on a reserved name; the DB `reserved_slugs`
+// table is still the authoritative gate server-side.
 export const createTenantBody = z.object({
   slug: z.string().min(1).max(63).refine(isValidSlug, {
     message: "Invalid or reserved slug",

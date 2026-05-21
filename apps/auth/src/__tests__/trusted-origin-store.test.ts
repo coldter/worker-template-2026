@@ -10,7 +10,7 @@ afterEach(() => {
   __resetTrustedOriginStoreForTests();
 });
 
-describe("A4.4 normalizeIssuerOrigin", () => {
+describe("normalizeIssuerOrigin", () => {
   it("accepts a bare https URL with no path and returns the origin", () => {
     expect(normalizeIssuerOrigin("https://idp.example.com")).toBe(
       "https://idp.example.com"
@@ -60,7 +60,7 @@ describe("A4.4 normalizeIssuerOrigin", () => {
   });
 });
 
-describe("A4.4 trusted-origin store", () => {
+describe("trusted-origin store", () => {
   it("returns empty list for unknown tenant", () => {
     expect(getTrustedOriginsForTenant("org_missing")).toEqual([]);
   });
@@ -75,7 +75,6 @@ describe("A4.4 trusted-origin store", () => {
     expect(getTrustedOriginsForTenant("org_acme")).toContain(
       "https://idp.example.com"
     );
-    // Other tenant must not see acme's registration.
     expect(getTrustedOriginsForTenant("org_globex")).toEqual([]);
   });
 

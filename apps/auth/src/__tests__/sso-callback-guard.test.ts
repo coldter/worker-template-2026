@@ -22,8 +22,6 @@ function makeMockDb(providerRow: { organizationId: string } | null): MockDb {
   };
 }
 
-// Helper to build a minimal HookEndpointContext for matcher calls.
-// The matcher only reads ctx.path, so context can be fully stubbed.
 // boundary: vendor-SDK generic variance — HookEndpointContext requires a
 // complex AuthContext; we only need ctx.path at runtime.
 function hookCtx(path: string): HookEndpointContext {
@@ -84,7 +82,6 @@ describe("ssoCallbackGuardPlugin", () => {
   });
 
   it("rejects cross-tenant callback (provider.organizationId !== tenant.organizationId)", async () => {
-    // Provider belongs to org_other, but tenant is org_acme
     const db = makeMockDb({ organizationId: "org_other" });
     const plugin = ssoCallbackGuardPlugin(
       db as unknown as Parameters<typeof ssoCallbackGuardPlugin>[0],
@@ -96,7 +93,6 @@ describe("ssoCallbackGuardPlugin", () => {
     if (!hook) {
       throw new Error("No matching hook");
     }
-    // Invoke the handler — it should throw with 403
     await expect(
       (hook.handler as unknown as (ctx: unknown) => Promise<unknown>)(ctx)
     ).rejects.toMatchObject({
@@ -106,7 +102,7 @@ describe("ssoCallbackGuardPlugin", () => {
   });
 
   it("rejects when provider is not found in DB", async () => {
-    const db = makeMockDb(null); // no provider row
+    const db = makeMockDb(null);
     const plugin = ssoCallbackGuardPlugin(
       db as unknown as Parameters<typeof ssoCallbackGuardPlugin>[0],
       acmeTenant
@@ -124,7 +120,6 @@ describe("ssoCallbackGuardPlugin", () => {
 
   it("rejects all callbacks when tenant is null (admin/apex host)", async () => {
     const db = makeMockDb({ organizationId: "org_acme" });
-    // tenant is null — admin host
     const plugin = ssoCallbackGuardPlugin(
       db as unknown as Parameters<typeof ssoCallbackGuardPlugin>[0],
       null

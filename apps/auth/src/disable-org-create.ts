@@ -1,12 +1,7 @@
 import type { BetterAuthPlugin } from "better-auth";
 import { APIError, createAuthMiddleware } from "better-auth/api";
 
-// Retracted bypass surfaces:
-// - INTERNAL_ADMIN_TOKEN header (D35 — removed)
-// - feature flag (none)
-// - shared secret (none)
-//
-// Organizations are created via direct Drizzle insert by the admin worker (B2).
+// Organizations are created via direct Drizzle insert by the admin worker.
 // No BA endpoint should ever be able to create an organization.
 
 export function disableOrgCreate(): BetterAuthPlugin {

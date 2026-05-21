@@ -12,12 +12,6 @@ export type AuthResult =
   | { ok: true; admin: GlobalAdmin }
   | { ok: false; failure: AuthFailure };
 
-/**
- * Minimal context shape consumed by `authenticateOperator`. Mirrors the
- * runtime fields the function actually touches (request headers, env, and
- * `executionCtx.waitUntil`) so the function can be unit-tested without
- * spinning up Hono.
- */
 export type AuthenticateOperatorContext = {
   req: { header(name: string): string | undefined };
   env: {
@@ -32,12 +26,6 @@ export type AuthenticateOperatorDeps = {
   db: DrizzleClient;
 };
 
-/**
- * Shared post-resolution flow: gates deactivated rows and schedules a
- * fire-and-forget `lastActiveAt` ping. Used by both the production CF Access
- * path and the dev-mode email-resolution adapter so the deactivation gate
- * and ping behavior live in exactly one place.
- */
 function finalizeAdmin(
   c: Pick<AuthenticateOperatorContext, "executionCtx">,
   db: DrizzleClient,
@@ -65,14 +53,6 @@ function finalizeAdmin(
   return { ok: true, admin };
 }
 
-/**
- * D52 — unified operator authentication. Verifies the Cloudflare Access JWT,
- * rejects service tokens (D19), looks up the `global_admins` row by `cfAccessSub`,
- * runs the enrollment-token claim flow (D31) on miss, gates deactivated rows,
- * and schedules a fire-and-forget `lastActiveAt` ping. Returns a discriminated
- * `AuthResult` so the caller (a Hono middleware) can map failures to HTTP
- * responses centrally.
- */
 export async function authenticateOperator(
   c: AuthenticateOperatorContext,
   deps: AuthenticateOperatorDeps
@@ -91,11 +71,9 @@ export async function authenticateOperator(
       issuer: teamDomain,
       audience: c.env.CF_ACCESS_AUD,
       clockTolerance: 60,
-      // CF Access signs identity tokens with RS256 (per
-      // https://developers.cloudflare.com/cloudflare-one/identity/authorization-cookie/validating-json/).
-      // Pinning the algorithm prevents accidental acceptance of HS-signed
-      // forgeries that would otherwise verify against a JWKS-derived key
-      // material misuse.
+      // Pinning RS256 (CF Access's signing algorithm) prevents acceptance of
+      // HS-signed forgeries that would otherwise verify against JWKS key
+      // material.
       algorithms: ["RS256"],
     });
     deps.jwks.recordSuccess();
@@ -111,13 +89,9 @@ export async function authenticateOperator(
   const emailRaw = payload.email;
   const cnRaw = payload.common_name;
 
-  // Per CF Access docs (cloudflare-one/identity/authorization-cookie/
-  // application-token), self-hosted application identity tokens are
-  // user-tokens: they carry `email` and never `common_name`. Service
-  // tokens carry `common_name` (the service-token name) and have no
-  // `email`. We discriminate solely on `common_name` — the `type` claim
-  // varies between deployments (e.g., "self-hosted" vs "saas") and was
-  // an unreliable filter that would reject legitimate identity tokens.
+  // CF Access service tokens carry `common_name` and no `email`; user
+  // identity tokens carry `email` and never `common_name`. The `type` claim
+  // varies between deployments and is unreliable for this discrimination.
   if (cnRaw) {
     return { ok: false, failure: { kind: "service_token_rejected" } };
   }
@@ -142,12 +116,9 @@ export async function authenticateOperator(
           cfAccessSub: { isNull: true },
         },
       });
-      // Audit-fix #3 — case-insensitive email comparison. Both sides are
-      // lowercased + trimmed so a legacy row inserted with mixed case still
-      // matches the JWT-claimed `email` (which is normalized above). The
-      // claim WHERE clause below is independently keyed on the candidate id
-      // and `cfAccessSub IS NULL`, so case-folding here does not relax the
-      // atomic-claim guarantee.
+      // Case-insensitive compare so legacy mixed-case rows still match the
+      // normalized JWT email. The atomic-claim guarantee still holds because
+      // the UPDATE below is keyed on candidate id and `cfAccessSub IS NULL`.
       if (candidate && candidate.email.toLowerCase().trim() === email) {
         const claimed = await deps.db
           .update(globalAdmins)
@@ -189,21 +160,10 @@ export type AuthenticateOperatorByEmailDeps = {
   email: string;
 };
 
-/**
- * D52 — dev-mode operator resolution. Looks up `global_admins` by `email`
- * (the row seeded for `LOCAL_DEV_ADMIN_EMAIL`) instead of by JWT `sub`. Runs
- * the same deactivation gate and `lastActiveAt` ping as the production path
- * so `c.var.globalAdmin` ends up populated by the same code regardless of
- * which entry point resolved the row.
- */
 export async function authenticateOperatorByEmail(
   c: AuthenticateOperatorByEmailContext,
   deps: AuthenticateOperatorByEmailDeps
 ): Promise<AuthResult> {
-  // Audit-fix #3 — normalize both sides. The dev caller already lowercases +
-  // trims the env value, but mirror it here so direct callers in tests can
-  // pass mixed-case input safely. The follow-up filter on the result set is
-  // a defensive case-fold equality check.
   const email = deps.email.toLowerCase().trim();
   const admin =
     (await deps.db.query.globalAdmins.findFirst({
@@ -214,8 +174,8 @@ export async function authenticateOperatorByEmail(
     return finalizeAdmin(c, deps.db, admin);
   }
 
-  // Fallback: case-insensitive lookup via raw SQL for legacy rows that may
-  // have been inserted before the email-normalization invariant was added.
+  // Case-insensitive fallback for legacy rows inserted before the
+  // email-normalization invariant was added.
   const fallbackRows = await deps.db
     .select()
     .from(globalAdmins)

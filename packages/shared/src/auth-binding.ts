@@ -26,8 +26,6 @@ export interface AuthBindingRpc {
     tenant: TenantRef | null;
   }): Promise<{ ok: boolean }>;
   bumpTenantCacheVersion(): Promise<string>;
-  // B2 / Task 2.3 — invitation orchestration RPCs (D60). Called by the
-  // server's `/api/invitations/accept/:invitationId` handler.
   createUser(input: {
     email: string;
     password: string;
@@ -53,14 +51,12 @@ export interface AuthBindingRpc {
     request: Request,
     tenant: TenantRef | null
   ): Promise<Response>;
-  // A2.6 / A2.9 — cross-worker tenancy cache invalidation RPC. The server's
-  // FanOutInvalidator calls these on the AUTH binding to evict the auth
+  // Cross-worker tenancy cache invalidation RPC. The server's
+  // FanOutInvalidator calls this on the AUTH binding to evict the auth
   // worker's own-colo Cache API entry and bump its KV version.
   invalidateTenant(spec: InvalidationSpecRef): Promise<void>;
-  // A4.4 — discovery-time trusted-origin registration. Called by the server
-  // after createSsoProvider commits so the auth worker admits redirects to
-  // the IdP issuer origin on subsequent /sso/sign-in flows. Invalid issuers
-  // are silently rejected (`{ ok: false }`).
+  // Discovery-time trusted-origin registration. Invalid issuers are silently
+  // rejected (`{ ok: false }`).
   registerTrustedOrigin(
     tenantId: string,
     issuerUrl: string

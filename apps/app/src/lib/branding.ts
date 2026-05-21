@@ -1,7 +1,5 @@
-// Apply per-tenant branding before the router mounts. Uses
-// `style.setProperty` so we never have to inject a `<style>` tag, which would
-// require relaxing CSP to `'unsafe-inline'`. The CSS variable
-// `--brand-primary` is consumed by the design tokens in @repo/ui (B5).
+// Uses `style.setProperty` so we never have to inject a `<style>` tag, which
+// would require relaxing CSP to `'unsafe-inline'`.
 import type { TenantInfo } from "./tenant";
 
 export function applyBranding(branding: TenantInfo["branding"]): void {

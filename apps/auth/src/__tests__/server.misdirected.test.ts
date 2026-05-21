@@ -9,8 +9,8 @@ import { describe, expect, it } from "vitest";
  * (Misdirected Request). Auth traffic is only allowed via
  * `AuthEntrypoint.handleAuthRequest`, which sanitises the request and pins
  * it to a resolved tenant. Wiring a fallback that ran the BA pipeline with
- * `tenant: null` re-opens the Wave-1 audit finding (apex JWT mint bypass +
- * skipped tenant membership enforcement).
+ * `tenant: null` would re-open the apex JWT mint bypass + skipped tenant
+ * membership enforcement.
  *
  * We avoid importing `../server` directly because that module pulls in the
  * Cloudflare-Workers-only `caches.default` at module init. Instead we

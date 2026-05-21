@@ -7,7 +7,6 @@ const app = new OpenAPIHono<AdminEnv>();
 
 const audit = { audit: adminOperatorAuditLogger };
 
-// B2 fleshes out create / deactivate / reissue-enrollment handlers.
 app.get("/", requireOperator("platform.manage_global_admins", audit), (c) =>
   c.json({ data: [], meta: { total: 0 } }, 200)
 );

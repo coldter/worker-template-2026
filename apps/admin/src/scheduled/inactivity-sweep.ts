@@ -7,16 +7,8 @@ import type { AdminBindings } from "@/env";
 const NINETY_DAYS_MS = 90 * 24 * 60 * 60 * 1000;
 
 /**
- * 90-day inactivity sweep. Deactivates any global_admins row whose
- * `lastActiveAt` is older than 90 days and whose `deactivatedAt` is null.
- * Runs from `apps/admin/src/index.ts` `scheduled()` (cron: `0 12 * * *`).
- *
- * Audit-fix #4 — emits one critical `global_admin.deactivated` row per
- * deactivated admin inside the same transaction so the audit row rolls back
- * with the update. The actor is "system"; metadata captures the reason and
- * the row's `lastActiveAt` at sweep time.
- *
- * Returns `{ deactivated: number }` for log lines / contract tests.
+ * Emits one `global_admin.deactivated` audit row per deactivated admin inside
+ * the same transaction so the audit row rolls back if the update fails.
  */
 export async function runInactivitySweep(
   env: AdminBindings

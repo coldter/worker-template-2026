@@ -27,10 +27,8 @@ export function tenantMiddleware(deps: MwDeps) {
     let resolveHost = rawHost;
     // Fail closed in production: never even read the dev header so an
     // attacker cannot probe for a misconfiguration via response timing.
-    // `dev-header.ts` also rejects when `nodeEnv === "production"`, but
-    // this gate is the structural fail-safe — if someone removes the
-    // nodeEnv check by accident, the production middleware still ignores
-    // the header.
+    // `dev-header.ts` also rejects when `nodeEnv === "production"`; this
+    // gate is the structural fail-safe in case that check is removed.
     if (deps.config.nodeEnv !== "production") {
       const devSlug = c.req.header("X-Dev-Tenant-Slug");
       if (devSlug !== undefined) {

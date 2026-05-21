@@ -1,8 +1,8 @@
-// B4.7 (D76) — apex page is served as a static asset on the apex of
-// `APP_WILDCARD_HOST`. Vite copies `public/apex/index.html` into
-// `dist/apex/index.html` during build. The "source of truth" assertion
-// runs against `public/`; the post-build check is gated on `dist/`
-// existing so this suite stays green without a build step.
+// Apex page is served as a static asset on the apex of `APP_WILDCARD_HOST`.
+// Vite copies `public/apex/index.html` into `dist/apex/index.html` during
+// build. The "source of truth" assertion runs against `public/`; the
+// post-build check is gated on `dist/` existing so this suite stays green
+// without a build step.
 
 import * as fs from "node:fs";
 import * as path from "node:path";

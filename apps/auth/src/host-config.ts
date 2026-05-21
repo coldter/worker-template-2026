@@ -17,7 +17,7 @@ const HOST_PORT_SUFFIX_RE = /:\d+$/;
 
 /**
  * Derives a per-isolate AllowedHostsSnapshot from wrangler env vars.
- * customHosts is empty here — Phase A5 will extend this with active
+ * customHosts is empty here — future work will extend this with active
  * tenant_custom_hostnames loaded from the DB at isolate start.
  */
 export function snapshotFromEnv(env: SnapshotEnv): AllowedHostsSnapshot {
@@ -85,7 +85,7 @@ export function deriveAllowedHosts(
 /**
  * Returns true when `rawHost` (a Host-header value, possibly with port) is in
  * the snapshot-derived allow-list. Used by the auth-worker entry to fail
- * closed with 421 (Misdirected Request) on unknown hosts (D29).
+ * closed with 421 (Misdirected Request) on unknown hosts.
  *
  * Matching rules:
  *   - localDevHosts are matched verbatim (they may contain ":port").

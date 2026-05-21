@@ -81,7 +81,6 @@ export function buildRegistryInstance<
   resources: TResources,
   options: RegistryOptions
 ): RegistryInstance<TResources> {
-  // Validate at construction time
   validateRegistry(
     resources,
     options.schemaRoles,
@@ -142,8 +141,8 @@ export function buildRegistryInstance<
 
       for (const [name, resourceDef] of Object.entries(resources)) {
         for (const action of resourceDef.actions) {
-          // Evaluate without resource but with ignoreResourceConditions
-          // so that conditionally-allowed actions (e.g. whereOwner) report true
+          // ignoreResourceConditions reports conditionally-allowed actions
+          // (e.g. whereOwner) as true since there is no concrete resource.
           const decision = await evaluate({
             principal,
             action,

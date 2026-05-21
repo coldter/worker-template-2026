@@ -1,4 +1,3 @@
-// Hono middleware adapter for @repo/authorization
 import type { Context, MiddlewareHandler } from "hono";
 import { HTTPException } from "hono/http-exception";
 import type { RegistryInstance } from "./registry";
@@ -142,7 +141,6 @@ export function createAuthorize<
         throw denyResponse(decision);
       }
 
-      // Store loaded resource in context for downstream handlers
       if (loadedResource !== undefined) {
         c.set(AUTHORIZED_RESOURCE_KEY, loadedResource);
       }

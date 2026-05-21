@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
 // provisionUserCallback runs AFTER token exchange. The earlier-fail gate is
-// ssoCallbackGuardPlugin (A4.3).
+// ssoCallbackGuardPlugin.
 import { provisionUserCallback } from "../plugins/provision-user";
 
 type MockDb = {
@@ -120,7 +120,6 @@ describe("provisionUserCallback", () => {
 
   it("throws FORBIDDEN when an existing user with the same email lacks membership in provider org", async () => {
     const existingUser = { id: "user_other", email: "alice@example.com" };
-    // select().from().where().limit() returns no member rows
     const db = makeMockDb({
       query: {
         users: {

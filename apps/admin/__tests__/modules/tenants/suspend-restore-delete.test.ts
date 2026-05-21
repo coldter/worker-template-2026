@@ -1,22 +1,3 @@
-/**
- * C6.2 — admin worker tenant suspend/restore/delete routes.
- *
- * The legacy server worker exposed `POST /api/admin/tenants/:id/suspend|restore`
- * directly under apps/server. C6 collapses every operator-led tenant mutation
- * onto the admin worker, where `requireOperator` already gates by global-admin
- * role and the `AdminApiEntrypoint` RPC handles the transactional flow.
- *
- * These tests pin the new route surface:
- *   POST   /api/admin/tenants/:id/suspend  -> 204 (super_admin / support)
- *   POST   /api/admin/tenants/:id/restore  -> 204 (super_admin / support)
- *   DELETE /api/admin/tenants/:id          -> 204 (super_admin only)
- *
- * Each handler must:
- *   1. Run requireOperator with the matching action.
- *   2. Forward operator identity (id/email/role) + optional reason via the
- *      service binding to AdminApiEntrypoint.
- *   3. Return 204 on success, propagate role gate as 403.
- */
 import { OpenAPIHono } from "@hono/zod-openapi";
 import type { GlobalAdmin } from "@repo/db/schema";
 import { describe, expect, it, vi } from "vitest";
@@ -66,8 +47,7 @@ function buildApp(opts: { role?: OperatorRole; rpc?: StubRpc } = {}) {
     deleteTenant: opts.rpc?.deleteTenant ?? vi.fn(async () => undefined),
   };
 
-  // boundary: tests inject a partial admin bindings object — only API.* and
-  // a couple of NODE_ENV-shaped keys are read by the handler.
+  // boundary: tests inject a partial admin bindings object.
   const env = {
     API: rpc,
     NODE_ENV: "test",

@@ -28,7 +28,6 @@ export class EmailNotificationWorkflow extends WorkflowEntrypoint<
     event: WorkflowEvent<EmailNotificationParams>,
     step: WorkflowStep
   ): Promise<void> {
-    // Step 1: Load notification and resolve email
     const notificationData = await step.do(
       "load-notification",
       { retries: { limit: 3, delay: "2 seconds", backoff: "exponential" } },
@@ -71,7 +70,6 @@ export class EmailNotificationWorkflow extends WorkflowEntrypoint<
 
     const recipientEmail = notificationData.email;
 
-    // Step 2: Send email via Resend
     await step.do(
       "send-email",
       { retries: { limit: 3, delay: "5 seconds", backoff: "exponential" } },
@@ -96,7 +94,6 @@ export class EmailNotificationWorkflow extends WorkflowEntrypoint<
       }
     );
 
-    // Step 3: Update notification status
     await step.do(
       "update-status",
       { retries: { limit: 3, delay: "2 seconds", backoff: "exponential" } },

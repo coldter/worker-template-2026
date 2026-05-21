@@ -69,7 +69,7 @@ describe("host-only cookie config (config-level assertions)", () => {
     const attrs = auth.options.advanced?.cookies?.session_token?.attributes as
       | Record<string, unknown>
       | undefined;
-    // Domain must be absent — browser scopes cookie to host-only (D15/D65)
+    // Domain must be absent — browser scopes cookie to host-only.
     expect(attrs?.domain).toBeUndefined();
   });
 
@@ -95,8 +95,6 @@ describe("host-only cookie config (config-level assertions)", () => {
   });
 
   it("custom hostname config also has no Domain attribute", () => {
-    // Custom hostnames are in the allowedHosts list — same cookie config applies.
-    // The cookie attributes are instance-level config, not host-specific.
     const auth = makeAuth();
     const attrs = auth.options.advanced?.cookies?.session_token?.attributes as
       | Record<string, unknown>

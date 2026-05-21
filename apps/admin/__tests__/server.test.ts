@@ -10,10 +10,6 @@ afterEach(() => {
 
 describe("apps/admin server composition", () => {
   it("requires CF Access JWT before reaching any handler", async () => {
-    // dbMiddleware now mounts before cfAccessMiddleware so the perimeter can
-    // resolve `global_admins` rows in either the production CF Access path
-    // or the dev-mode email path. This smoke test stubs the db attach so it
-    // can exercise the missing-JWT contract without a Hyperdrive binding.
     vi.doMock("@/middlewares/db", async () => {
       const { createMiddleware } = await import("hono/factory");
       return {

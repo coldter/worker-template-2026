@@ -49,7 +49,6 @@ vi.mock("@/middlewares/invalidator", () => ({
   }),
 }));
 
-// ---- auth-context stub ----
 // We control what principal is in scope via capturedAuthCtx
 let capturedAuthCtx: {
   user: {
@@ -77,7 +76,6 @@ vi.mock("@/middlewares/auth-context", () => ({
   },
 }));
 
-// ---- db stub ----
 // We control db operations per test via capturedDb
 type MockTx = {
   execute: ReturnType<typeof vi.fn>;
@@ -204,7 +202,6 @@ vi.mock("@/middlewares/db", () => ({
   },
 }));
 
-// ---- tenancy stub ----
 let capturedTenantOrgId = "org_acme";
 
 vi.mock("@/middlewares/tenancy", () => ({

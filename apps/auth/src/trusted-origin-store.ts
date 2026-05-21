@@ -1,7 +1,7 @@
-// A4.4 — per-isolate snapshot of issuer origins registered by the server worker
-// after a successful `createSsoProvider`. The dynamic `trustedOrigins(req)`
-// callback in `instance.ts` consults this store keyed by tenant.organizationId
-// so subsequent /sso/sign-in redirects to the issuer pass BA's allowed-redirect
+// Per-isolate snapshot of issuer origins registered by the server worker after
+// a successful `createSsoProvider`. The dynamic `trustedOrigins(req)` callback
+// in `instance.ts` consults this store keyed by tenant.organizationId so
+// subsequent /sso/sign-in redirects to the issuer pass BA's allowed-redirect
 // check without re-reading the DB on every request.
 //
 // Lifetime: per-isolate Map. Cold-start re-population happens on the next

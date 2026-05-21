@@ -83,7 +83,6 @@ const app = new OpenAPIHono<AppEnv>();
 // import { wellKnownChallengeRouter } from "@/modules/tenancy/well-known-challenge";
 // app.route("/.well-known/cf-custom-hostname-challenge", wellKnownChallengeRouter);
 
-// Global middleware
 // request-id runs BEFORE hostHeaderGuard so even 421 host-rejection
 // responses carry an X-Request-Id (otherwise the correlation chain breaks
 // at the very edge of the worker).
@@ -95,7 +94,6 @@ app.use("*", createCorsMiddleware());
 app.use("*", analyticsMiddleware);
 app.use("*", rateLimitMiddleware);
 
-// Scoped middleware -- DB + tenant for /api/*
 app.use("/api/*", dbMiddleware);
 app.use("/api/*", tenancyMiddleware);
 // Invalidator middleware runs after tenancy so handlers under /api/* can
@@ -115,7 +113,6 @@ app.use("/api/*", auditContextMiddleware);
 // resolved before the request is forwarded to the auth worker (A3.6).
 app.all("/api/auth/*", authProxyMiddleware);
 
-// Routes
 app.route("/", statusHandler);
 app.route("/api/org-admin/sso/providers", ssoProvidersHandler);
 app.route("/api/roles", rolesHandler);
@@ -126,7 +123,6 @@ app.route("/api/tenancy/custom-hostnames", customHostnamesHandler);
 app.route("/api/invitations", invitationsHandler);
 app.route("/api/authorization/capabilities", capabilitiesHandler);
 
-// OpenAPI docs + Scalar UI (non-production only)
 setupDocs(app);
 
 // B4 (D40, D45) — tenant-SPA fallback. Anything that did not match an
@@ -151,7 +147,6 @@ app.all("*", async (c) => {
   return await assets.fetch(c.req.raw);
 });
 
-// Error handling
 app.notFound((c) =>
   c.json({ error: { code: "NOT_FOUND", message: "Route not found" } }, 404)
 );

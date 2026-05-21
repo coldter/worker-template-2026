@@ -221,7 +221,7 @@ interface SsoProviderResource {
 
 // Owner and admin org-roles can manage SSO providers for their tenant.
 // All operations are scoped to the resolved tenant org — cross-tenant access
-// is prevented by service-layer org enforcement (A4.4).
+// is prevented by service-layer org enforcement.
 export const ssoProviderAuthorization =
   auth.createResource<SsoProviderResource>("sso_provider", {
     actions: ["create", "read", "update", "delete", "rotate_secret"],
@@ -239,8 +239,8 @@ interface CustomHostnameResource {
   organizationId: string;
 }
 
-// A5 — only org owners and admins can manage custom hostnames. Service-layer
-// scoping (A5.4) re-checks `actor.organizationId` against the row.
+// Only org owners and admins can manage custom hostnames. Service-layer
+// scoping re-checks `actor.organizationId` against the row.
 export const customHostnameAuthorization =
   auth.createResource<CustomHostnameResource>("custom_hostname", {
     actions: ["create", "list", "verify", "remove"],

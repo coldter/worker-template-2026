@@ -3,7 +3,6 @@ import { APIError } from "better-auth/api";
 import { describe, expect, it } from "vitest";
 import { disableSignUpHook } from "../disable-sign-up";
 
-// Minimal user shape for the hook
 const baseUser = {
   id: "user_test",
   name: "Test User",
@@ -37,7 +36,6 @@ describe("disableSignUpHook", () => {
       },
     } as unknown as GenericEndpointContext;
     const result = await create.before(baseUser, ctx);
-    // Should return { data: user } with defaults applied
     expect(result).toBeDefined();
     const r = result as { data: typeof baseUser & Record<string, unknown> };
     expect(r.data.email).toBe(baseUser.email);

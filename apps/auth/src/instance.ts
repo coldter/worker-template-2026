@@ -73,15 +73,14 @@ export type AuthBindings = Omit<CloudflareBindings, "API" | "NODE_ENV"> & {
 
 const platformSchema = z.enum(["web", "mobile"]);
 
-// Platform-specific session durations (in seconds)
 const SESSION_CONFIG = {
   web: {
-    expiresIn: 3600, // 1 hour
-    updateAge: 1800, // 30 minutes
+    expiresIn: 3600,
+    updateAge: 1800,
   },
   mobile: {
-    expiresIn: 604_800, // 7 days
-    updateAge: 86_400, // 1 day
+    expiresIn: 604_800,
+    updateAge: 86_400,
   },
 } as const;
 
@@ -97,7 +96,6 @@ export type SessionWithAdditionalFields = {
 // stable absolute URLs.
 const TRAILING_SLASH_RE = /\/$/;
 
-// Regex patterns at top-level for performance
 const MOBILE_PATTERNS = [
   /android/i,
   /iphone/i,
@@ -119,7 +117,6 @@ const detectPlatform = (userAgent: string | null): Platform => {
     : "web";
 };
 
-/** Minimal execution context - compatible with both Workers and Hono ExecutionContext */
 type MinimalExecutionContext = {
   waitUntil(promise: Promise<unknown>): void;
   passThroughOnException(): void;
@@ -161,7 +158,6 @@ export function createAuth(
     ])
   );
 
-  // hostConfig mirrors the snapshot fields that parseHostname needs.
   const hostConfig: HostConfig = {
     wildcardSuffix: options.allowedHostsSnapshot.wildcardSuffix,
     adminHost: options.allowedHostsSnapshot.adminHost,
@@ -185,7 +181,7 @@ export function createAuth(
     // Disable account-linking entry points so a user discovered via SSO can
     // never be auto-merged into a different identity. trustedProviders is the
     // bypass list for `allowDifferentEmails`; keeping it empty closes that
-    // bypass too. (A4.2)
+    // bypass too.
     account: {
       accountLinking: {
         allowDifferentEmails: false,
@@ -193,7 +189,7 @@ export function createAuth(
       },
     },
     secret: env.BETTER_AUTH_SECRET,
-    // Absent `fallback` is intentional: unknown hosts must fail closed (D6).
+    // Absent `fallback` is intentional: unknown hosts must fail closed.
     baseURL: {
       allowedHosts: allowedHosts as string[],
       protocol: "https" as const,
@@ -215,12 +211,12 @@ export function createAuth(
     },
     // BA auto-merges allowedHosts into trustedOrigins. This callback adds the
     // per-tenant origin explicitly for the discovery-origin extension point
-    // (A4) and to make audit reading obvious. Do NOT echo req.headers.get("Host")
-    // — that re-opens the trustedOrigins echo abuse (spec 09-security).
+    // and to make audit reading obvious. Do NOT echo req.headers.get("Host")
+    // — that re-opens the trustedOrigins echo abuse.
     //
-    // A4.4 — registered SSO issuer origins (per-isolate snapshot) are merged
-    // here so subsequent /sso/sign-in redirects to a registered IdP issuer
-    // pass BA's allowed-redirect check. The store is populated by
+    // Registered SSO issuer origins (per-isolate snapshot) are merged here so
+    // subsequent /sso/sign-in redirects to a registered IdP issuer pass BA's
+    // allowed-redirect check. The store is populated by
     // AuthEntrypoint.registerTrustedOrigin after createSsoProvider commits.
     trustedOrigins: async (req?: Request) => {
       const tenantId = options.tenant?.organizationId ?? null;
@@ -246,17 +242,12 @@ export function createAuth(
       ] as string[];
     },
 
-    // Rate limiting — set higher than lockout to ensure our custom lockout
-    // kicks in first.
-    //
-    // Storage decision: BA's `secondary-storage` adapter pointed at
-    // Cloudflare KV (eventually consistent, write-coalesced) caused
-    // counters to lag across colos and let attackers bypass the window by
-    // spreading requests. Until the auth worker grows a service binding to
-    // the server worker's `RateLimiter` Durable Object (Wave 2A), we switch
-    // to the BA-managed Postgres table (`storage: "database"`) so counter
-    // writes are linearizable through Hyperdrive. The same Drizzle adapter
-    // is already wired below, so no extra plumbing is needed.
+    // Rate limit max is set higher than lockout so the custom lockout kicks
+    // in first. Storage uses the BA-managed Postgres table (`storage:
+    // "database"`) instead of KV: KV is eventually consistent and write-
+    // coalesced, so counters lag across colos and attackers can bypass the
+    // window by spreading requests. Postgres via Hyperdrive gives
+    // linearizable counter writes.
     rateLimit: {
       enabled: true,
       window: RATE_LIMIT_CONFIG.global.window,
@@ -308,8 +299,8 @@ export function createAuth(
       // Each request resolves to a single tenant host via `sanitizedAuthRequest`,
       // so host-only cookies are correct: never send a `Domain` attribute,
       // mark `Secure`, `HttpOnly`, and `SameSite=lax`. Cross-subdomain leakage
-      // is the threat we explicitly close (D15/D65) — browsers default to
-      // host-only when `Domain` is omitted.
+      // is the threat we explicitly close — browsers default to host-only
+      // when `Domain` is omitted.
       useSecureCookies: true,
       defaultCookieAttributes: {
         sameSite: "lax",
@@ -334,11 +325,10 @@ export function createAuth(
       user: {
         create: {
           before: async (user, hookCtx) => {
-            // Reject public sign-up first; admin createUser path passes (D32).
+            // Reject public sign-up; admin createUser path bypasses.
             const { create } = disableSignUpHook();
             const signUpResult = await create.before(user, hookCtx);
 
-            // Preserve existing role-assignment behavior after the bypass check.
             const base =
               signUpResult &&
               typeof signUpResult === "object" &&
@@ -382,7 +372,6 @@ export function createAuth(
             const platform = detectPlatform(userAgent);
             const config = SESSION_CONFIG[platform];
 
-            // Query existing session for new-device detection
             const [previousSession] = await db
               .select({
                 userAgent: schema.sessions.userAgent,
@@ -392,12 +381,11 @@ export function createAuth(
               .where(eq(schema.sessions.userId, session.userId))
               .limit(1);
 
-            // Revoke existing sessions for this user (single session per user)
+            // Single session per user — revoke existing sessions before mint.
             await db
               .delete(schema.sessions)
               .where(eq(schema.sessions.userId, session.userId));
 
-            // Detect new device and send notification
             if (previousSession) {
               const isNewDevice =
                 previousSession.userAgent !== userAgent ||
@@ -420,15 +408,14 @@ export function createAuth(
               }
             }
 
-            // Calculate expiration based on platform
             const expiresAt = new Date(Date.now() + config.expiresIn * 1000);
 
-            // A6.4 — when a tenant is resolved, enforce membership and
-            // pin the active org/role + copy the org claim fields so the
-            // JWT mint can stamp them as `org` without a re-query (D34/D32).
-            // For the apex / null-tenant case, fall back to the legacy
-            // "most recent membership" lookup so admin host / apex sign-ins
-            // still get a default activeOrganizationId.
+            // When a tenant is resolved, enforce membership and pin the
+            // active org/role + copy the org claim fields so the JWT mint can
+            // stamp them as `org` without a re-query. For the apex / null-
+            // tenant case, fall back to a "most recent membership" lookup so
+            // admin host / apex sign-ins still get a default
+            // activeOrganizationId.
             let orgContext: {
               activeOrganizationId: string;
               activeOrgRole: string;
@@ -490,22 +477,19 @@ export function createAuth(
             // runtime; reach via Record<string, unknown> per the BA pattern.
             const updateData = session as Record<string, unknown>;
 
-            // A6.5 — host-pinned tenants reject any setActive to a foreign
-            // org. Defense in depth on top of the create-time pin.
+            // Host-pinned tenants reject any setActive to a foreign org.
+            // Defense in depth on top of the create-time pin.
             assertSameTenantOnUpdate(options.tenant, updateData);
 
             if (updateData.activeOrganizationId !== undefined) {
               const newOrgId = updateData.activeOrganizationId as string | null;
 
               if (!newOrgId) {
-                // Clearing active org -- also clear the role
                 return {
                   data: { ...session, activeOrgRole: null },
                 };
               }
 
-              // Resolve the userId from the endpoint context's session
-              // (set by orgSessionMiddleware before the DB call).
               const endpointCtx = context as
                 | {
                     context?: {
@@ -577,14 +561,14 @@ export function createAuth(
     plugins: [
       enhancedUserPlugin(),
       // Bearer + JWT must be registered before any plugin that consumes the
-      // resolved session via `sessionMiddleware` (e.g. our admin plugin).
-      // Otherwise BA's late-registration ordering means bearer-token requests
-      // never get a session attached for downstream plugins. (BA convention.)
+      // resolved session via `sessionMiddleware`. BA's late-registration
+      // ordering otherwise causes bearer-token requests to never get a
+      // session attached for downstream plugins.
       bearer({ requireSignature: true }),
       jwt({
         jwt: {
-          // Per-tenant URL-form aud/iss (D12). Spec deviation: the `org.id`
-          // claim carries the URN-style stable identifier; iss/aud stay URL.
+          // Per-tenant URL-form aud/iss. The `org.id` claim carries the
+          // stable identifier; iss/aud stay URL.
           issuer: deriveJwtIssuer(options.tenant, { APP_URL: env.APP_URL }),
           audience: deriveJwtAudience(options.tenant, { APP_URL: env.APP_URL }),
           expirationTime: "15m",
@@ -631,7 +615,6 @@ export function createAuth(
         adminRoles: [SYSTEM_ROLES.ADMIN.slug],
       }),
       adminPlugin(env.API),
-      // Email OTP plugin for password reset via OTP (not magic links)
       emailOTP({
         otpLength: TWO_FACTOR_CONFIG.otpLength,
         expiresIn: TWO_FACTOR_CONFIG.emailOtpExpiresIn,
@@ -658,11 +641,10 @@ export function createAuth(
 
           logger.info(`Sending ${typeLabels[type]} OTP to ${email}`);
 
-          // Map change-email to email-verification for the template
           const templateType =
             type === "change-email" ? "email-verification" : type;
 
-          // Send without awaiting to prevent timing attacks
+          // Send without awaiting to prevent timing attacks.
           ctx.waitUntil(
             sendEmail({
               apiKey: env.RESEND_API_KEY,
@@ -686,32 +668,26 @@ export function createAuth(
           );
         },
       }),
-      // Two-factor authentication plugin (email OTP only, no TOTP)
       twoFactor({
         // With usePlural: true on the Drizzle adapter, provide the
         // singular model name so it resolves to our "twoFactors" table.
         twoFactorTable: "twoFactor",
-        // Skip TOTP verification since we only use email OTP
         skipVerificationOnEnable: true,
-        // OTP configuration for 2FA verification
         otpOptions: {
-          // OTP expires in 3 minutes
           period: TWO_FACTOR_CONFIG.twoFactorOtpPeriodMinutes,
           async sendOTP({ user, otp }, reqCtx) {
-            // debugging (remove in production)
             if (env.NODE_ENV === "development") {
-              logger.info(`OTP: ${otp} for user ${user.id} (${user.email})`); // Log OTP for
+              logger.info(`OTP: ${otp} for user ${user.id} (${user.email})`);
             }
             logger.info(`Sending 2FA OTP to ${user.email}`);
 
-            // Extract device info from context if available
             const ipAddress =
               reqCtx?.headers?.get("CF-Connecting-IP") ??
               reqCtx?.headers?.get("x-forwarded-for")?.split(",")[0]?.trim() ??
               undefined;
             const userAgent = reqCtx?.headers?.get("user-agent") ?? undefined;
 
-            // Send without awaiting to prevent timing attacks
+            // Send without awaiting to prevent timing attacks.
             ctx.waitUntil(
               sendEmail({
                 apiKey: env.RESEND_API_KEY,
@@ -741,17 +717,14 @@ export function createAuth(
         disableDefaultReference: true,
       }),
       createOrganizationPlugin(db, async (data) => {
-        // B2 / Audit-fix #2 — wire BA's `sendInvitationEmail` callback to the
-        // shared `TenantInviteEmail` template via Resend. The callback fires
-        // when BA's organization plugin creates an invitation row through its
-        // public createInvitation endpoint. The operator-led path
-        // (`AdminApiEntrypoint.createTenantOnBehalfOf`) inserts the
-        // invitation row directly via Drizzle and does NOT invoke this
-        // callback — that flow's email is sent from the server worker after
-        // the transaction commits (separate plumbing tracked in B2.6
-        // integration). Wiring this callback here keeps tenant-admin-led
-        // invites (member invites within an existing tenant) on the same
-        // template + transport.
+        // BA's `sendInvitationEmail` callback fires when the organization
+        // plugin creates an invitation row through its public createInvitation
+        // endpoint. The operator-led path
+        // (`AdminApiEntrypoint.createTenantOnBehalfOf`) inserts the invitation
+        // row directly via Drizzle and does NOT invoke this callback — that
+        // flow's email is sent from the server worker after the transaction
+        // commits. Wiring this callback here keeps tenant-admin-led invites on
+        // the same template + transport.
         const acceptUrl = options.tenant?.host
           ? `https://${options.tenant.host}/accept-invite/${data.invitation.id}`
           : `${env.APP_URL.replace(TRAILING_SLASH_RE, "")}/accept-invite/${data.invitation.id}`;
@@ -787,13 +760,12 @@ export function createAuth(
         );
       }),
       // Placed after createOrganizationPlugin so its before hook runs first
-      // (BA's late-registration ordering). No bypass surface (D22).
+      // (BA's late-registration ordering). No bypass surface.
       disableOrgCreate(),
-      // SSO plugin — BEFORE bearer/jwt so its before-hooks fire on the right path.
-      // organizationProvisioning disabled: org membership is managed by A4.4 CRUD.
-      // domainVerified gate is enforced in provisionUserCallback (D8).
-      // BA writes oidc_config text via its own /sso/register endpoint; org-admin
-      // CRUD (A4.4) writes oidc_config_encrypted bytea. The decrypted view
+      // organizationProvisioning disabled: org membership is managed by our
+      // admin CRUD. domainVerified gate is enforced in provisionUserCallback.
+      // BA writes oidc_config text via its own /sso/register endpoint; the
+      // org-admin CRUD writes oidc_config_encrypted bytea. The decrypted view
       // reconciles both columns transparently for BA reads.
       sso({
         organizationProvisioning: { disabled: true },
@@ -802,10 +774,9 @@ export function createAuth(
         domainVerification: { enabled: true },
       }),
       // Validates provider.organizationId === tenant.organizationId BEFORE the
-      // IdP token exchange (A4.3). Must be after sso() so BA's own SSO routes
-      // are registered, but the before-hook fires on every matching request.
+      // IdP token exchange. Must be after sso() so BA's own SSO routes are
+      // registered, but the before-hook fires on every matching request.
       ssoCallbackGuardPlugin(db, options.tenant),
-      // override type
       {
         id: "override-type",
         $Infer: {} as {

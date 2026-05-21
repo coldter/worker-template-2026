@@ -1,12 +1,6 @@
 import { writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 
-/**
- * Generate the apps/admin OpenAPI spec to `openapi.cache.json` (D42).
- * Mirrors `apps/server/scripts/generate-openapi.ts`. Pre-build step for
- * `bun run deploy`; downstream apps/admin-ui (B3) consumes the cache for
- * codegen.
- */
 async function main(): Promise<void> {
   const { default: app } = await import("../src/server");
   const spec = app.getOpenAPI31Document({

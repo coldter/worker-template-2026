@@ -62,25 +62,14 @@ function assertStatusMutationResult(result: StatusMutationResult): void {
 }
 
 /**
- * Admin Status Plugin
- *
- * Provides endpoints for user-status management:
- * - Deactivate user (admin sets user to inactive)
- * - Activate user (admin reactivates a user)
- * - Unlock user (admin unlocks a locked user)
- *
  * The plugin id is `admin-status` (NOT `admin`) so this plugin can coexist
- * with Better Auth's official `admin` plugin if a future contributor adds
- * it: BA throws on duplicate plugin ids at construction time.
+ * with Better Auth's official `admin` plugin: BA throws on duplicate plugin
+ * ids at construction time.
  */
-export const adminPlugin = (apiBinding: ApiBindingRpc) => {
-  return {
+export const adminPlugin = (apiBinding: ApiBindingRpc) =>
+  ({
     id: "admin-status",
     endpoints: {
-      /**
-       * Deactivate a user - sets status to "inactive"
-       * Revokes all user sessions
-       */
       deactivateUser: createAuthEndpoint(
         "/admin/deactivate-user",
         {
@@ -134,10 +123,6 @@ export const adminPlugin = (apiBinding: ApiBindingRpc) => {
         }
       ),
 
-      /**
-       * Activate a user - sets status back to "active"
-       * Clears deactivation fields
-       */
       activateUser: createAuthEndpoint(
         "/admin/activate-user",
         {
@@ -189,10 +174,6 @@ export const adminPlugin = (apiBinding: ApiBindingRpc) => {
         }
       ),
 
-      /**
-       * Unlock a user - resets lockout status
-       * Clears failed login attempts and lockedUntil
-       */
       unlockUser: createAuthEndpoint(
         "/admin/unlock-user",
         {
@@ -243,8 +224,7 @@ export const adminPlugin = (apiBinding: ApiBindingRpc) => {
         }
       ),
     },
-  } satisfies BetterAuthPlugin;
-};
+  }) satisfies BetterAuthPlugin;
 
 export async function assertCanManageUserStatus(
   actor: AuthSessionUser,

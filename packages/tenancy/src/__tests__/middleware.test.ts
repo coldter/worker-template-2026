@@ -209,8 +209,6 @@ describe("A2.8 tenantMiddleware", () => {
   });
 
   it("dev header is unreachable in production (fail-closed gate)", async () => {
-    // baseEnvProd has NODE_ENV=test which loadHostConfigOnce keeps as
-    // "test"; flip it to "production" explicitly to assert the gate.
     const prodEnv = {
       ...baseEnvProd,
       NODE_ENV: "production",
@@ -255,9 +253,6 @@ describe("A2.8 tenantMiddleware", () => {
     await app.request("/whoami", {
       headers: { Host: "localhost:3000", "X-Dev-Tenant-Slug": "acme" },
     });
-    // The middleware's production gate runs BEFORE we read the header,
-    // so we should never see the `tenant.dev_header.ignored` event in
-    // production.
     expect(events.some((e) => e.event === "tenant.dev_header.ignored")).toBe(
       false
     );

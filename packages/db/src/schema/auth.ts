@@ -24,7 +24,6 @@ export const users = pgTable("users", {
     .defaultNow()
     .$onUpdate(() => new Date())
     .notNull(),
-  // User status fields (from userStatusPlugin)
   status: text("status")
     .$type<"active" | "inactive" | "locked">()
     .default("active")
@@ -32,16 +31,12 @@ export const users = pgTable("users", {
   deactivatedAt: timestamp("deactivated_at", { withTimezone: true }),
   deactivatedBy: varchar("deactivated_by", { length: 255 }),
   deactivatedReason: text("deactivated_reason"),
-  // Lockout fields (from userStatusPlugin)
   failedLoginAttempts: integer("failed_login_attempts").default(0).notNull(),
   lockedUntil: timestamp("locked_until", { withTimezone: true }),
-  // Role assignment (from userStatusPlugin)
   roleSlugs: text("role_slugs").array().default([]).notNull(),
-  // Onboarding tracking
   onboardingCompletedAt: timestamp("onboarding_completed_at", {
     withTimezone: true,
   }),
-  // Two-factor authentication enabled flag
   twoFactorEnabled: boolean("two_factor_enabled").default(false).notNull(),
 });
 
@@ -126,8 +121,7 @@ export const verifications = pgTable(
 );
 
 /**
- * JWKS table
- * Used by better-auth JWT plugin for storing JSON Web Key Sets (key rotation)
+ * Used by better-auth JWT plugin for storing JSON Web Key Sets (key rotation).
  */
 export const jwkss = pgTable("jwks", {
   id: varchar("id", { length: 255 })
@@ -142,8 +136,7 @@ export const jwkss = pgTable("jwks", {
 });
 
 /**
- * Two-Factor Authentication table
- * Used by better-auth twoFactor plugin for storing OTP secrets and backup codes
+ * Used by better-auth twoFactor plugin for storing OTP secrets and backup codes.
  */
 export const twoFactors = pgTable(
   "two_factors",

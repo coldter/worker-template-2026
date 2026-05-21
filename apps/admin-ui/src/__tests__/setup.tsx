@@ -3,12 +3,10 @@ import { cleanup } from "@testing-library/react";
 import type React from "react";
 import { afterEach, vi } from "vitest";
 
-// Automatic cleanup after each test
 afterEach(() => {
   cleanup();
 });
 
-// Mock TanStack Router
 vi.mock("@tanstack/react-router", async () => {
   const actual = await vi.importActual("@tanstack/react-router");
   return {
@@ -34,7 +32,6 @@ vi.mock("@tanstack/react-router", async () => {
   };
 });
 
-// Mock localStorage
 const localStorageMock = {
   getItem: vi.fn(),
   setItem: vi.fn(),
@@ -45,7 +42,6 @@ const localStorageMock = {
 };
 Object.defineProperty(window, "localStorage", { value: localStorageMock });
 
-// Mock matchMedia
 Object.defineProperty(window, "matchMedia", {
   writable: true,
   value: vi.fn().mockImplementation((query: string) => ({
@@ -60,14 +56,12 @@ Object.defineProperty(window, "matchMedia", {
   })),
 });
 
-// Mock ResizeObserver
 global.ResizeObserver = vi.fn().mockImplementation(() => ({
   observe: vi.fn(),
   unobserve: vi.fn(),
   disconnect: vi.fn(),
 }));
 
-// Mock IntersectionObserver
 global.IntersectionObserver = vi.fn().mockImplementation(() => ({
   observe: vi.fn(),
   unobserve: vi.fn(),

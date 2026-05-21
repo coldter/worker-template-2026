@@ -1,15 +1,11 @@
 /**
- * Per-tenant JWT configuration helpers (D12).
+ * Per-tenant JWT configuration helpers.
  *
- * Spec deviation note: the multi-tenancy spec narrative uses
- * `urn:tenant:${organizationId}` as a conceptual identifier for the issuer /
- * audience. The actual JWT shape produced here uses URL-form `iss`/`aud`
- * (`https://${tenant.host}`) to match the BA 1.6+ JWT plugin and the
- * verifier list documented in spec 09 §JWT scoping. The stable URN-style
- * identifier lives in the `org.id` claim — verifiers (Phase C) read both:
- * `iss`/`aud` for transport-level scoping and `org.id` for org identity that
- * is independent of host changes (custom hostname swaps). Do NOT add a
- * redundant URN-form claim here.
+ * The JWT shape uses URL-form `iss`/`aud` (`https://${tenant.host}`) to match
+ * the BA 1.6+ JWT plugin. The stable identifier lives in the `org.id` claim:
+ * verifiers read both `iss`/`aud` for transport-level scoping and `org.id`
+ * for org identity that is independent of host changes (custom hostname
+ * swaps). Do NOT add a redundant URN-form claim here.
  */
 import type { Tenant } from "@repo/tenancy";
 import type { UserWithStatusFields } from "./plugins/user-status";
@@ -49,7 +45,7 @@ type JwtPayloadSession = {
 };
 
 /**
- * Derives the JWT `iss` claim. URL-form per BA 1.6+ JWT plugin shape (D12).
+ * Derives the JWT `iss` claim. URL-form per BA 1.6+ JWT plugin shape.
  * Falls back to `env.APP_URL` when there is no tenant context (apex page or
  * admin host).
  */
@@ -61,7 +57,7 @@ export function deriveJwtIssuer(
 }
 
 /**
- * Derives the JWT `aud` claim. Same URL-form rule as `iss` (D12).
+ * Derives the JWT `aud` claim. Same URL-form rule as `iss`.
  */
 export function deriveJwtAudience(
   tenant: Tenant | null,
@@ -72,7 +68,7 @@ export function deriveJwtAudience(
 
 /**
  * Builds the BA `definePayload` return value. The `org.sessionVersion` is the
- * revocation primitive: verifiers (Phase C) check
+ * revocation primitive: verifiers check
  * `claim.sessionVersion >= db.organization.session_version` and reject when
  * the claim is older. Prefer the session fields written by
  * `session.create.before`, because that hook reads the fresh organization row
@@ -90,11 +86,9 @@ export function buildJwtPayload(
     platform: session.platform,
     org: tenant
       ? {
-          // `org.id` stores the raw `organizationId` string per the plan
-          // README's spec deviation #2: "URN-style stable identity" means a
-          // stable identifier that is independent of host (custom hostname
-          // swaps must not invalidate JWTs), NOT a literal `urn:tenant:`
-          // prefixed URI. C1 verifier consumers compare `claim.org.id`
+          // `org.id` stores the raw `organizationId` string — a stable
+          // identifier independent of host so custom hostname swaps do not
+          // invalidate JWTs. Verifier consumers compare `claim.org.id`
           // against the raw orgId on the organizations row.
           id: session.tenantOrgId ?? tenant.organizationId,
           host: session.tenantHost ?? tenant.host,

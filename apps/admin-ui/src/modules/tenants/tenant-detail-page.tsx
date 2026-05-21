@@ -45,7 +45,7 @@ export function TenantDetailPage({ slug }: TenantDetailPageProps) {
         </CardHeader>
         <CardContent>
           <p className="text-muted-foreground text-sm">
-            {/* TODO(api-gen): admin worker has no GET /tenants/:slug yet (B2 stub). */}
+            {/* TODO(api-gen): admin worker has no GET /tenants/:slug yet. */}
             Detail endpoint not implemented yet
             {status ? ` (HTTP ${status})` : ""}.
           </p>

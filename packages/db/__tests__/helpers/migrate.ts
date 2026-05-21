@@ -13,7 +13,6 @@ export async function runMigrations(connectionString: string): Promise<Client> {
   const client = new Client({ connectionString });
   await client.connect();
 
-  // Drop and recreate for a clean migration run (including drizzle tracking schema)
   await client.query("DROP SCHEMA IF EXISTS public CASCADE");
   await client.query("DROP SCHEMA IF EXISTS drizzle CASCADE");
   await client.query("CREATE SCHEMA public");

@@ -6,19 +6,12 @@ import { SYSTEM_ROLES } from "@/modules/roles";
 import { defaultAdminUser } from "../fixtures";
 import { db, isUserSeeded } from "../utils";
 
-/**
- * Seed an admin user to access app first time
- *
- * Creates a user with the admin role assigned.
- */
 export const userSeed = async () => {
-  // Skip seeding in production
   if (process.env.NODE_ENV === "production") {
     console.error("Not allowed in production.");
     return;
   }
 
-  // Skip if records already exist
   if (await isUserSeeded()) {
     console.warn("Users table is not empty - skipping seed");
     return;
@@ -27,7 +20,6 @@ export const userSeed = async () => {
   const userId = createUserId();
   const hashedPassword = await hashPassword(defaultAdminUser.password);
 
-  // Insert user with admin role and active status
   const [user] = await db
     .insert(users)
     .values({
@@ -46,7 +38,6 @@ export const userSeed = async () => {
     return;
   }
 
-  // Insert credential account for password-based login
   await db.insert(accounts).values({
     id: createAccountId(),
     accountId: userId,

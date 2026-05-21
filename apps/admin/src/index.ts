@@ -10,7 +10,6 @@ export default {
     env: AdminBindings,
     ctx: ExecutionContext
   ) {
-    // Audit-fix #6 — surface sweep outcome in worker logs.
     safeWaitUntil(
       ctx,
       runInactivitySweep(env).then(

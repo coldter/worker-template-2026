@@ -3,9 +3,8 @@ import { createMiddleware } from "hono/factory";
 import type { AdminEnv } from "@/env";
 
 /**
- * Rejects requests whose normalized Host header is not the configured
- * `ADMIN_HOST`. Runs before any auth code so workers.dev / preview-host
- * probes are answered with 404 without ever touching DB / JWKS (D29).
+ * Must run before any auth code so workers.dev / preview-host probes are
+ * answered with 404 without ever touching DB / JWKS.
  */
 export const hostGuardMiddleware = createMiddleware<AdminEnv>(
   async (c, next) => {

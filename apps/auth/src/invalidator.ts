@@ -7,8 +7,8 @@ const tenancyCache = (caches as unknown as { default: Cache }).default;
 
 /**
  * Build the auth worker's own-colo Invalidator. Auth never fans out — the
- * server side initiates tenancy mutations (D28/D68 asymmetry); auth only
- * accepts fan-in via the RPC entrypoint.
+ * server side initiates tenancy mutations; auth only accepts fan-in via the
+ * RPC entrypoint.
  */
 export function createAuthInvalidator(env: {
   CACHE: KVNamespace;

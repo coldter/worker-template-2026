@@ -13,11 +13,8 @@ interface ThemeProviderProps {
   defaultTheme?: Theme;
 }
 
-/**
- * Light-only theme provider. The operator console deliberately ships
- * without a theme switcher to keep the surface area minimal — operators
- * land here for short tasks. Future work can expand this if needed.
- */
+// Light-only by design: the operator console intentionally ships without a
+// theme switcher to keep the surface area minimal.
 export function ThemeProvider({
   children,
   defaultTheme = "light",

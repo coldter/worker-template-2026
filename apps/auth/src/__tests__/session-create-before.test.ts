@@ -56,7 +56,7 @@ const subdomainTenant: Tenant = Object.freeze({
   deletedAt: null,
 });
 
-describe("enforceTenantMembership (A6.4)", () => {
+describe("enforceTenantMembership", () => {
   it("is a no-op when tenant is null (apex)", async () => {
     const db = makeStubDb({ organizations: [], members: [] });
     const result = await enforceTenantMembership(db, null, { userId: "u1" });

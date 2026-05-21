@@ -2,15 +2,6 @@ import { Hono } from "hono";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { AdminEnv } from "@/env";
 
-/**
- * Characterization suite for the CF Access perimeter (Task 7).
- *
- * Locks down the CURRENT observable behavior of `cfAccessMiddleware` so the
- * Task 9 refactor (collapse to a thin wrapper around `authenticateOperator`)
- * cannot drift the public contract. Assertions are limited to status + JSON
- * error code; internals (jose calls, JWKS construction) are not asserted.
- */
-
 beforeEach(() => {
   vi.resetModules();
 });
@@ -22,7 +13,7 @@ afterEach(() => {
 
 type ResponseBody = { error?: { code?: string }; sub?: string; email?: string };
 
-describe("cfAccessMiddleware (characterization — must remain stable through C2)", () => {
+describe("cfAccessMiddleware (characterization)", () => {
   it("returns 403 ACCESS_TOKEN_REQUIRED when no JWT header is present", async () => {
     const { cfAccessMiddleware } = await import("@/middlewares/cf-access");
     const app = new Hono<AdminEnv>();

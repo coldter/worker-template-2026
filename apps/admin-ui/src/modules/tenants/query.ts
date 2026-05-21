@@ -36,8 +36,7 @@ export const tenantDetailQueryOptions = (slug: string) =>
   queryOptions({
     queryKey: ["tenants", "detail", slug] as const,
     queryFn: async ({ signal }) =>
-      // TODO(api-gen): the admin worker has no `GET /tenants/:slug` route in
-      // B2's stub handler. Once it lands, the @hey-api SDK supersedes this.
+      // TODO(api-gen): admin worker has no GET /tenants/:slug route yet.
       apiFetch<AdminTenant>(`/api/admin/tenants/${slug}`, { signal }),
     enabled: slug.length > 0,
   });

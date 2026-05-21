@@ -5,18 +5,11 @@ import type { Context } from "hono";
 import type { AdminEnv } from "@/env";
 
 /**
- * Build a worker-scoped `OperatorAuditLogger` for the apps/admin perimeter.
- *
- * `requireOperator` invokes this on every deny path (401 unauthenticated /
- * 403 forbidden). The admin worker has no AUDIT_LOG_QUEUE binding (only
- * apps/server consumes the queue), so the bufferable
- * `operator.access.denied` event is written directly via the per-request
- * Drizzle client. The insert is registered against `executionCtx.waitUntil`
- * so the response can flush before the audit-log write completes while the
- * runtime keeps the isolate alive long enough for the row to settle.
- *
- * Failure is swallowed: an audit insert that throws must NOT mask the deny
- * response. The caller already has a 401/403 in flight.
+ * The admin worker has no AUDIT_LOG_QUEUE binding (only apps/server consumes
+ * the queue), so the `operator.access.denied` event is written directly via
+ * the per-request Drizzle client and registered against `waitUntil` so the
+ * response can flush before the insert settles. Failure is swallowed: an
+ * audit insert that throws must NOT mask the deny response.
  */
 export const adminOperatorAuditLogger: OperatorAuditLogger = {
   recordOperatorAccessDenied(c, detail) {

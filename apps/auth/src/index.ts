@@ -180,10 +180,9 @@ export class AuthEntrypoint extends WorkerEntrypoint<CloudflareBindings> {
   }
 
   /**
-   * A2.6 / A2.9 — fan-in invalidation entrypoint. Called by the server's
-   * FanOutInvalidator after a tenancy mutation so the auth worker drops its
-   * own-colo Cache API entry for the given host. Auth never fans out further
-   * (D28/D68 asymmetry).
+   * Fan-in invalidation entrypoint. Called by the server's FanOutInvalidator
+   * after a tenancy mutation so the auth worker drops its own-colo Cache API
+   * entry for the given host. Auth never fans out further (asymmetric design).
    */
   async invalidateTenant(spec: InvalidationSpec): Promise<void> {
     const invalidator = createAuthInvalidator(this.env);
@@ -191,9 +190,9 @@ export class AuthEntrypoint extends WorkerEntrypoint<CloudflareBindings> {
   }
 
   /**
-   * A2.6 / A2.9 — fan-in version-bump entrypoint. Bumps the auth worker's KV
-   * version key, invalidating all cached tenant lookups in this colo without
-   * scanning. Returns the new version so callers can confirm propagation.
+   * Fan-in version-bump entrypoint. Bumps the auth worker's KV version key,
+   * invalidating all cached tenant lookups in this colo without scanning.
+   * Returns the new version so callers can confirm propagation.
    */
   async bumpTenantCacheVersion(): Promise<string> {
     const invalidator = createAuthInvalidator(this.env);
@@ -201,10 +200,10 @@ export class AuthEntrypoint extends WorkerEntrypoint<CloudflareBindings> {
   }
 
   /**
-   * A4.4 — discovery-time trustedOrigins registration. The server worker
-   * calls this RPC after a successful `createSsoProvider` so the auth
-   * worker's per-tenant `trustedOrigins(req)` callback admits redirects to
-   * the registered IdP issuer origin on subsequent /sso/sign-in calls.
+   * Discovery-time trustedOrigins registration. The server worker calls this
+   * RPC after a successful `createSsoProvider` so the auth worker's per-tenant
+   * `trustedOrigins(req)` callback admits redirects to the registered IdP
+   * issuer origin on subsequent /sso/sign-in calls.
    *
    * The issuer URL is validated and normalized to a bare origin
    * (https-only, no userinfo, no path beyond root). Invalid issuers are
@@ -231,15 +230,15 @@ export class AuthEntrypoint extends WorkerEntrypoint<CloudflareBindings> {
   }
 
   /**
-   * B2 / Task 2.3 — invitation orchestration RPCs called by the server worker
-   * during the `POST /api/invitations/accept/:invitationId` flow. Each method
-   * opens a fresh Drizzle client and constructs a BA instance scoped to the
-   * supplied tenant (or apex when null) so per-tenant trustedOrigins +
-   * allowedHosts apply correctly.
+   * Invitation orchestration RPCs called by the server worker during the
+   * `POST /api/invitations/accept/:invitationId` flow. Each method opens a
+   * fresh Drizzle client and constructs a BA instance scoped to the supplied
+   * tenant (or apex when null) so per-tenant trustedOrigins + allowedHosts
+   * apply correctly.
    *
    * `createUser` is non-idempotent in BA: if the email already exists it
    * throws `USER_ALREADY_EXISTS`. The server-side handler treats that as a
-   * recoverable case via `findUserByEmail` (D60).
+   * recoverable case via `findUserByEmail`.
    *
    * boundary: CSRF / throttle / disableSignUp middleware bypass — INTENTIONAL.
    * The four RPC methods below (`createUser`, `signInEmail`,
@@ -247,19 +246,13 @@ export class AuthEntrypoint extends WorkerEntrypoint<CloudflareBindings> {
    * entry points directly, deliberately bypassing BA's HTTP-layer CSRF token
    * check, `/sign-in/email` rate-limit window, and the `disableSignUp` /
    * `disable-org-create` `before` hooks (those hooks gate the public HTTP
-   * surface; the operator-led path is the supported escape valve per D32 /
-   * D35 / D60).
+   * surface; the operator-led path is the supported escape valve).
    *
    * Because the bypass is unconditional, these methods MUST NEVER be exposed
    * over HTTP — they are reachable only via the Cloudflare service-binding
-   * RPC surface from:
-   *   - apps/server `POST /api/invitations/accept/:invitationId` (caller is
-   *     authenticated by the per-IP-and-per-invitationId rate limit added in
-   *     fix 3 below; the invitee proves they hold the unguessable `inv_*`
-   *     id), and
-   *   - apps/admin `POST /api/admin/tenants` (caller is authenticated by
-   *     Cloudflare Access in front of the admin worker plus `requireOperator`
-   *     middleware; only global admins reach the binding).
+   * RPC surface from authenticated server / admin worker callers (the server
+   * gates by per-IP-and-per-invitationId rate limit + unguessable `inv_*` id;
+   * admin gates by Cloudflare Access + `requireOperator` middleware).
    *
    * Adding any new caller — especially anything that takes user input and
    * relays it to these methods without an equivalent gate — re-opens the
@@ -310,8 +303,8 @@ export class AuthEntrypoint extends WorkerEntrypoint<CloudflareBindings> {
   /**
    * Sign in via email + password and return BA's `Set-Cookie` headers verbatim
    * so the calling worker can forward each one to the browser. Cookie
-   * domain/path are governed by the auth worker's BA cookie config (D15/D65);
-   * we do NOT rewrite them here.
+   * domain/path are governed by the auth worker's BA cookie config; we do NOT
+   * rewrite them here.
    *
    * BA may emit multiple Set-Cookie headers in a single response (e.g. the
    * session cookie plus a CSRF rotation). `Headers.get("Set-Cookie")`
@@ -386,7 +379,7 @@ export class AuthEntrypoint extends WorkerEntrypoint<CloudflareBindings> {
 
   /**
    * Direct DB lookup by email — used by the server's accept handler to
-   * recover from BA's non-idempotent `USER_ALREADY_EXISTS` (D60). Email is
+   * recover from BA's non-idempotent `USER_ALREADY_EXISTS`. Email is
    * lowercased + trimmed before the lookup, mirroring BA's normalization.
    */
   async findUserByEmail(
@@ -416,7 +409,7 @@ export class AuthEntrypoint extends WorkerEntrypoint<CloudflareBindings> {
  * RPC methods. Direct fetches (workers.dev probes, leaked preview hosts,
  * an accidental public route) must fail closed; otherwise the BA instance
  * would run with `tenant: null`, mint apex JWTs, and skip tenant
- * membership enforcement (Wave-1 audit finding).
+ * membership enforcement.
  *
  * Even a request with a perfectly-matching host returns 421 here — the
  * tenant context that protects mintable JWTs only exists on the RPC path.

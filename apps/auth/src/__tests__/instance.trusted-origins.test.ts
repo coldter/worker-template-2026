@@ -12,7 +12,6 @@ const snapshot: AllowedHostsSnapshot = {
   localDevHosts: ["localhost:3000"],
 };
 
-// hostConfig mirrors the snapshot for parseHostname usage
 const hostConfig: HostConfig = {
   wildcardSuffix: snapshot.wildcardSuffix,
   adminHost: snapshot.adminHost,
@@ -35,9 +34,9 @@ function makeAuth(extraTrustedOrigins: readonly string[] = []) {
     },
     basePath: "/api/auth",
     // BA auto-merges allowedHosts into trustedOrigins; this callback adds the
-    // per-tenant origin explicitly for discovery-origin extension (A4) and to
+    // per-tenant origin explicitly for discovery-origin extension and to
     // make audit reading obvious. Do NOT echo req.headers.get("Host") — that
-    // re-opens the trustedOrigins echo abuse (spec 09-security).
+    // re-opens the trustedOrigins echo abuse.
     trustedOrigins: async (req) => {
       if (!req) {
         return [...localDevOrigins, ...extraTrustedOrigins];
@@ -56,7 +55,6 @@ function makeAuth(extraTrustedOrigins: readonly string[] = []) {
 describe("dynamic trustedOrigins(req)", () => {
   it("includes per-tenant origin for valid subdomain host", async () => {
     const auth = makeAuth();
-    // Access internal trusted origins by calling the function via options
     const origins = await (
       auth.options.trustedOrigins as (
         req?: Request
@@ -111,7 +109,7 @@ describe("dynamic trustedOrigins(req)", () => {
     expect(origins).toContain("http://localhost:3000");
   });
 
-  it("includes extraTrustedOrigins (discovery origins for A4)", async () => {
+  it("includes extraTrustedOrigins (discovery origins)", async () => {
     const auth = makeAuth(["https://discovery.sso.example.com"]);
     const origins = await (
       auth.options.trustedOrigins as (

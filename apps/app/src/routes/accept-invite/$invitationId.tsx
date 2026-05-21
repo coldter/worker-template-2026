@@ -1,8 +1,7 @@
-// `/accept-invite/:invitationId` — public route, OUTSIDE `(protected)` (D48).
-// Better Auth invitation acceptance is orchestrated by `apps/server` at
-// `POST /api/invitations/accept/:invitationId` (B2). The server completes
-// the BA flow, sets the session cookie, and returns the post-accept
-// redirect target.
+// Public route, OUTSIDE `(protected)`. Better Auth invitation acceptance is
+// orchestrated by `apps/server` at `POST /api/invitations/accept/:invitationId`;
+// the server completes the BA flow, sets the session cookie, and returns the
+// post-accept redirect target.
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 

@@ -9,7 +9,6 @@ export const defaultHook: Hook<unknown, Env, "", unknown> = (result) => {
     if (!issue) {
       return;
     }
-    // const type = `form.${code}` as const;
     throw new HTTPException(400, {
       cause: result.error,
       message: issue.message,

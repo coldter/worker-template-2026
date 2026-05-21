@@ -1,12 +1,3 @@
-/**
- * Discriminated union of every auth-related failure the admin perimeter can
- * surface (D69). The `authFailureToResponse` helper maps each branch to a
- * concrete `Response` with stable error codes so handlers and tests can rely
- * on them without coupling to the underlying middleware path.
- *
- * Adding a new branch is a compile error in `authFailureToResponse` until
- * the switch is extended.
- */
 export type AuthFailure =
   | { kind: "missing_token" }
   | { kind: "invalid_token" }
