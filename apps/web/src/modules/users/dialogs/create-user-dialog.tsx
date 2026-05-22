@@ -1,18 +1,10 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
+import { useMutationForm } from "@/hooks/use-mutation-form";
+import { FormDialog } from "@/modules/common/form-dialog";
 import { PasswordInput } from "@/modules/common/password-input";
-import { Button } from "@/modules/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/modules/ui/dialog";
-import {
-  Form,
   FormControl,
   FormField,
   FormItem,
@@ -53,102 +45,81 @@ export function CreateUserDialog({
     },
   });
 
-  const onSubmit = async (values: CreateUserFormValues) => {
-    await createMutation.mutateAsync(values);
-    form.reset();
-    onOpenChange(false);
-  };
+  const { submit, isPending } = useMutationForm({
+    form,
+    mutation: createMutation,
+    toVariables: (values) => values,
+    onClose: () => onOpenChange(false),
+    resetOnSuccess: true,
+  });
 
   return (
-    <Dialog onOpenChange={onOpenChange} open={open}>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>Create User</DialogTitle>
-          <DialogDescription>
-            Add a new user to the system. They will receive login credentials.
-          </DialogDescription>
-        </DialogHeader>
+    <FormDialog
+      description="Add a new user to the system. They will receive login credentials."
+      form={form}
+      isPending={isPending}
+      onOpenChange={onOpenChange}
+      onSubmit={submit}
+      open={open}
+      pendingLabel="Creating..."
+      submitLabel="Create User"
+      title="Create User"
+    >
+      <FormField
+        control={form.control}
+        name="name"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Name</FormLabel>
+            <FormControl>
+              <Input placeholder="John Doe" {...field} />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
 
-        <Form {...form}>
-          <form className="space-y-4" onSubmit={form.handleSubmit(onSubmit)}>
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="John Doe" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+      <FormField
+        control={form.control}
+        name="email"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Email</FormLabel>
+            <FormControl>
+              <Input placeholder="john@example.com" type="email" {...field} />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
 
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="john@example.com"
-                      type="email"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+      <FormField
+        control={form.control}
+        name="password"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Password</FormLabel>
+            <FormControl>
+              <PasswordInput placeholder="Enter password" {...field} />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
 
-            <FormField
-              control={form.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Password</FormLabel>
-                  <FormControl>
-                    <PasswordInput placeholder="Enter password" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="roleSlugs"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Roles</FormLabel>
-                  <FormControl>
-                    <RoleMultiSelect
-                      onChange={field.onChange}
-                      value={field.value}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <DialogFooter>
-              <Button
-                onClick={() => onOpenChange(false)}
-                type="button"
-                variant="outline"
-              >
-                Cancel
-              </Button>
-              <Button disabled={createMutation.isPending} type="submit">
-                {createMutation.isPending ? "Creating..." : "Create User"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
+      <FormField
+        control={form.control}
+        name="roleSlugs"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Roles</FormLabel>
+            <FormControl>
+              <RoleMultiSelect onChange={field.onChange} value={field.value} />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+    </FormDialog>
   );
 }

@@ -1,3 +1,4 @@
+import { getClientIpFromHeaders } from "@repo/shared/client-ip";
 import type { Context } from "hono";
 
 export type AuditContext = {
@@ -5,12 +6,13 @@ export type AuditContext = {
   userAgent?: string;
 };
 
+export function getClientIp(c: Context): string | undefined {
+  return getClientIpFromHeaders(c.req.raw.headers);
+}
+
 export function extractAuditContext(c: Context): AuditContext {
   return {
-    ipAddress:
-      c.req.header("CF-Connecting-IP") ??
-      c.req.header("x-forwarded-for")?.split(",")[0]?.trim() ??
-      undefined,
+    ipAddress: getClientIp(c),
     userAgent: c.req.header("user-agent") ?? undefined,
   };
 }

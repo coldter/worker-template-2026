@@ -1,11 +1,7 @@
-import {
-  flexRender,
-  getCoreRowModel,
-  useReactTable,
-} from "@tanstack/react-table";
-import { useMemo, useState } from "react";
-import type { NavigateFn } from "@/hooks/use-table-url-state";
-import { useTableUrlState } from "@/hooks/use-table-url-state";
+import { flexRender } from "@tanstack/react-table";
+import { useEffect, useMemo, useState } from "react";
+
+import { useServerTable } from "@/hooks/use-server-table";
 import { DataTablePagination } from "@/modules/data-table";
 import { TableEmpty } from "@/modules/data-table/table-empty";
 import { TableError } from "@/modules/data-table/table-error";
@@ -18,84 +14,57 @@ import {
   TableHeader,
   TableRow,
 } from "@/modules/ui/table";
-import { Route } from "@/routes/(protected)/audit-logs/index";
+import {
+  type AuditLogsSearch,
+  Route,
+} from "@/routes/(protected)/audit-logs/index";
+
 import { AuditLogDetailSheet } from "../detail";
-import { useAuditLogsQuery } from "../query";
+import { type AuditLogsQueryParams, useAuditLogsQuery } from "../query";
 import { type AuditLog, auditLogsColumns } from "./columns";
 import { AuditLogsFilters } from "./filters";
 import { AuditLogsHeader } from "./header";
 
+type AuditLogId = AuditLog["id"];
+
 export function AuditLogsTable() {
-  const routeNavigate = Route.useNavigate();
-  const search = Route.useSearch();
-  const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null);
+  const [selectedLogId, setSelectedLogId] = useState<AuditLogId | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
 
-  const tableNavigate: NavigateFn = ({ search: searchUpdate, replace }) => {
-    if (typeof searchUpdate === "function") {
-      routeNavigate({
-        search: (prev) => ({ ...prev, ...searchUpdate(prev) }),
-        replace,
-      });
-    } else if (searchUpdate === true) {
-      routeNavigate({ search: true, replace });
-    } else {
-      routeNavigate({
-        search: (prev) => ({ ...prev, ...searchUpdate }),
-        replace,
-      });
-    }
-  };
-
-  const {
-    pagination,
-    onPaginationChange,
-    sorting,
-    onSortingChange,
-    ensurePageInRange,
-  } = useTableUrlState({
-    search,
-    navigate: tableNavigate,
-    pagination: {
-      defaultPage: 1,
-      defaultPageSize: 20,
-    },
-    sorting: {
+  const { table, navigate, search, rows, isLoading, isError, total } =
+    useServerTable<AuditLog, AuditLogsSearch, AuditLogsQueryParams>({
+      route: Route,
+      columns: auditLogsColumns,
+      useData: useAuditLogsQuery,
       defaultSort: "createdAt",
-      defaultOrder: "desc",
-    },
-  });
+      buildQueryParams: ({ page, perPage, sort, search: s }) => ({
+        page,
+        perPage,
+        sort: sort.id,
+        order: sort.desc ? "desc" : "asc",
+        event: s.event,
+        actorId: s.actorId,
+        targetType: s.targetType,
+      }),
+    });
 
-  const { data, isLoading, isError } = useAuditLogsQuery({
-    page: pagination.pageIndex + 1,
-    perPage: pagination.pageSize,
-    sort: sorting[0]?.id,
-    order: sorting[0]?.desc ? "desc" : "asc",
-    event: search.event,
-    actorId: search.actorId,
-    targetType: search.targetType,
-  });
+  const selectedLog = useMemo(() => {
+    if (!selectedLogId) {
+      return null;
+    }
+    return rows.find((row) => row.id === selectedLogId) ?? null;
+  }, [rows, selectedLogId]);
 
-  const pageCount = data?.meta.pageCount ?? 0;
-
-  useMemo(() => {
-    ensurePageInRange(pageCount);
-  }, [pageCount, ensurePageInRange]);
-
-  const table = useReactTable({
-    data: data?.data ?? [],
-    columns: auditLogsColumns,
-    pageCount,
-    state: { pagination, sorting },
-    onPaginationChange,
-    onSortingChange,
-    getCoreRowModel: getCoreRowModel(),
-    manualPagination: true,
-    manualSorting: true,
-  });
+  // Close sheet when selected row drops out of the current page after refetch.
+  useEffect(() => {
+    if (detailOpen && selectedLogId && !selectedLog) {
+      setDetailOpen(false);
+      setSelectedLogId(null);
+    }
+  }, [detailOpen, selectedLogId, selectedLog]);
 
   function handleRowClick(log: AuditLog) {
-    setSelectedLog(log);
+    setSelectedLogId(log.id);
     setDetailOpen(true);
   }
 
@@ -108,8 +77,8 @@ export function AuditLogsTable() {
       return <TableSkeleton columnCount={auditLogsColumns.length} />;
     }
 
-    const rows = table.getRowModel().rows;
-    if (rows.length === 0) {
+    const tableRows = table.getRowModel().rows;
+    if (tableRows.length === 0) {
       return (
         <TableEmpty
           colSpan={auditLogsColumns.length}
@@ -118,11 +87,19 @@ export function AuditLogsTable() {
       );
     }
 
-    return rows.map((row) => (
+    return tableRows.map((row) => (
       <TableRow
         className="cursor-pointer transition-colors"
         key={row.id}
         onClick={() => handleRowClick(row.original)}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            handleRowClick(row.original);
+          }
+        }}
+        role="button"
+        tabIndex={0}
       >
         {row.getVisibleCells().map((cell) => (
           <TableCell key={cell.id}>
@@ -135,9 +112,9 @@ export function AuditLogsTable() {
 
   return (
     <div className="@container/content space-y-4 p-6">
-      <AuditLogsHeader totalCount={data?.meta.total} />
+      <AuditLogsHeader totalCount={total} />
 
-      <AuditLogsFilters navigate={tableNavigate} search={search} />
+      <AuditLogsFilters navigate={navigate} search={search} />
 
       <div className="rounded-lg border">
         <Table>

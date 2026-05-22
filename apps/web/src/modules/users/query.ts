@@ -18,11 +18,22 @@ import type {
   UpdateUserRolesData,
 } from "@/api.gen/types.gen";
 
+function normaliseListParams(params: ListUsersData["query"]) {
+  if (!params) {
+    return {};
+  }
+  return Object.fromEntries(
+    Object.entries(params)
+      .filter(([, value]) => value !== undefined)
+      .sort(([a], [b]) => a.localeCompare(b))
+  );
+}
+
 export const usersKeys = {
   all: ["users"] as const,
   lists: () => [...usersKeys.all, "list"] as const,
   list: (params: ListUsersData["query"]) =>
-    [...usersKeys.lists(), params] as const,
+    [...usersKeys.lists(), normaliseListParams(params)] as const,
   details: () => [...usersKeys.all, "detail"] as const,
   detail: (id: string) => [...usersKeys.details(), id] as const,
 };

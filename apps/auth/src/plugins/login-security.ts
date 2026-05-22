@@ -7,8 +7,7 @@ import {
 } from "@repo/db";
 import type { BetterAuthPlugin } from "better-auth";
 import { APIError, createAuthMiddleware } from "better-auth/api";
-
-type UserEmail = string;
+import { z } from "zod";
 
 import {
   calculateLockoutExpiry,
@@ -17,9 +16,48 @@ import {
 } from "../constants";
 import { userStatusSchema } from "./user-status";
 
-/**
- * Auth error codes for client handling
- */
+// createAuthMiddleware does not propagate endpoint body types; re-validate the field we need.
+const emailBodySchema = z
+  .object({
+    email: z.string().email().optional(),
+  })
+  .passthrough();
+
+function readEmailFromBody(body: unknown): string | undefined {
+  const parsed = emailBodySchema.safeParse(body ?? {});
+  return parsed.success ? parsed.data.email : undefined;
+}
+
+// 2FA users get `{ twoFactorRedirect: true }` -- not yet fully authenticated, so don't clear failed-attempt counters.
+const twoFactorRedirectSchema = z
+  .object({
+    twoFactorRedirect: z.boolean().optional(),
+  })
+  .passthrough();
+
+function isTwoFactorRedirect(returned: unknown): boolean {
+  const parsed = twoFactorRedirectSchema.safeParse(returned);
+  return parsed.success && parsed.data.twoFactorRedirect === true;
+}
+
+const twoFactorVerifySuccessSchema = z
+  .object({
+    user: z
+      .object({
+        email: z.string().email().optional(),
+      })
+      .passthrough()
+      .optional(),
+  })
+  .passthrough();
+
+function readEmailFromTwoFactorVerifyResponse(
+  returned: unknown
+): string | undefined {
+  const parsed = twoFactorVerifySuccessSchema.safeParse(returned);
+  return parsed.success ? parsed.data.user?.email : undefined;
+}
+
 export const AUTH_ERROR_CODES = {
   ACCOUNT_DELETED: "ACCOUNT_DELETED",
   ACCOUNT_INACTIVE: "ACCOUNT_INACTIVE",
@@ -27,16 +65,6 @@ export const AUTH_ERROR_CODES = {
   INVALID_CREDENTIALS: "INVALID_CREDENTIALS",
 } as const;
 
-/**
- * Login Security Plugin
- *
- * Handles all login security concerns within better-auth's plugin system:
- * - User status validation (deleted, inactive, locked)
- * - Failed login attempt tracking
- * - Account lockout after max failed attempts
- * - Lockout expiry and auto-unlock
- * - Reset failed attempts on successful login
- */
 export const loginSecurityPlugin = (db: DrizzleClient) => {
   return {
     id: "login-security",
@@ -46,13 +74,13 @@ export const loginSecurityPlugin = (db: DrizzleClient) => {
         {
           matcher: (context) => context.path === "/sign-up/email",
           handler: createAuthMiddleware(async (ctx) => {
-            const body = ctx.body as { email?: string } | undefined;
-            if (!body?.email) {
+            const email = readEmailFromBody(ctx.body);
+            if (!email) {
               return;
             }
 
             const existingUser = await db.query.users.findFirst({
-              where: { email: { eq: body.email as UserEmail } },
+              where: { email: { eq: email } },
               columns: { id: true },
             });
 
@@ -66,13 +94,13 @@ export const loginSecurityPlugin = (db: DrizzleClient) => {
         {
           matcher: (context) => context.path === "/sign-in/email",
           handler: createAuthMiddleware(async (ctx) => {
-            const body = ctx.body as { email?: string } | undefined;
-            if (!body?.email) {
+            const email = readEmailFromBody(ctx.body);
+            if (!email) {
               return;
             }
 
             const user = await db.query.users.findFirst({
-              where: { email: { eq: body.email as UserEmail } },
+              where: { email: { eq: email } },
             });
 
             if (!user) {
@@ -111,7 +139,6 @@ export const loginSecurityPlugin = (db: DrizzleClient) => {
                 });
               }
 
-              // Lockout expired - auto-unlock
               await clearUserLockout(db, user.id);
             }
           }),
@@ -121,8 +148,8 @@ export const loginSecurityPlugin = (db: DrizzleClient) => {
         {
           matcher: (context) => context.path === "/sign-in/email",
           handler: createAuthMiddleware(async (ctx) => {
-            const body = ctx.body as { email?: string } | undefined;
-            if (!body?.email) {
+            const email = readEmailFromBody(ctx.body);
+            if (!email) {
               return;
             }
 
@@ -130,9 +157,8 @@ export const loginSecurityPlugin = (db: DrizzleClient) => {
             const isFailure = returned instanceof APIError;
 
             if (isFailure) {
-              // Handle failed login attempt
               const user = await db.query.users.findFirst({
-                where: { email: { eq: body.email as UserEmail } },
+                where: { email: { eq: email } },
               });
 
               if (!user) {
@@ -164,7 +190,28 @@ export const loginSecurityPlugin = (db: DrizzleClient) => {
               });
             }
 
-            await resetFailedLoginAttemptsByEmail(db, body.email);
+            // Hold counter open across 2FA redirect; reset happens in the /two-factor/verify-otp after-hook.
+            if (isTwoFactorRedirect(ctx.context.returned)) {
+              return;
+            }
+
+            await resetFailedLoginAttemptsByEmail(db, email);
+          }),
+        },
+        {
+          matcher: (context) => context.path === "/two-factor/verify-otp",
+          handler: createAuthMiddleware(async (ctx) => {
+            const returned = ctx.context.returned;
+            if (returned instanceof APIError) {
+              return;
+            }
+
+            const email = readEmailFromTwoFactorVerifyResponse(returned);
+            if (!email) {
+              return;
+            }
+
+            await resetFailedLoginAttemptsByEmail(db, email);
           }),
         },
       ],

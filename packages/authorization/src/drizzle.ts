@@ -4,7 +4,7 @@
 // shape. Both avoid importing @repo/db so this package stays self-contained
 // while drizzle-orm remains an optional peer dependency.
 // boundary: drizzle-orm generic variance
-import { and, type Column, eq, inArray, type SQL } from "drizzle-orm";
+import { and, type Column, eq, inArray, or, type SQL } from "drizzle-orm";
 
 export interface RelationTuple {
   objectId: string;
@@ -98,12 +98,8 @@ export async function checkRelation(
   return result.length > 0;
 }
 
-/**
- * Batch check multiple relation tuples in a single query.
- * Returns a Map keyed by "subjectType:subjectId:relation:objectType:objectId".
- * For small batches (<10), this is efficient enough. Large batches could be
- * optimized with per-tuple queries or a multi-column IN when Drizzle supports it.
- */
+const PER_TUPLE_THRESHOLD = 5;
+
 export async function checkRelationBatch(
   db: Pick<DrizzleLike, "select">,
   table: AuthRelationsTable,
@@ -118,6 +114,37 @@ export async function checkRelationBatch(
     return keyMap;
   }
 
+  let whereClause: SQL | undefined;
+  if (inputs.length < PER_TUPLE_THRESHOLD) {
+    const tuplePredicates: SQL[] = [];
+    for (const input of inputs) {
+      const predicate = and(
+        eq(table.subjectType, input.subject.type),
+        eq(table.subjectId, input.subject.id),
+        eq(table.relation, input.relation),
+        eq(table.objectType, input.object.type),
+        eq(table.objectId, input.object.id)
+      );
+      if (predicate) {
+        tuplePredicates.push(predicate);
+      }
+    }
+    whereClause = or(...tuplePredicates);
+  } else {
+    const uniqueSubjectTypes = [...new Set(inputs.map((i) => i.subject.type))];
+    const uniqueSubjectIds = [...new Set(inputs.map((i) => i.subject.id))];
+    const uniqueRelations = [...new Set(inputs.map((i) => i.relation))];
+    const uniqueObjectTypes = [...new Set(inputs.map((i) => i.object.type))];
+    const uniqueObjectIds = [...new Set(inputs.map((i) => i.object.id))];
+    whereClause = and(
+      inArray(table.subjectType, uniqueSubjectTypes),
+      inArray(table.subjectId, uniqueSubjectIds),
+      inArray(table.relation, uniqueRelations),
+      inArray(table.objectType, uniqueObjectTypes),
+      inArray(table.objectId, uniqueObjectIds)
+    );
+  }
+
   const results = await db
     .select<RelationTuple>({
       subjectType: table.subjectType,
@@ -127,15 +154,7 @@ export async function checkRelationBatch(
       objectId: table.objectId,
     })
     .from(table)
-    .where(
-      and(
-        inArray(
-          table.subjectId,
-          inputs.map((i) => i.subject.id)
-        ),
-        inArray(table.relation, [...new Set(inputs.map((i) => i.relation))])
-      )
-    );
+    .where(whereClause);
 
   for (const row of results) {
     const key = `${row.subjectType}:${row.subjectId}:${row.relation}:${row.objectType}:${row.objectId}`;

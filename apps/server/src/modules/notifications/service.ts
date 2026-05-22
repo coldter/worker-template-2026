@@ -1,4 +1,4 @@
-import type { DrizzleClient } from "@repo/db";
+import { type DrizzleClient, firstOrThrow } from "@repo/db";
 import {
   notificationPreferences,
   notifications,
@@ -21,28 +21,13 @@ import type {
   UpdatePreferencesInput,
 } from "./types";
 
-// ============================================================
-// SORT COLUMN MAPPING
-// ============================================================
-
 const SORT_COLUMNS = {
   [NOTIFICATIONS_SORT_COLUMNS.createdAt]: notifications.createdAt,
   [NOTIFICATIONS_SORT_COLUMNS.status]: notifications.status,
   [NOTIFICATIONS_SORT_COLUMNS.type]: notifications.type,
 } as const;
 
-// ============================================================
-// NOTIFICATION SERVICE
-// ============================================================
-
 export const notificationService = {
-  // ─────────────────────────────────────────────────────────────
-  // NOTIFICATION QUERIES
-  // ─────────────────────────────────────────────────────────────
-
-  /**
-   * List notifications for a user with filtering and pagination.
-   */
   async listByUser(
     db: DrizzleClient,
     userId: string,
@@ -50,7 +35,6 @@ export const notificationService = {
   ) {
     const { perPage, offset, sort, order } = getPaginationParams(query);
 
-    // Build conditions
     const conditions: SQL[] = [eq(notifications.userId, userId)];
 
     if (query.type) {
@@ -58,7 +42,7 @@ export const notificationService = {
     }
 
     if (query.status) {
-      // Explicit status filter takes precedence over unreadOnly
+      // explicit status filter takes precedence over unreadOnly
       conditions.push(eq(notifications.status, query.status));
     } else if (query.unreadOnly) {
       conditions.push(eq(notifications.channel, "push"));
@@ -80,7 +64,6 @@ export const notificationService = {
       .limit(perPage)
       .offset(offset);
 
-    // Get total count
     const [countResult] = await db
       .select({ total: count() })
       .from(notifications)
@@ -93,9 +76,6 @@ export const notificationService = {
     });
   },
 
-  /**
-   * Get a single notification by ID.
-   */
   async findById(
     db: DrizzleClient,
     notificationId: string
@@ -108,9 +88,6 @@ export const notificationService = {
     return notification ?? null;
   },
 
-  /**
-   * Get a notification by ID for a specific user.
-   */
   async findByIdAndUser(
     db: DrizzleClient,
     notificationId: string,
@@ -129,9 +106,6 @@ export const notificationService = {
     return notification ?? null;
   },
 
-  /**
-   * Get unread notification count for a user.
-   */
   async getUnreadCount(db: DrizzleClient, userId: string): Promise<number> {
     const [result] = await db
       .select({ count: count() })
@@ -147,9 +121,6 @@ export const notificationService = {
     return result?.count ?? 0;
   },
 
-  /**
-   * Mark a push notification as read.
-   */
   async markAsRead(
     db: DrizzleClient,
     notificationId: string,
@@ -172,9 +143,6 @@ export const notificationService = {
     return updated ?? null;
   },
 
-  /**
-   * Mark all notifications as read for a user.
-   */
   async markAllAsRead(db: DrizzleClient, userId: string): Promise<number> {
     const result = await db
       .update(notifications)
@@ -193,13 +161,6 @@ export const notificationService = {
     return result.length;
   },
 
-  // ─────────────────────────────────────────────────────────────
-  // PUSH TOKENS
-  // ─────────────────────────────────────────────────────────────
-
-  /**
-   * List push tokens for a user.
-   */
   async listPushTokens(
     db: DrizzleClient,
     userId: string
@@ -211,16 +172,12 @@ export const notificationService = {
       .orderBy(desc(pushTokens.createdAt));
   },
 
-  /**
-   * Register or update a push token.
-   */
   async registerPushToken(
     db: DrizzleClient,
     userId: string,
     sessionId: string,
     input: RegisterPushTokenInput
   ): Promise<PushTokenRecord> {
-    // Check if token already exists
     const [existing] = await db
       .select()
       .from(pushTokens)
@@ -228,7 +185,6 @@ export const notificationService = {
       .limit(1);
 
     if (existing) {
-      // Update existing token
       const [updated] = await db
         .update(pushTokens)
         .set({
@@ -245,30 +201,25 @@ export const notificationService = {
       return updated ?? existing;
     }
 
-    // Create new token
-    const [newToken] = await db
-      .insert(pushTokens)
-      .values({
-        userId,
-        sessionId,
-        token: input.token,
-        platform: input.platform,
-        deviceId: input.deviceId ?? null,
-        deviceName: input.deviceName ?? null,
-        isActive: true,
-      })
-      .returning();
-
-    if (!newToken) {
-      throw new Error("Failed to create push token");
-    }
+    const newToken = await firstOrThrow(
+      db
+        .insert(pushTokens)
+        .values({
+          userId,
+          sessionId,
+          token: input.token,
+          platform: input.platform,
+          deviceId: input.deviceId ?? null,
+          deviceName: input.deviceName ?? null,
+          isActive: true,
+        })
+        .returning(),
+      "Failed to create push token"
+    );
 
     return newToken;
   },
 
-  /**
-   * Deactivate a push token.
-   */
   async deactivatePushToken(
     db: DrizzleClient,
     tokenId: string,
@@ -282,10 +233,7 @@ export const notificationService = {
     return result.length > 0;
   },
 
-  /**
-   * Delete a push token by its FCM token string.
-   * Used to remove tokens that FCM reports as invalid.
-   */
+  // remove tokens that FCM reports as invalid
   async deletePushTokenByToken(
     db: DrizzleClient,
     token: string
@@ -297,13 +245,6 @@ export const notificationService = {
     return result.length > 0;
   },
 
-  // ─────────────────────────────────────────────────────────────
-  // PREFERENCES
-  // ─────────────────────────────────────────────────────────────
-
-  /**
-   * Get notification preferences for a user.
-   */
   async getPreferences(
     db: DrizzleClient,
     userId: string
@@ -315,16 +256,12 @@ export const notificationService = {
       .orderBy(asc(notificationPreferences.typePattern));
   },
 
-  /**
-   * Update notification preferences for a user.
-   */
   async updatePreferences(
     db: DrizzleClient,
     userId: string,
     input: UpdatePreferencesInput
   ): Promise<PreferencesRecord[]> {
     return db.transaction(async (tx) => {
-      // Upsert global preferences
       const globalValues = {
         userId,
         typePattern: "*",
@@ -348,7 +285,6 @@ export const notificationService = {
           },
         });
 
-      // Upsert type-specific preferences
       if (input.typeOverrides) {
         for (const [typePattern, override] of Object.entries(
           input.typeOverrides
@@ -379,7 +315,7 @@ export const notificationService = {
         }
       }
 
-      // Read back final state inside tx for consistency
+      // Read back inside the tx so callers see the post-upsert state atomically.
       return tx
         .select()
         .from(notificationPreferences)
@@ -388,9 +324,6 @@ export const notificationService = {
     });
   },
 
-  /**
-   * Ensure default preferences exist for a user.
-   */
   async ensureDefaultPreferences(
     db: DrizzleClient,
     userId: string

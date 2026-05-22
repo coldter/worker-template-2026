@@ -117,28 +117,34 @@ export function buildRegistryInstance<
     },
 
     async evaluateCapabilities(principal) {
-      const capabilities: Record<string, boolean> = {};
-
+      // evaluate() is pure and each task writes a unique `${name}:${action}` key, so parallelising is safe.
+      const tasks: Promise<readonly [string, boolean]>[] = [];
       for (const [name, resourceDef] of Object.entries(resources)) {
         for (const action of resourceDef.actions) {
-          // Evaluate without resource but with ignoreResourceConditions
-          // so that conditionally-allowed actions (e.g. whereOwner) report true
-          const decision = await evaluate({
-            principal,
-            action,
-            resourceName: name,
-            resource: undefined,
-            globalPolicies: options.globalPolicies,
-            resourcePolicies: resourceDef.policies,
-            systemAdminRoles: options.systemAdminRoles,
-            ignoreResourceConditions: true,
-          });
-          capabilities[`${name}:${action}`] = decision.allowed;
+          tasks.push(
+            evaluate({
+              principal,
+              action,
+              resourceName: name,
+              resource: undefined,
+              globalPolicies: options.globalPolicies,
+              resourcePolicies: resourceDef.policies,
+              systemAdminRoles: options.systemAdminRoles,
+              ignoreResourceConditions: true,
+            }).then(
+              (decision) => [`${name}:${action}`, decision.allowed] as const
+            )
+          );
         }
       }
 
-      // boundary: runtime keys are derived from the registry's own action
-      // tuples, so the typed CapabilityMap shape is correct by construction.
+      const settled = await Promise.all(tasks);
+      const capabilities: Record<string, boolean> = {};
+      for (const [key, allowed] of settled) {
+        capabilities[key] = allowed;
+      }
+
+      // boundary: runtime keys derived from registry actions match CapabilityMap by construction
       return capabilities as unknown as CapabilityMap<TResources>;
     },
   };

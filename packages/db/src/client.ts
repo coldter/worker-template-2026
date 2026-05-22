@@ -19,11 +19,6 @@ export type WithDrizzleClientOptions = {
   waitUntil?: (promise: Promise<unknown>) => void;
 };
 
-/**
- * Create a temporary Postgres connection, build a Drizzle client, run the
- * callback, and guarantee cleanup. If `waitUntil` is provided the client end
- * is handed off fire-and-forget; otherwise it is awaited synchronously.
- */
 export async function withDrizzleClient<T>(
   connectionString: string,
   callback: (db: DrizzleClient) => Promise<T>,
@@ -44,12 +39,7 @@ export async function withDrizzleClient<T>(
   }
 }
 
-// Type inference
-function _inferType() {
-  return createDrizzleClient(null as never);
-}
-
-export type DrizzleClient = ReturnType<typeof _inferType>;
+export type DrizzleClient = ReturnType<typeof createDrizzleClient>;
 export type Transaction = Parameters<
   Parameters<DrizzleClient["transaction"]>[0]
 >[0];

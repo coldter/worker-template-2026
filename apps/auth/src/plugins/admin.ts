@@ -61,22 +61,10 @@ function assertStatusMutationResult(result: StatusMutationResult): void {
   }
 }
 
-/**
- * Admin Plugin
- *
- * Provides endpoints for user management:
- * - Deactivate user (admin sets user to inactive)
- * - Activate user (admin reactivates a user)
- * - Unlock user (admin unlocks a locked user)
- */
 export const adminPlugin = (apiBinding: ApiBindingRpc) => {
   return {
     id: "admin",
     endpoints: {
-      /**
-       * Deactivate a user - sets status to "inactive"
-       * Revokes all user sessions
-       */
       deactivateUser: createAuthEndpoint(
         "/admin/deactivate-user",
         {
@@ -111,6 +99,7 @@ export const adminPlugin = (apiBinding: ApiBindingRpc) => {
           },
         },
         async (ctx) => {
+          // boundary: better-auth plugin endpoint ctx lacks $Infer narrowing for user-status additional fields.
           const currentUser = ctx.context.session.user as AuthSessionUser;
 
           await assertCanManageUserStatusWithApiError(
@@ -130,10 +119,6 @@ export const adminPlugin = (apiBinding: ApiBindingRpc) => {
         }
       ),
 
-      /**
-       * Activate a user - sets status back to "active"
-       * Clears deactivation fields
-       */
       activateUser: createAuthEndpoint(
         "/admin/activate-user",
         {
@@ -167,6 +152,7 @@ export const adminPlugin = (apiBinding: ApiBindingRpc) => {
           },
         },
         async (ctx) => {
+          // boundary: better-auth plugin endpoint ctx lacks $Infer narrowing for user-status additional fields.
           const currentUser = ctx.context.session.user as AuthSessionUser;
 
           await assertCanManageUserStatusWithApiError(
@@ -185,10 +171,6 @@ export const adminPlugin = (apiBinding: ApiBindingRpc) => {
         }
       ),
 
-      /**
-       * Unlock a user - resets lockout status
-       * Clears failed login attempts and lockedUntil
-       */
       unlockUser: createAuthEndpoint(
         "/admin/unlock-user",
         {
@@ -221,6 +203,7 @@ export const adminPlugin = (apiBinding: ApiBindingRpc) => {
           },
         },
         async (ctx) => {
+          // boundary: better-auth plugin endpoint ctx lacks $Infer narrowing for user-status additional fields.
           const currentUser = ctx.context.session.user as AuthSessionUser;
 
           await assertCanManageUserStatusWithApiError(

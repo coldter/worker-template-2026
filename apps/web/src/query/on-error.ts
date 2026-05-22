@@ -1,4 +1,5 @@
 import { toast } from "sonner";
+import { ApiError } from "@/lib/api";
 import { authClient } from "@/lib/auth-client";
 import { clearSession } from "@/modules/auth";
 import { useAlertStore } from "@/store/alert";
@@ -15,30 +16,58 @@ const FALLBACK_MESSAGES: Record<number, string> = {
   504: "Request timed out. Please try again.",
 };
 
-interface ErrorWithStatus {
-  error?: { message?: string };
-  message?: string;
-  path?: string;
-  status?: number;
-}
-
-const getStatusCode = (error: unknown): number => {
-  const err = error as ErrorWithStatus;
-  return typeof err?.status === "number" ? err.status : 0;
+const readStringProp = (error: unknown, key: string): string | undefined => {
+  if (typeof error !== "object" || error === null) {
+    return;
+  }
+  if (!(key in error)) {
+    return;
+  }
+  const value = (error as Record<string, unknown>)[key];
+  return typeof value === "string" ? value : undefined;
 };
 
-const getErrorPath = (error: unknown): string | undefined =>
-  (error as ErrorWithStatus)?.path;
+const readNumberProp = (error: unknown, key: string): number | undefined => {
+  if (typeof error !== "object" || error === null) {
+    return;
+  }
+  if (!(key in error)) {
+    return;
+  }
+  const value = (error as Record<string, unknown>)[key];
+  return typeof value === "number" ? value : undefined;
+};
+
+const getStatusCode = (error: unknown): number => {
+  if (ApiError.is(error)) {
+    return error.status;
+  }
+  return readNumberProp(error, "status") ?? 0;
+};
+
+const getErrorPath = (error: unknown): string | undefined => {
+  if (ApiError.is(error)) {
+    return error.path;
+  }
+  return readStringProp(error, "path");
+};
 
 const getErrorMessage = (error: unknown): string => {
-  const err = error as ErrorWithStatus;
   const status = getStatusCode(error);
 
-  if (err?.error?.message) {
-    return err.error.message;
+  if (ApiError.is(error)) {
+    if (error.error.message) {
+      return error.error.message;
+    }
+    if (error.message && error.message !== "Error") {
+      return error.message;
+    }
+    return FALLBACK_MESSAGES[status] || "An unexpected error occurred";
   }
-  if (err?.message && err.message !== "Error") {
-    return err.message;
+
+  const message = readStringProp(error, "message");
+  if (message && message !== "Error") {
+    return message;
   }
 
   return FALLBACK_MESSAGES[status] || "An unexpected error occurred";

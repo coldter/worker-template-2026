@@ -8,11 +8,20 @@ export interface Logger {
   warn: (message: string, context?: LogContext) => void;
 }
 
+// JSON.stringify omits Error fields by default; serialize them explicitly.
+function replaceErrors(_key: string, value: unknown): unknown {
+  if (value instanceof Error) {
+    return { name: value.name, message: value.message, stack: value.stack };
+  }
+  return value;
+}
+
 function log(level: LogLevel, message: string, context?: LogContext): void {
+  const payload = { level, message, ts: Date.now(), ...context };
   const entry =
     process.env.NODE_ENV === "production"
-      ? JSON.stringify({ level, message, ts: Date.now(), ...context })
-      : { level, message, ts: Date.now(), ...context };
+      ? JSON.stringify(payload, replaceErrors)
+      : JSON.stringify(payload, replaceErrors, 2);
   switch (level) {
     case "error":
       console.error(entry);

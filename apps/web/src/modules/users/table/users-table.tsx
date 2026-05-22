@@ -1,8 +1,5 @@
-import { getCoreRowModel, useReactTable } from "@tanstack/react-table";
-import { useMemo } from "react";
-
-import type { NavigateFn } from "@/hooks/use-table-url-state";
-import { useTableUrlState } from "@/hooks/use-table-url-state";
+import type { ListUsersData } from "@/api.gen/types.gen";
+import { useServerTable } from "@/hooks/use-server-table";
 import {
   DataTable,
   DataTablePagination,
@@ -11,73 +8,30 @@ import {
 import { Route, type UsersSearch } from "@/routes/(protected)/users/index";
 
 import { useUsersQuery } from "../query";
+import type { User } from "../types";
 import { usersColumns } from "./columns";
 
+type UsersQueryParams = NonNullable<ListUsersData["query"]>;
+
 export function UsersTable() {
-  const routeNavigate = Route.useNavigate();
-  const search = Route.useSearch();
-
-  const tableNavigate: NavigateFn = ({ search: searchUpdate, replace }) => {
-    if (typeof searchUpdate === "function") {
-      routeNavigate({
-        search: (prev: UsersSearch) => ({ ...prev, ...searchUpdate(prev) }),
-        replace,
-      });
-    } else if (searchUpdate === true) {
-      routeNavigate({ search: true, replace });
-    } else {
-      routeNavigate({
-        search: (prev: UsersSearch) => ({ ...prev, ...searchUpdate }),
-        replace,
-      });
-    }
-  };
-
-  const {
-    pagination,
-    onPaginationChange,
-    sorting,
-    onSortingChange,
-    ensurePageInRange,
-  } = useTableUrlState({
-    search,
-    navigate: tableNavigate,
-    pagination: {
-      defaultPage: 1,
-      defaultPageSize: 20,
-    },
-    sorting: {
-      defaultSort: "createdAt",
-      defaultOrder: "desc",
-    },
-  });
-
-  const { data, isLoading, isError } = useUsersQuery({
-    page: pagination.pageIndex + 1,
-    perPage: pagination.pageSize,
-    sort: sorting[0]?.id,
-    order: sorting[0]?.desc ? "desc" : "asc",
-    search: search.search,
-    status: search.status,
-    role: search.role,
-  });
-
-  const pageCount = data?.meta.pageCount ?? 0;
-
-  useMemo(() => {
-    ensurePageInRange(pageCount);
-  }, [pageCount, ensurePageInRange]);
-
-  const table = useReactTable({
-    data: data?.data ?? [],
+  const { table, rows, isLoading, isError } = useServerTable<
+    User,
+    UsersSearch,
+    UsersQueryParams
+  >({
+    route: Route,
     columns: usersColumns,
-    pageCount,
-    state: { pagination, sorting },
-    onPaginationChange,
-    onSortingChange,
-    getCoreRowModel: getCoreRowModel(),
-    manualPagination: true,
-    manualSorting: true,
+    useData: useUsersQuery,
+    defaultSort: "createdAt",
+    buildQueryParams: ({ page, perPage, sort, search }) => ({
+      page,
+      perPage,
+      sort: sort.id,
+      order: sort.desc ? "desc" : "asc",
+      search: search.search,
+      status: search.status,
+      role: search.role,
+    }),
   });
 
   return (
@@ -85,7 +39,7 @@ export function UsersTable() {
       <DataTableToolbar searchPlaceholder="Search users..." table={table} />
       <DataTable
         columns={usersColumns}
-        data={data?.data ?? []}
+        data={rows}
         emptyMessage="No users found."
         isError={isError}
         isLoading={isLoading}

@@ -1,3 +1,4 @@
+import { logger } from "@repo/shared/logger";
 import { createMiddleware } from "hono/factory";
 import type { AppEnv } from "@/lib/context";
 
@@ -12,7 +13,9 @@ export const analyticsMiddleware = createMiddleware<AppEnv>(async (c, next) => {
       doubles: [c.res.status, duration],
       indexes: [new URL(c.req.url).pathname],
     });
-  } catch {
-    // Never let analytics failures affect the response
+  } catch (err) {
+    logger.debug("Analytics writeDataPoint failed", {
+      error: err instanceof Error ? err.message : String(err),
+    });
   }
 });

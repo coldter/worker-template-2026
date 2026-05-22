@@ -1,19 +1,10 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
-import { Button } from "@/modules/ui/button";
+import { useMutationForm } from "@/hooks/use-mutation-form";
+import { FormDialog } from "@/modules/common/form-dialog";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/modules/ui/dialog";
-import {
-  Form,
   FormControl,
   FormField,
   FormItem,
@@ -53,76 +44,57 @@ export function EditUserDialog({
     },
   });
 
-  useEffect(() => {
-    if (open) {
-      form.reset({
-        name: user.name,
-        email: user.email,
-      });
-    }
-  }, [open, user, form]);
-
-  const onSubmit = async (values: EditUserFormValues) => {
-    await updateMutation.mutateAsync({
-      userId: user.id,
-      data: values,
-    });
-    onOpenChange(false);
-  };
+  const { submit, isPending } = useMutationForm({
+    form,
+    mutation: updateMutation,
+    toVariables: (values) => ({ userId: user.id, data: values }),
+    onClose: () => onOpenChange(false),
+    resetWhen: {
+      open,
+      key: user,
+      values: { name: user.name, email: user.email },
+    },
+  });
 
   return (
-    <Dialog onOpenChange={onOpenChange} open={open}>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>Edit User</DialogTitle>
-          <DialogDescription>Update user profile information</DialogDescription>
-        </DialogHeader>
+    <FormDialog
+      description="Update user profile information"
+      form={form}
+      isPending={isPending}
+      onOpenChange={onOpenChange}
+      onSubmit={submit}
+      open={open}
+      pendingLabel="Saving..."
+      submitLabel="Save Changes"
+      title="Edit User"
+    >
+      <FormField
+        control={form.control}
+        name="name"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Name</FormLabel>
+            <FormControl>
+              <Input {...field} />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
 
-        <Form {...form}>
-          <form className="space-y-4" onSubmit={form.handleSubmit(onSubmit)}>
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Name</FormLabel>
-                  <FormControl>
-                    <Input {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl>
-                    <Input type="email" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <DialogFooter>
-              <Button
-                onClick={() => onOpenChange(false)}
-                type="button"
-                variant="outline"
-              >
-                Cancel
-              </Button>
-              <Button disabled={updateMutation.isPending} type="submit">
-                {updateMutation.isPending ? "Saving..." : "Save Changes"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
+      <FormField
+        control={form.control}
+        name="email"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Email</FormLabel>
+            <FormControl>
+              <Input type="email" {...field} />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+    </FormDialog>
   );
 }

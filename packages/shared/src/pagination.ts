@@ -70,7 +70,8 @@ export const PAGINATION_DEFAULTS = {
 } as const;
 
 export function getPaginationParams(query: Partial<PaginationQuery>) {
-  const page = query.page ?? PAGINATION_DEFAULTS.PAGE;
+  const rawPage = query.page ?? PAGINATION_DEFAULTS.PAGE;
+  const page = Math.max(1, Math.trunc(rawPage));
   const perPage = Math.min(
     query.perPage ?? PAGINATION_DEFAULTS.PER_PAGE,
     PAGINATION_DEFAULTS.MAX_PER_PAGE

@@ -3,7 +3,6 @@ import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import {
   createRootRouteWithContext,
   HeadContent,
-  Navigate,
   Outlet,
 } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
@@ -14,6 +13,7 @@ import type { Session } from "@/modules/auth";
 import AppError from "@/modules/common/app-error";
 import { DownAlert } from "@/modules/common/down-alert";
 import { NavigationProgress } from "@/modules/common/navigation-progress";
+import { NotFoundError } from "@/modules/errors/not-found-error";
 import { Toaster } from "@/modules/ui/sonner";
 import "../index.css";
 
@@ -24,7 +24,7 @@ export type RouterAppContext = {
 
 export const Route = createRootRouteWithContext<RouterAppContext>()({
   component: RootComponent,
-  notFoundComponent: () => <Navigate to="/login" />,
+  notFoundComponent: NotFoundError,
   errorComponent: AppError,
   head: () => ({
     meta: [
@@ -66,8 +66,13 @@ function RootComponent() {
         <Toaster richColors />
         <DownAlert />
       </ThemeProvider>
-      <ReactQueryDevtools initialIsOpen={false} />
-      <TanStackRouterDevtools position="bottom-left" />
+      {/* Dev-only at build time: import.meta.env.DEV is statically tree-shaken in prod. */}
+      {import.meta.env.DEV && (
+        <>
+          <ReactQueryDevtools initialIsOpen={false} />
+          <TanStackRouterDevtools position="bottom-left" />
+        </>
+      )}
     </StrictMode>
   );
 }

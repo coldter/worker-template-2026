@@ -150,7 +150,17 @@ const usersRoutes = {
     operationId: "updateUserRoles",
     method: "patch",
     path: "/{userId}/roles",
-    guard: [authorize("user", "update")],
+    guard: [
+      authorize("user", "update-roles", {
+        loadResource: async (c) => {
+          const userId = c.req.param("userId");
+          if (!userId) {
+            return null;
+          }
+          return userService.findById(c.var.db, userId);
+        },
+      }),
+    ],
     tags: ["users"],
     summary: "Update user roles",
     description: "Updates user role assignments",
@@ -206,7 +216,17 @@ const usersRoutes = {
     operationId: "activateUser",
     method: "post",
     path: "/{userId}/activate",
-    guard: [authorize("user", "activate")],
+    guard: [
+      authorize("user", "activate", {
+        loadResource: async (c) => {
+          const userId = c.req.param("userId");
+          if (!userId) {
+            return null;
+          }
+          return userService.findById(c.var.db, userId);
+        },
+      }),
+    ],
     tags: ["users"],
     summary: "Activate user",
     description: "Reactivates a deactivated user",
@@ -224,7 +244,17 @@ const usersRoutes = {
     operationId: "unlockUser",
     method: "post",
     path: "/{userId}/unlock",
-    guard: [authorize("user", "unlock")],
+    guard: [
+      authorize("user", "unlock", {
+        loadResource: async (c) => {
+          const userId = c.req.param("userId");
+          if (!userId) {
+            return null;
+          }
+          return userService.findById(c.var.db, userId);
+        },
+      }),
+    ],
     tags: ["users"],
     summary: "Unlock user",
     description: "Unlocks a locked user and resets failed login attempts",

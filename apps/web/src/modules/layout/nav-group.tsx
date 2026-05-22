@@ -1,7 +1,7 @@
 import { Link, useLocation } from "@tanstack/react-router";
 import { ChevronRight } from "lucide-react";
 import { type ReactNode, useMemo } from "react";
-import { useAuthorization } from "@/hooks/use-authorization";
+import { useCapabilityChecker } from "@/hooks/use-authorization";
 import {
   Collapsible,
   CollapsibleContent,
@@ -35,26 +35,19 @@ import type {
 } from "./types";
 
 function useFilteredItems(items: NavItem[]): NavItem[] {
-  const { capabilities } = useAuthorization();
+  const { check } = useCapabilityChecker();
 
   return useMemo(() => {
-    const hasAccess = (permission: string | null | undefined): boolean => {
-      if (permission === null || permission === undefined) {
-        return true;
-      }
-      return capabilities[permission] === true;
-    };
-
     const filterItems = (itemList: NavItem[]): NavItem[] =>
       itemList
         .map((item) => {
-          if (!hasAccess(item.permission)) {
+          if (!check(item.permission)) {
             return null;
           }
 
           if (item.items) {
             const filteredChildren = item.items.filter((child) =>
-              hasAccess(child.permission)
+              check(child.permission)
             );
 
             if (filteredChildren.length === 0) {
@@ -69,7 +62,7 @@ function useFilteredItems(items: NavItem[]): NavItem[] {
         .filter((item): item is NavItem => item !== null);
 
     return filterItems(items);
-  }, [items, capabilities]);
+  }, [items, check]);
 }
 
 export function NavGroup({ title, items }: NavGroupProps) {

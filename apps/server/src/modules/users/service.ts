@@ -7,6 +7,7 @@ import {
   firstOrThrow,
 } from "@repo/db";
 import { accounts, users } from "@repo/db/schema";
+import { logger } from "@repo/shared/logger";
 import { hashPassword } from "better-auth/crypto";
 import {
   and,
@@ -40,6 +41,24 @@ import type {
   UserRecord,
 } from "./types";
 import { onUserStatusChange } from "./user-status-hooks";
+
+async function safeNotifyStatusChange(
+  userId: string,
+  newStatus: string,
+  previousStatus: string,
+  reason: string | null
+): Promise<void> {
+  try {
+    await onUserStatusChange(userId, newStatus, previousStatus, reason);
+  } catch (error) {
+    logger.error("onUserStatusChange hook failed", {
+      userId,
+      newStatus,
+      previousStatus,
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+}
 
 export const userService = {
   async find(db: DrizzleClient, query: ListUsersQuery) {
@@ -297,7 +316,7 @@ export const userService = {
       });
     });
 
-    await onUserStatusChange(
+    await safeNotifyStatusChange(
       id,
       USER_STATUS.INACTIVE,
       existingUser.status,
@@ -330,7 +349,12 @@ export const userService = {
       });
     });
 
-    await onUserStatusChange(id, USER_STATUS.ACTIVE, existingUser.status, null);
+    await safeNotifyStatusChange(
+      id,
+      USER_STATUS.ACTIVE,
+      existingUser.status,
+      null
+    );
   },
 
   async unlock(
@@ -358,6 +382,11 @@ export const userService = {
       });
     });
 
-    await onUserStatusChange(id, USER_STATUS.ACTIVE, existingUser.status, null);
+    await safeNotifyStatusChange(
+      id,
+      USER_STATUS.ACTIVE,
+      existingUser.status,
+      null
+    );
   },
 };

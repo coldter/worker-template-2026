@@ -6,6 +6,7 @@ import pg from "pg";
 import { PostgresError } from "pg-error-enum";
 import type { AppEnv } from "@/lib/context";
 
+// boundary: typeof-guarded reads of `code` on an unknown error cause.
 function extractCauseCode(cause: unknown): string | null {
   if (
     typeof cause === "object" &&

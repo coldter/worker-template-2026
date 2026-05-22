@@ -1,4 +1,11 @@
-import { index, pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import {
+  index,
+  pgTable,
+  text,
+  timestamp,
+  uniqueIndex,
+} from "drizzle-orm/pg-core";
+import { createdAt, timestamps } from "../helpers";
 import { users } from "./auth";
 
 export const organizations = pgTable("organization", {
@@ -7,7 +14,7 @@ export const organizations = pgTable("organization", {
   slug: text("slug").unique(),
   logo: text("logo"),
   metadata: text("metadata"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+  ...timestamps(),
 });
 
 export const members = pgTable(
@@ -21,11 +28,15 @@ export const members = pgTable(
       .notNull()
       .references(() => organizations.id, { onDelete: "cascade" }),
     role: text("role").notNull(),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
+    ...timestamps(),
   },
-  (t) => [
-    index("member_user_id_idx").on(t.userId),
-    index("member_org_id_idx").on(t.organizationId),
+  (table) => [
+    index("member_user_id_idx").on(table.userId),
+    index("member_org_id_idx").on(table.organizationId),
+    uniqueIndex("members_user_org_unique").on(
+      table.userId,
+      table.organizationId
+    ),
   ]
 );
 
@@ -42,8 +53,9 @@ export const invitations = pgTable(
       .references(() => organizations.id, { onDelete: "cascade" }),
     role: text("role").notNull(),
     status: text("status").notNull(),
-    expiresAt: timestamp("expires_at").notNull(),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    // Intentionally immutable, no updatedAt: terminal-write only.
+    createdAt: createdAt(),
   },
   (t) => [
     index("invitation_org_id_idx").on(t.organizationId),

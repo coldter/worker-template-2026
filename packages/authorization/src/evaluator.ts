@@ -34,150 +34,144 @@ export interface EvaluateInput {
 }
 
 export async function evaluate(input: EvaluateInput): Promise<PolicyDecision> {
-  try {
-    const {
+  const {
+    principal,
+    action,
+    globalPolicies,
+    resourcePolicies,
+    systemAdminRoles,
+    resolveOrganization,
+    resource,
+    resolveRelation,
+    ignoreResourceConditions = false,
+  } = input;
+
+  if (!principal) {
+    return { allowed: false, reason: "UNAUTHENTICATED" };
+  }
+
+  let sawEvaluationError = false;
+
+  for (const policy of globalPolicies) {
+    if (policy.effect !== "deny") {
+      continue;
+    }
+    const { matched, conditionError } = await matchPolicy(
+      policy,
       principal,
       action,
-      globalPolicies,
-      resourcePolicies,
-      systemAdminRoles,
-      resolveOrganization,
+      undefined,
+      resolveRelation
+    );
+    if (conditionError) {
+      sawEvaluationError = true;
+      continue;
+    }
+    if (matched) {
+      return {
+        allowed: false,
+        reason: "GLOBAL_DENY",
+        matchedPolicy: policy.label,
+      };
+    }
+  }
+
+  let orgDenyReason: DenyReason | undefined;
+
+  for (const policy of resourcePolicies) {
+    if (policy.effect !== "deny") {
+      continue;
+    }
+
+    if (hasResourceConditions(policy) && resource === undefined) {
+      continue;
+    }
+
+    if (resolveOrganization && resource !== undefined) {
+      const orgResult = checkOrgScoping(
+        principal,
+        resource,
+        resolveOrganization,
+        policy,
+        systemAdminRoles
+      );
+      if (orgResult !== "pass") {
+        orgDenyReason ??= orgResult.skip;
+        continue;
+      }
+    }
+
+    const { matched, conditionError } = await matchPolicy(
+      policy,
+      principal,
+      action,
+      resource,
+      resolveRelation
+    );
+    if (conditionError) {
+      sawEvaluationError = true;
+      continue;
+    }
+    if (matched) {
+      return {
+        allowed: false,
+        reason: "EXPLICIT_DENY",
+        matchedPolicy: policy.label,
+      };
+    }
+  }
+
+  for (const policy of resourcePolicies) {
+    if (policy.effect !== "allow") {
+      continue;
+    }
+
+    if (
+      hasResourceConditions(policy) &&
+      resource === undefined &&
+      !ignoreResourceConditions
+    ) {
+      continue;
+    }
+
+    if (resolveOrganization && resource !== undefined) {
+      const orgResult = checkOrgScoping(
+        principal,
+        resource,
+        resolveOrganization,
+        policy,
+        systemAdminRoles
+      );
+      if (orgResult !== "pass") {
+        orgDenyReason ??= orgResult.skip;
+        continue;
+      }
+    }
+
+    const { matched, conditionError } = await matchPolicy(
+      policy,
+      principal,
+      action,
       resource,
       resolveRelation,
-      ignoreResourceConditions = false,
-    } = input;
-
-    // Step 1: No principal = UNAUTHENTICATED
-    if (!principal) {
-      return { allowed: false, reason: "UNAUTHENTICATED" };
+      ignoreResourceConditions
+    );
+    if (conditionError) {
+      sawEvaluationError = true;
+      continue;
     }
-
-    // Step 2: Check global deny policies
-    for (const policy of globalPolicies) {
-      if (policy.effect !== "deny") {
-        continue;
-      }
-      const match = await matchPolicy(
-        policy,
-        principal,
-        action,
-        undefined,
-        resolveRelation
-      );
-      if (match) {
-        return {
-          allowed: false,
-          reason: "GLOBAL_DENY",
-          matchedPolicy: policy.label,
-        };
-      }
+    if (matched) {
+      return { allowed: true, matchedPolicy: policy.label };
     }
+  }
 
-    // Track the best org-specific deny reason across policy evaluation.
-    // If all policies are skipped due to org failures, return this instead
-    // of a generic NO_MATCHING_POLICY.
-    let orgDenyReason: DenyReason | undefined;
-
-    // Step 3: Check resource deny policies (deny rules first)
-    for (const policy of resourcePolicies) {
-      if (policy.effect !== "deny") {
-        continue;
-      }
-
-      // Skip deny policies with resource conditions if no resource loaded.
-      // For capabilities mode (ignoreResourceConditions), deny policies that
-      // depend on the resource are also skipped -- we cannot know if the deny
-      // would apply without a concrete resource, so we err on the optimistic
-      // side for capabilities.
-      if (hasResourceConditions(policy) && resource === undefined) {
-        continue;
-      }
-
-      // Org scoping check (per-policy, not top-level)
-      if (resolveOrganization && resource !== undefined) {
-        const orgResult = checkOrgScoping(
-          principal,
-          resource,
-          resolveOrganization,
-          policy,
-          systemAdminRoles
-        );
-        // For deny policies, if org check fails the policy does not apply
-        if (orgResult !== "pass") {
-          orgDenyReason ??= orgResult.skip;
-          continue;
-        }
-      }
-
-      const match = await matchPolicy(
-        policy,
-        principal,
-        action,
-        resource,
-        resolveRelation
-      );
-      if (match) {
-        return {
-          allowed: false,
-          reason: "EXPLICIT_DENY",
-          matchedPolicy: policy.label,
-        };
-      }
-    }
-
-    // Step 4: Check resource allow policies
-    for (const policy of resourcePolicies) {
-      if (policy.effect !== "allow") {
-        continue;
-      }
-
-      // Skip policies with resource conditions if no resource loaded
-      // (unless ignoreResourceConditions is set for capabilities evaluation)
-      if (
-        hasResourceConditions(policy) &&
-        resource === undefined &&
-        !ignoreResourceConditions
-      ) {
-        continue;
-      }
-
-      // Org scoping check (per-policy)
-      if (resolveOrganization && resource !== undefined) {
-        const orgResult = checkOrgScoping(
-          principal,
-          resource,
-          resolveOrganization,
-          policy,
-          systemAdminRoles
-        );
-        // If org check fails, skip this policy
-        if (orgResult !== "pass") {
-          orgDenyReason ??= orgResult.skip;
-          continue;
-        }
-      }
-
-      const match = await matchPolicy(
-        policy,
-        principal,
-        action,
-        resource,
-        resolveRelation,
-        ignoreResourceConditions
-      );
-      if (match) {
-        return { allowed: true, matchedPolicy: policy.label };
-      }
-    }
-
-    // Step 5: Default deny -- use org-specific reason when available
-    if (orgDenyReason) {
-      return { allowed: false, reason: orgDenyReason };
-    }
-    return { allowed: false, reason: "NO_MATCHING_POLICY" };
-  } catch {
+  if (sawEvaluationError) {
     return { allowed: false, reason: "EVALUATION_ERROR" };
   }
+  if (orgDenyReason) {
+    return { allowed: false, reason: orgDenyReason };
+  }
+  return { allowed: false, reason: "NO_MATCHING_POLICY" };
 }
 
 function roleMatches(policy: PolicyRule, principal: Principal): boolean {
@@ -198,6 +192,9 @@ function hasResourceConditions(policy: PolicyRule): boolean {
   return policy.conditions.some((c) => c.effect === "requires_resource");
 }
 
+// Catch is narrowed to condition.evaluate; operational errors from resolveRelation/resolveOrganization propagate.
+type MatchResult = { matched: boolean; conditionError?: true };
+
 async function matchPolicy(
   policy: PolicyRule,
   principal: Principal,
@@ -205,27 +202,22 @@ async function matchPolicy(
   resource: unknown | undefined,
   resolveRelation?: EvaluateInput["resolveRelation"],
   ignoreResourceConditions = false
-): Promise<boolean> {
-  // Check role match
+): Promise<MatchResult> {
   if (!roleMatches(policy, principal)) {
-    return false;
+    return { matched: false };
   }
 
-  // Check action match
   if (!actionMatches(policy, action)) {
-    return false;
+    return { matched: false };
   }
 
-  // Check all conditions (AND)
   for (const condition of policy.conditions) {
-    // When ignoreResourceConditions is set, treat resource conditions as passing
     if (condition.effect === "requires_resource" && ignoreResourceConditions) {
       continue;
     }
 
-    // A requires_resource condition with no resource means this policy cannot match
     if (condition.effect === "requires_resource" && resource === undefined) {
-      return false;
+      return { matched: false };
     }
 
     const ctx: ConditionContext = {
@@ -233,13 +225,33 @@ async function matchPolicy(
       resource,
       resolveRelation,
     };
-    const result = await condition.evaluate(ctx);
-    if (!result) {
-      return false;
+    try {
+      const result = await condition.evaluate(ctx);
+      if (!result) {
+        return { matched: false };
+      }
+    } catch (error) {
+      // console here avoids a @repo/shared <-> @repo/authorization circular dep.
+      const errInfo =
+        error instanceof Error
+          ? { name: error.name, message: error.message, stack: error.stack }
+          : { value: String(error) };
+      console.error(
+        JSON.stringify({
+          level: "error",
+          message: "authorization.evaluator.condition_error",
+          ts: Date.now(),
+          policyId: policy.label,
+          principalId: principal.id,
+          action,
+          error: errInfo,
+        })
+      );
+      return { matched: false, conditionError: true };
     }
   }
 
-  return true;
+  return { matched: true };
 }
 
 type OrgCheckResult =

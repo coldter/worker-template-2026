@@ -11,7 +11,8 @@
     "build": "tsup src/index.ts --format esm --dts",
     "check-types": "tsgo --noEmit",
     "check-types:backup": "tsc --noEmit",
-    "dev": "email dev --dir ./src/templates --port 3003"
+    "dev": "email dev --dir ./src/templates --port 3003",
+    "test": "vitest run"
   },
   "dependencies": {
     "@react-email/components": "^1.0.11",
@@ -27,10 +28,7 @@
     "@types/react-dom": "^19.2.3",
     "@typescript/native-preview": "beta",
     "tsup": "^8.5.1",
-    "typescript": "^6.0.3"
-  },
-  "peerDependencies": {
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.7"
   }
 }

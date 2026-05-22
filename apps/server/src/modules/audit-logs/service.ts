@@ -1,11 +1,7 @@
-import { env } from "cloudflare:workers";
 import type { DrizzleClient, Executor } from "@repo/db";
 import { auditLogs } from "@repo/db/schema";
-import { logger } from "@repo/shared/logger";
 import { and, count, eq, gte, lte, type SQL, sql } from "drizzle-orm";
 import type {
-  AuditLogQueueMessage,
-  BufferableAuditLogInput,
   CriticalAuditLogInput,
   FindAuditLogsQuery,
 } from "@/modules/audit-logs/types";
@@ -39,19 +35,6 @@ export const auditLogService = {
       })
       .returning();
     return log;
-  },
-
-  enqueue(input: BufferableAuditLogInput): void {
-    const message: AuditLogQueueMessage = {
-      ...input,
-      timestamp: new Date().toISOString(),
-    };
-    env.AUDIT_LOG_QUEUE.send(message).catch((error) => {
-      logger.error("Failed to enqueue audit log", {
-        event: message.event,
-        error: error instanceof Error ? error.message : String(error),
-      });
-    });
   },
 
   async find(db: DrizzleClient, query: FindAuditLogsQuery) {

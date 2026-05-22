@@ -43,7 +43,7 @@ export function ThemeProvider({
         ? "dark"
         : "light";
     }
-    return theme as ResolvedTheme;
+    return theme;
   }, [theme]);
 
   useEffect(() => {

@@ -19,6 +19,7 @@ export class AuthEntrypoint extends WorkerEntrypoint<CloudflareBindings> {
     return withDrizzleClient(
       this.env.HYPERDRIVE.connectionString,
       async (db) => {
+        // boundary: workerd codegen -- AuthBindings narrows env.API to ApiBindingRpc; runtime object is identical.
         const auth = createAuth(db, this.env as AuthBindings, this.ctx);
         return await auth.api.getSession({ headers });
       },
@@ -30,6 +31,7 @@ export class AuthEntrypoint extends WorkerEntrypoint<CloudflareBindings> {
     return withDrizzleClient(
       this.env.HYPERDRIVE.connectionString,
       async (db) => {
+        // boundary: workerd codegen -- see getSession.
         const auth = createAuth(db, this.env as AuthBindings, this.ctx);
         return await auth.api.getToken({ headers });
       },

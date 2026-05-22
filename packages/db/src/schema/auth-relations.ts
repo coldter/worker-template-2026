@@ -1,11 +1,7 @@
-import {
-  index,
-  pgTable,
-  text,
-  timestamp,
-  uniqueIndex,
-} from "drizzle-orm/pg-core";
+import { index, pgTable, text, uniqueIndex } from "drizzle-orm/pg-core";
+import { createdAt } from "../helpers";
 import { generatePrefixedCuid, ID_PREFIXES } from "../ids";
+import { users } from "./auth";
 
 export const authRelationsTable = pgTable(
   "auth_relations",
@@ -18,8 +14,12 @@ export const authRelationsTable = pgTable(
     relation: text("relation").notNull(),
     objectType: text("object_type").notNull(),
     objectId: text("object_id").notNull(),
-    createdBy: text("created_by").notNull(),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
+    // Nullable so onDelete "set null" applies when the creating user is deleted.
+    createdBy: text("created_by").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    // Intentionally immutable, no updatedAt: callers delete + recreate.
+    createdAt: createdAt(),
   },
   (t) => [
     uniqueIndex("auth_rel_unique").on(
@@ -31,5 +31,6 @@ export const authRelationsTable = pgTable(
     ),
     index("auth_rel_subject_lookup").on(t.subjectType, t.subjectId, t.relation),
     index("auth_rel_object_lookup").on(t.objectType, t.objectId, t.relation),
+    index("auth_rel_created_by_idx").on(t.createdBy),
   ]
 );

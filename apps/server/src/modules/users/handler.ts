@@ -5,7 +5,7 @@ import { HTTPException } from "hono/http-exception";
 import { isValidRole } from "@/auth/principal";
 import { auth } from "@/auth/schema";
 import type { AppEnv } from "@/lib/context";
-import { triggerWorkflow } from "@/lib/events";
+import { dispatchEvent } from "@/lib/events";
 import { notificationService } from "@/modules/notifications";
 import { defaultHook } from "@/utils/default-hook";
 import { UserNotFoundError } from "./errors";
@@ -106,11 +106,12 @@ const usersHandler = app
       c.var.auditContext
     );
 
-    c.executionCtx.waitUntil(
-      triggerWorkflow({
+    dispatchEvent(
+      {
         type: "user.created",
         payload: { userId: user.id, email: user.email, name: user.name },
-      })
+      },
+      c.executionCtx
     );
 
     return c.json({ user: toUserSummaryResponse(user) }, 201);

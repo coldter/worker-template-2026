@@ -1,3 +1,5 @@
+import { logger } from "@repo/shared/logger";
+
 export const ID_PREFIXES = {
   user: "usr",
   session: "ses",
@@ -8,6 +10,13 @@ export const ID_PREFIXES = {
   notification: "ntf",
   pushToken: "ptk",
   relation: "rel",
+  jwks: "jwks",
+  twoFactor: "2fa",
+  organization: "org",
+  member: "mem",
+  invitation: "inv",
+  team: "tm",
+  teamMember: "tmm",
 } as const;
 
 declare const __brand: unique symbol;
@@ -21,8 +30,8 @@ export type VerificationId = Brand<string, "VerificationId">;
 export function generatePrefixedCuid<P extends string>(
   prefix: P
 ): `${P}_${string}` {
-  const timestampSeconds = Math.floor(Date.now() / 1000);
-  const timestampHex = timestampSeconds.toString(16).toLowerCase();
+  const timestampMs = Date.now();
+  const timestampHex = timestampMs.toString(16).toLowerCase();
 
   const randomBytes = new Uint8Array(8);
   crypto.getRandomValues(randomBytes);
@@ -46,17 +55,17 @@ export const createAccountId = (): AccountId =>
 export const createVerificationId = (): VerificationId =>
   generatePrefixedCuid(ID_PREFIXES.verification) as VerificationId;
 
+// Called by Better Auth's advanced.database.generateId for every model; unknown models fall back to "ent" so plugin inserts keep working.
 export const generateIdForModel = (model: string): string => {
-  switch (model) {
-    case "user":
-      return createUserId();
-    case "session":
-      return createSessionId();
-    case "account":
-      return createAccountId();
-    case "verification":
-      return createVerificationId();
-    default:
-      return generatePrefixedCuid("ent");
+  if (model in ID_PREFIXES) {
+    const prefix = ID_PREFIXES[model as keyof typeof ID_PREFIXES];
+    return generatePrefixedCuid(prefix);
   }
+  logger.warn(
+    "generateIdForModel: unknown model, falling back to 'ent' prefix",
+    {
+      model,
+    }
+  );
+  return generatePrefixedCuid("ent");
 };

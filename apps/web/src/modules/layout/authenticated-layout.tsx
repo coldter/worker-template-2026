@@ -32,6 +32,9 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
               // set the height to 100svh - spacing (total margins) to prevent overflow
               "peer-data-[variant=inset]:has-data-[layout=fixed]:h-[calc(100svh-(var(--spacing)*4))]"
             )}
+            // SkipToMain links to #content; keep id and tabIndex in sync.
+            id="content"
+            tabIndex={-1}
           >
             {children ?? <Outlet />}
           </SidebarInset>

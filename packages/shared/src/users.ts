@@ -2,6 +2,7 @@ export const USER_STATUS = {
   ACTIVE: "active",
   INACTIVE: "inactive",
   LOCKED: "locked",
+  DELETED: "deleted",
 } as const;
 
 export type UserStatus = (typeof USER_STATUS)[keyof typeof USER_STATUS];
@@ -27,6 +28,12 @@ export const USER_STATUS_CONFIG = {
   },
   [USER_STATUS.LOCKED]: {
     label: "Locked",
+    variant: "destructive",
+    color: "red",
+    className: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
+  },
+  [USER_STATUS.DELETED]: {
+    label: "Deleted",
     variant: "destructive",
     color: "red",
     className: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",

@@ -194,10 +194,7 @@
         "@typescript/native-preview": "beta",
         "tsup": "^8.5.1",
         "typescript": "^6.0.3",
-      },
-      "peerDependencies": {
-        "react": "^19.0.0",
-        "react-dom": "^19.0.0",
+        "vitest": "^4.1.7",
       },
     },
     "packages/shared": {

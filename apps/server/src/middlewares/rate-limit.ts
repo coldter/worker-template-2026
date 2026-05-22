@@ -1,4 +1,6 @@
+import { logger } from "@repo/shared/logger";
 import { createMiddleware } from "hono/factory";
+import { getClientIp } from "@/lib/audit-context";
 import type { AppEnv } from "@/lib/context";
 
 const WINDOW_SECONDS = 60;
@@ -9,15 +11,12 @@ export const rateLimitMiddleware = createMiddleware<AppEnv>(async (c, next) => {
     return next();
   }
 
-  const ip =
-    c.req.header("CF-Connecting-IP") ??
-    c.req.header("X-Forwarded-For")?.split(",")[0]?.trim() ??
-    "unknown";
+  // Only `CF-Connecting-IP` is trusted; `X-Forwarded-For` is client-controllable and would let an attacker mint unlimited buckets.
+  const ip = getClientIp(c) ?? "unknown";
 
   const identifier = `ip:${ip}`;
   const limit = GUEST_LIMIT;
 
-  // DO-first approach
   const doBinding = c.env.RATE_LIMITER;
   if (doBinding) {
     try {
@@ -35,14 +34,12 @@ export const rateLimitMiddleware = createMiddleware<AppEnv>(async (c, next) => {
       c.header("X-RateLimit-Remaining", String(remaining));
       return next();
     } catch (err) {
-      const { logger } = await import("@repo/shared/logger");
       logger.warn("Rate limiter DO unavailable, falling back to KV", {
         error: err instanceof Error ? err.message : String(err),
       });
     }
   }
 
-  // Fallback: KV-based rate limiting
   const windowKey = `rl:${identifier}:${Math.floor(Date.now() / (WINDOW_SECONDS * 1000))}`;
   const raw = await c.env.CACHE.get(windowKey, "text");
   const count = raw ? Number.parseInt(raw, 10) : 0;
@@ -64,8 +61,10 @@ export const rateLimitMiddleware = createMiddleware<AppEnv>(async (c, next) => {
         });
       })()
     );
-  } catch {
-    // executionCtx not available in test environment
+  } catch (err) {
+    logger.debug("Rate limiter KV waitUntil unavailable", {
+      error: err instanceof Error ? err.message : String(err),
+    });
   }
 
   await next();

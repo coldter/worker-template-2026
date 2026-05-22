@@ -96,7 +96,6 @@ export const CRITICAL_EVENTS = [
 ] as const;
 
 // Observational events with no accompanying business write.
-// Logged asynchronously via auditLogService.enqueue(input).
 export const BUFFERABLE_EVENTS = [
   "auth.login.success",
   "auth.login.failed",
