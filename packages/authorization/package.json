@@ -15,9 +15,9 @@
   },
   "devDependencies": {
     "@typescript/native-preview": "beta",
-    "hono": "^4.12.21",
+    "hono": "^4.12.25",
     "typescript": "^6.0.3",
-    "vitest": "^4.1.7"
+    "vitest": "^4.1.8"
   },
   "peerDependencies": {
     "drizzle-orm": "^0.44.0",

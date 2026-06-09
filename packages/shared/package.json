@@ -23,9 +23,9 @@
     "check-types:backup": "tsc --noEmit"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20260521.1",
+    "@cloudflare/workers-types": "^4.20260609.1",
     "@hono/zod-openapi": "^1.4.0",
-    "@types/node": "^25.9.1",
+    "@types/node": "^25.9.2",
     "@typescript/native-preview": "beta",
     "typescript": "^6.0.3"
   },
