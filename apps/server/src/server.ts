@@ -21,7 +21,6 @@ import usersHandler from "@/modules/users/handler";
 
 const app = new OpenAPIHono<AppEnv>();
 
-// Global middleware
 app.use("*", trimTrailingSlash());
 app.use("*", secureHeaders());
 app.use("*", requestIdMiddleware);
@@ -39,7 +38,6 @@ app.use("/api/*", dbMiddleware);
 app.use("/api/*", authContextMiddleware);
 app.use("/api/*", auditContextMiddleware);
 
-// Routes
 app.route("/", statusHandler);
 app.route("/api/roles", rolesHandler);
 app.route("/api/users", usersHandler);
@@ -50,7 +48,6 @@ app.route("/api/authorization/capabilities", capabilitiesHandler);
 // OpenAPI docs + Scalar UI (non-production only)
 setupDocs(app);
 
-// Error handling
 app.notFound((c) =>
   c.json({ error: { code: "NOT_FOUND", message: "Route not found" } }, 404)
 );

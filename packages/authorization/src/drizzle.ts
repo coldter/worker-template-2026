@@ -74,9 +74,6 @@ export type DrizzleLike = {
   };
 };
 
-/**
- * Check if a single relation tuple exists.
- */
 export async function checkRelation(
   db: Pick<DrizzleLike, "select">,
   table: AuthRelationsTable,
@@ -166,9 +163,7 @@ export async function checkRelationBatch(
   return keyMap;
 }
 
-/**
- * Create a new relation tuple. Silently ignores duplicates via onConflictDoNothing.
- */
+// Silently ignores duplicates via onConflictDoNothing.
 export async function createRelation(
   db: Pick<DrizzleLike, "insert">,
   table: AuthRelationsTable,
@@ -187,9 +182,6 @@ export async function createRelation(
     .onConflictDoNothing();
 }
 
-/**
- * Delete a relation tuple.
- */
 export async function deleteRelation(
   db: Pick<DrizzleLike, "delete">,
   table: AuthRelationsTable,
@@ -208,9 +200,6 @@ export async function deleteRelation(
     );
 }
 
-/**
- * List relations matching a filter. All filter fields are optional.
- */
 export async function listRelations(
   db: Pick<DrizzleLike, "select">,
   table: AuthRelationsTable,

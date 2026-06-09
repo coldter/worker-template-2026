@@ -6,11 +6,8 @@ import { TwoFactorOtpEmail } from "../templates/two-factor-otp";
 import { VerificationOtpEmail } from "../templates/verification-otp";
 import { WelcomeEmail } from "../templates/welcome";
 
-// Snapshot tests pin the rendered HTML output of each transactional email
-// template. Diffs in the snapshots make unintentional copy or layout changes
-// visible during review. Each template is rendered with the same
-// `PreviewProps` shape used by the React Email dev server, so the snapshot
-// reflects the canonical preview state.
+// Snapshots pin rendered HTML so unintentional copy or layout changes surface
+// during review.
 
 describe("Email template snapshots", () => {
   test("NotificationEmail renders with action button", async () => {

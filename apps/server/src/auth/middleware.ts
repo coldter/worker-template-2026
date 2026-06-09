@@ -12,7 +12,6 @@ import type { AppEnv } from "@/lib/context";
 import { authorization } from "./registry";
 
 /**
- * Extract a Principal from the Hono request context.
  * Exported so other code (e.g. capabilities route) can reuse the same logic
  * without duplicating the user/session field extraction.
  */

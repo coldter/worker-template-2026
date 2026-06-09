@@ -47,7 +47,6 @@ const userPrincipal: Principal = {
 };
 
 describe("createAuthorize", () => {
-  // Create the authorize function
   // resolvePrincipal reads from a custom header for testing
   const authorize = createAuthorize(registry, {
     resolvePrincipal: (c) => {

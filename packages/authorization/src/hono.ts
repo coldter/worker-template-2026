@@ -124,7 +124,6 @@ export function createAuthorize<
         throw denyResponse(decision);
       }
 
-      // Store loaded resource in context for downstream handlers
       if (loadedResource !== undefined) {
         c.set(AUTHORIZED_RESOURCE_KEY, loadedResource);
       }
@@ -171,9 +170,8 @@ export function createAuthorize<
  * Retrieve the resource loaded by authorize() middleware. Throws if the
  * caller invokes this on a route whose middleware did not declare a
  * `loadResource` (or whose loader produced a nullish value that the
- * middleware would have already converted to a 403). After the change,
- * downstream handlers can rely on a non-null `T` instead of casting from
- * `undefined`.
+ * middleware would have already converted to a 403), so downstream
+ * handlers can rely on a non-null `T`.
  */
 export function getAuthorizedResource<T>(c: Context): T {
   const value = c.get(AUTHORIZED_RESOURCE_KEY);

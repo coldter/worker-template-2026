@@ -13,13 +13,6 @@ import type {
   PushTokenSummary,
 } from "./types";
 
-// ============================================================
-// RESPONSE FORMATTERS
-// ============================================================
-
-/**
- * Format notification for API response.
- */
 export function formatNotificationSummary(
   notification: NotificationRecord
 ): NotificationSummary {
@@ -45,9 +38,6 @@ export function formatNotificationSummary(
   };
 }
 
-/**
- * Format push token for API response.
- */
 export function formatPushTokenSummary(
   token: PushTokenRecord
 ): PushTokenSummary {
@@ -64,18 +54,15 @@ export function formatPushTokenSummary(
 }
 
 /**
- * Format preferences for API response.
  * Aggregates multiple preference records into a single summary.
  */
 export function formatPreferencesSummary(
   preferences: PreferencesRecord[]
 ): PreferencesSummary {
-  // Find global preferences (pattern "*" or "global")
   const globalPrefs = preferences.find(
     (p) => p.typePattern === "*" || p.typePattern === "global"
   );
 
-  // Build type overrides from non-global preferences
   const typeOverrides: PreferencesSummary["typeOverrides"] = {};
   for (const pref of preferences) {
     if (pref.typePattern !== "*" && pref.typePattern !== "global") {
@@ -105,12 +92,7 @@ export function formatPreferencesSummary(
   };
 }
 
-// ============================================================
-// REQUEST CONTEXT HELPERS
-// ============================================================
-
 /**
- * Get current user ID from context.
  * Throws if user is not authenticated.
  */
 export function requireUserId(c: Context<Env>): string {
@@ -122,7 +104,6 @@ export function requireUserId(c: Context<Env>): string {
 }
 
 /**
- * Get current session ID from context.
  * Throws if session is not available.
  */
 export function requireSessionId(c: Context<Env>): string {
@@ -133,12 +114,7 @@ export function requireSessionId(c: Context<Env>): string {
   return session.id;
 }
 
-// ============================================================
-// PREFERENCE RESOLUTION
-// ============================================================
-
 /**
- * Resolve which channels are enabled for a given notification type based on user preferences.
  * Priority: exact type match > wildcard "*" > defaults (all enabled).
  */
 export function resolveEnabledChannels(
@@ -146,7 +122,6 @@ export function resolveEnabledChannels(
   notificationType: string,
   requestedChannels: NotificationChannel[]
 ): NotificationChannel[] {
-  // Find most specific preference: exact type match first, then wildcard
   const exactMatch = preferences.find(
     (p) => p.typePattern === notificationType
   );

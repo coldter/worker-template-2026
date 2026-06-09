@@ -68,7 +68,6 @@ export function AuditLogsFilters({ search, navigate }: AuditLogsFiltersProps) {
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center gap-2">
-        {/* Event filter */}
         <Select
           onValueChange={(value) =>
             updateFilter({ event: value === "__all__" ? undefined : value })
@@ -103,7 +102,6 @@ export function AuditLogsFilters({ search, navigate }: AuditLogsFiltersProps) {
           </SelectContent>
         </Select>
 
-        {/* Target type filter */}
         <Select
           onValueChange={(value) =>
             updateFilter({
@@ -143,7 +141,6 @@ export function AuditLogsFilters({ search, navigate }: AuditLogsFiltersProps) {
         )}
       </div>
 
-      {/* Active filter badges */}
       {hasActiveFilters && (
         <div className="flex flex-wrap items-center gap-1.5">
           <span className="text-muted-foreground text-xs">Active filters:</span>

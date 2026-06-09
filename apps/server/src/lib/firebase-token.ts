@@ -1,10 +1,6 @@
 import { env } from "cloudflare:workers";
 import { z } from "zod";
 
-// ============================================================
-// TYPES
-// ============================================================
-
 interface ServiceAccount {
   client_email: string;
   private_key: string;
@@ -15,10 +11,6 @@ interface CachedToken {
   accessToken: string;
   expiresAt: number;
 }
-
-// ============================================================
-// EXTERNAL-INPUT SCHEMAS (validated boundaries)
-// ============================================================
 
 const serviceAccountSchema = z
   .object({
@@ -33,10 +25,6 @@ const oauthTokenResponseSchema = z.object({
   expires_in: z.number(),
 });
 
-// ============================================================
-// CONSTANTS
-// ============================================================
-
 const FCM_SCOPE = "https://www.googleapis.com/auth/firebase.messaging";
 const TOKEN_URL = "https://oauth2.googleapis.com/token";
 const TOKEN_REFRESH_MARGIN_MS = 5 * 60 * 1000;
@@ -50,10 +38,6 @@ const RE_PLUS = /\+/g;
 const RE_SLASH = /\//g;
 const RE_TRAILING_EQUALS = /=+$/;
 
-// ============================================================
-// BASE64URL HELPERS
-// ============================================================
-
 function base64UrlEncode(data: Uint8Array): string {
   const binary = Array.from(data, (b) => String.fromCharCode(b)).join("");
   return btoa(binary)
@@ -65,10 +49,6 @@ function base64UrlEncode(data: Uint8Array): string {
 function textToBase64Url(text: string): string {
   return base64UrlEncode(new TextEncoder().encode(text));
 }
-
-// ============================================================
-// SERVICE ACCOUNT PARSING
-// ============================================================
 
 export function parseServiceAccount(): ServiceAccount {
   if (cachedServiceAccount) {
@@ -101,10 +81,6 @@ export function parseServiceAccount(): ServiceAccount {
 
   return cachedServiceAccount;
 }
-
-// ============================================================
-// JWT SIGNING
-// ============================================================
 
 async function importPrivateKey(pem: string): Promise<CryptoKey> {
   if (cachedCryptoKey) {
@@ -160,10 +136,6 @@ async function createSignedJwt(
   return `${signingInput}.${base64UrlEncode(new Uint8Array(signature))}`;
 }
 
-// ============================================================
-// OAUTH TOKEN EXCHANGE
-// ============================================================
-
 async function fetchAccessToken(
   serviceAccount: ServiceAccount
 ): Promise<CachedToken> {
@@ -194,10 +166,6 @@ async function fetchAccessToken(
     expiresAt: Date.now() + parsedData.data.expires_in * 1000,
   };
 }
-
-// ============================================================
-// TIERED ACCESS TOKEN CACHE
-// ============================================================
 
 export async function getAccessToken(
   serviceAccount: ServiceAccount

@@ -254,9 +254,6 @@ export function getTargetTypeLabel(targetType: string | null): string {
   }
 }
 
-/**
- * Generate a concise human-readable description of what happened.
- */
 export function getEventDescription(
   event: string,
   actorType: string,

@@ -1,4 +1,3 @@
-// packages/authorization/src/schema.ts
 import { buildRegistryInstance, type RegistryInstance } from "./registry";
 import {
   createResourceDefinition,
@@ -70,7 +69,6 @@ class GlobalPolicyBuilder<TRole extends string> {
   }
 }
 
-// Schema type returned by createAuthSchema
 export interface AuthSchema<
   TRole extends string,
   TRelation extends string,
@@ -126,7 +124,6 @@ export type AnyResourceDef<
   readonly resolveOwner?: (resource: never) => string;
 };
 
-// Re-export RegistryInstance for consumers
 export type { RegistryInstance } from "./registry";
 
 export function createAuthSchema<

@@ -1,8 +1,7 @@
 import { beforeEach, describe, expect, test, vi } from "vitest";
 
-// A queue of responses (or thrown errors) the next `emails.send` invocation
-// should produce. If empty, sends default to success. Tests push values here
-// before invoking `sendEmail` to control the mocked Resend behaviour.
+// Responses the next `emails.send` invocations produce; empty defaults to
+// success. Tests push here before invoking `sendEmail`.
 type SendResponse =
   | { kind: "ok"; data: { id: string } }
   | { kind: "apiError"; message: string }

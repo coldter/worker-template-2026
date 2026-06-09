@@ -16,7 +16,7 @@ const app = new Hono<AuthEnv>();
 
 app.use("*", trimTrailingSlash());
 
-// DB middleware - creates and manages connection per request
+// Per-request DB connection lifecycle.
 app.use("*", async (c, next) => {
   await withDrizzleClient(
     c.env.HYPERDRIVE.connectionString,

@@ -9,17 +9,10 @@ const __dirname = path.dirname(__filename);
 /**
  * Hey API code generation config.
  *
- * All plugins below (client-fetch, sdk, @tanstack/react-query, zod) are
- * bundled inside the `@hey-api/openapi-ts` package, so no additional
- * dependencies are required.
- *
- * Zod plugin tradeoff:
- *   The `zod` plugin emits runtime schemas for request/response bodies so
- *   network payloads can be validated against the generated OpenAPI spec.
- *   The generated file is tree-shakeable: schemas only land in the bundle
- *   where they are imported. We keep it enabled because catching
- *   server/client contract drift at runtime is worth the small generation
- *   cost. If bundle size becomes a concern, drop the `zod` entry below.
+ * Zod plugin tradeoff: it emits tree-shakeable runtime schemas for
+ * request/response bodies. Kept enabled because catching server/client
+ * contract drift at runtime is worth the cost; if bundle size becomes a
+ * concern, drop the `zod` entry below.
  */
 export const openApiConfig: UserConfig = {
   input: {
