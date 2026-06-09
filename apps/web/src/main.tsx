@@ -4,7 +4,6 @@ import ReactDOM from "react-dom/client";
 import AppError from "@/modules/common/app-error";
 import { FullPageLoadingState } from "@/modules/common/full-page-loading-state";
 import { queryClient } from "@/query/query-client";
-import { type Session, sessionQueryOptions } from "@/query/session-query";
 import { routeTree } from "./routeTree.gen";
 
 const router = createRouter({
@@ -38,22 +37,17 @@ if (!rootElement) {
 if (!rootElement.innerHTML) {
   const root = ReactDOM.createRoot(rootElement);
 
-  const bootstrap = async () => {
-    let session: Session | null = null;
-    try {
-      session = await queryClient.ensureQueryData(sessionQueryOptions);
-    } catch (error) {
-      console.error("Failed to bootstrap session:", error);
-    }
-
-    root.render(
-      <QueryClientProvider client={queryClient}>
-        <RouterProvider context={{ queryClient, session }} router={router} />
-      </QueryClientProvider>
-    );
-  };
-
-  bootstrap().catch((error) => {
-    console.error("Bootstrap failed:", error);
-  });
+  // Render immediately so the app shell paints while the protected route's
+  // beforeLoad resolves the session via ensureQueryData. The session is no
+  // longer awaited up front: the protected beforeLoad is the source of truth
+  // for the authenticated-redirect, and the router shows defaultPendingComponent
+  // while it is in flight.
+  root.render(
+    <QueryClientProvider client={queryClient}>
+      <RouterProvider
+        context={{ queryClient, session: null }}
+        router={router}
+      />
+    </QueryClientProvider>
+  );
 }

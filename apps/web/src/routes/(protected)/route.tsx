@@ -1,4 +1,5 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
+import { authorizationCapabilitiesQueryOptions } from "@/hooks/use-authorization";
 import { clearSession } from "@/modules/auth";
 import { AuthenticatedLayout } from "@/modules/layout/authenticated-layout";
 import { sessionQueryOptions } from "@/query/session-query";
@@ -27,6 +28,10 @@ export const Route = createFileRoute("/(protected)")({
     }
 
     useUserStore.getState().setUser(session.user);
+
+    await context.queryClient.ensureQueryData(
+      authorizationCapabilitiesQueryOptions()
+    );
 
     return {
       session,

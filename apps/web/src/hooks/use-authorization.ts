@@ -1,5 +1,5 @@
 import type { authorization } from "@repo/shared/authorization";
-import { useQuery } from "@tanstack/react-query";
+import { queryOptions, useQuery } from "@tanstack/react-query";
 import { getAuthorizationCapabilities } from "@/api.gen/sdk.gen";
 
 export type Capability = keyof Awaited<
@@ -12,8 +12,8 @@ export const authorizationKeys = {
   capabilities: () => [...authorizationKeys.all, "capabilities"] as const,
 };
 
-export function useAuthorization() {
-  const query = useQuery({
+export const authorizationCapabilitiesQueryOptions = () =>
+  queryOptions({
     queryKey: authorizationKeys.capabilities(),
     queryFn: async ({ signal }) => {
       const response = await getAuthorizationCapabilities({ signal });
@@ -22,6 +22,9 @@ export function useAuthorization() {
     staleTime: 5 * 60 * 1000,
     retry: 1,
   });
+
+export function useAuthorization() {
+  const query = useQuery(authorizationCapabilitiesQueryOptions());
 
   return {
     capabilities: query.data ?? {},

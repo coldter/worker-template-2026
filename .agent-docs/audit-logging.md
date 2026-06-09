@@ -6,7 +6,7 @@ Audit records are written by `auditLogService` in `apps/server/src/modules/audit
 
 > Does this event occur alongside a database mutation?
 > - YES -> critical: use `auditLogService.create(input, executor)` inside the same `db.transaction()` call
-> - NO  -> bufferable: use `auditLogService.enqueue(input)` anywhere in the request handler
+> - NO  -> bufferable: use `recordBufferableAuditEvent(c, input)` anywhere in the request handler
 
 Critical events are written atomically with the mutation they describe. If the transaction rolls back, the audit record rolls back too — no orphaned entries. Bufferable events (reads, list views, login attempts) have no accompanying write, so they are sent to a Cloudflare Queue and flushed in batches.
 
@@ -34,19 +34,20 @@ await db.transaction(async (tx) => {
 });
 ```
 
-### `auditLogService.enqueue(input)`
+### `recordBufferableAuditEvent(c, input)`
 
-Use for bufferable events. Fire-and-forget — call it outside any transaction. Internally sends a timestamped message to `env.AUDIT_LOG_QUEUE`.
+Use for bufferable events. Fire-and-forget — call it outside any transaction. The helper (`apps/server/src/modules/audit-logs/buffer.ts`) timestamps the event, enriches it with the request's IP/user-agent from `c.var.auditContext`, and enqueues it to `env.AUDIT_LOG_QUEUE` via `c.executionCtx.waitUntil`, so a queue outage never affects the response.
 
 ```ts
-auditLogService.enqueue({
+recordBufferableAuditEvent(c, {
   event: AUDIT_EVENTS.USER.LISTED.event,
-  actorId: actor.id,
+  actorId: c.get("user")?.id,
   actorType: ACTOR_TYPES.USER,
-  ipAddress: c.req.header("cf-connecting-ip"),
-  userAgent: c.req.header("user-agent"),
+  metadata: { count: result.data.length },
 });
 ```
+
+The low-level `auditLogService.enqueue(queue, messages)` sends a batch of pre-built `AuditLogQueueMessage`s directly; prefer the helper, which fills in the timestamp and request context for you.
 
 ## Adding a new audit event
 
@@ -95,13 +96,20 @@ Consumer settings:
 | `max_retries`     | 3              |
 | `dead_letter_queue` | `audit-log-dlq` |
 
-The consumer handler (`queue` export in `src/index.ts`) writes each batch to the database using a single insert statement.
+The worker exposes a single `queue` export (Cloudflare delivers every queue's batches to it). `src/queues/router.ts` dispatches each batch to the consumer registered for `batch.queue`, so batches from different queues stay isolated. To add another queue: write its consumer in the owning module, register it in `QUEUE_CONSUMERS`, and add the producer/consumer entries to `wrangler.jsonc`.
+
+The audit consumer (`handleAuditLogQueue` in `src/modules/audit-logs/queue.ts`) re-validates each message against `auditLogQueueMessageSchema` and writes the valid ones to the database using a single insert statement, preserving each event's original `occurredAt` as its `createdAt`.
 
 ## Error handling and DLQ
 
-If a queue batch fails after 3 retries, messages are forwarded to `audit-log-dlq`. Monitor the DLQ to detect persistent write failures (e.g., schema mismatch after a migration, connectivity loss). DLQ messages can be replayed manually after the root cause is resolved.
+The consumer acks and retries per message so one bad message never sinks the batch:
 
-Within the consumer, do not throw from individual message processing — catch errors per-message and call `message.retry()` to allow selective retry without failing the entire batch.
+- **Malformed messages** (fail schema validation) are acked and dropped with a `warn` log. A message that does not parse will never parse on retry, so retrying it would only waste a DLQ slot.
+- **A successful batch insert** acks every valid message.
+- **A failed batch insert** falls back to per-row inserts: healthy rows are acked and only the genuinely failing rows are retried (and eventually dead-lettered) in isolation.
+- **An unreachable database** (the connection could not be acquired) retries the whole batch, so nothing is lost.
+
+After 3 retries a message is forwarded to `audit-log-dlq`. Monitor the DLQ to detect persistent write failures. DLQ messages can be replayed manually after the root cause is resolved.
 
 ## Auth worker events (future scope)
 

@@ -14,7 +14,7 @@ import {
 } from "@/modules/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/modules/ui/tabs";
 import { Analytics } from "./components/analytics";
-import { Overview } from "./components/overview";
+import { LazyOverview } from "./components/overview-lazy";
 import { RecentSales } from "./components/recent-sales";
 
 export function Dashboard() {
@@ -63,7 +63,7 @@ export function Dashboard() {
                   <CardTitle>Overview</CardTitle>
                 </CardHeader>
                 <CardContent className="ps-2">
-                  <Overview />
+                  <LazyOverview />
                 </CardContent>
               </Card>
               <Card className="col-span-1 lg:col-span-3">

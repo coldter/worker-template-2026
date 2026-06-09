@@ -9,10 +9,12 @@
   "placement": {
     "mode": "smart"
   },
+  "upload_source_maps": true,
+  "minify": true,
   "observability": {
     "enabled": true,
     "logs": {
-      "head_sampling_rate": 1
+      "head_sampling_rate": 0.25
     }
   },
   "hyperdrive": [

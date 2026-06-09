@@ -7,7 +7,7 @@ import { withDrizzleClient } from "@repo/db";
 import * as schema from "@repo/db/schema";
 import { logger } from "@repo/shared/logger";
 import { DrizzleLogger } from "@repo/shared/logger-drizzle";
-import { eq } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import { getPushProvider } from "@/lib/firebase";
 
 function getDrizzleLogger() {
@@ -133,13 +133,11 @@ export class PushNotificationWorkflow extends WorkflowEntrypoint<
               .filter((r) => r.invalidToken)
               .map((r) => r.token);
 
-            for (const token of invalidTokens) {
+            if (invalidTokens.length > 0) {
               await db
                 .delete(schema.pushTokens)
-                .where(eq(schema.pushTokens.token, token));
-            }
+                .where(inArray(schema.pushTokens.token, invalidTokens));
 
-            if (invalidTokens.length > 0) {
               logger.info("Cleaned up invalid push tokens", {
                 count: invalidTokens.length,
                 notificationId: event.payload.notificationId,

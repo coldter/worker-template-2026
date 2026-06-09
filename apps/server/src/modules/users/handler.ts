@@ -6,6 +6,8 @@ import { isValidRole } from "@/auth/principal";
 import { auth } from "@/auth/schema";
 import type { AppEnv } from "@/lib/context";
 import { dispatchEvent } from "@/lib/events";
+import { recordBufferableAuditEvent } from "@/modules/audit-logs/buffer";
+import { AUDIT_EVENTS, TARGET_TYPES } from "@/modules/audit-logs/constants";
 import { notificationService } from "@/modules/notifications";
 import { defaultHook } from "@/utils/default-hook";
 import { UserNotFoundError } from "./errors";
@@ -40,6 +42,12 @@ const usersHandler = app
     const query = c.req.valid("query");
     const result = await userService.find(c.var.db, query);
 
+    recordBufferableAuditEvent(c, {
+      event: AUDIT_EVENTS.USER.LISTED.event,
+      actorId: c.get("user")?.id,
+      metadata: { count: result.data.length },
+    });
+
     return c.json(
       {
         data: result.data.map(toUserSummaryResponse),
@@ -52,19 +60,16 @@ const usersHandler = app
   .openapi(usersRoutes.getMyAccount, async (c) => {
     const currentUser = requireCurrentUser(c);
 
-    const account = await userService.findAccountSummaryById(
-      c.var.db,
-      currentUser.id
-    );
+    // The account summary and unread count are independent reads; run them
+    // concurrently instead of serially.
+    const [account, unreadCount] = await Promise.all([
+      userService.findAccountSummaryById(c.var.db, currentUser.id),
+      notificationService.getUnreadCount(c.var.db, currentUser.id),
+    ]);
 
     if (!account) {
       throw new HTTPException(404, { message: "User not found" });
     }
-
-    const unreadCount = await notificationService.getUnreadCount(
-      c.var.db,
-      account.id
-    );
 
     return c.json(
       {
@@ -84,6 +89,13 @@ const usersHandler = app
     if (!user) {
       throw new HTTPException(404, { message: "User not found" });
     }
+
+    recordBufferableAuditEvent(c, {
+      event: AUDIT_EVENTS.USER.VIEWED.event,
+      actorId: c.get("user")?.id,
+      targetId: userId,
+      targetType: TARGET_TYPES.USER,
+    });
 
     return c.json({ user: toUserDetailResponse(user) }, 200);
   })

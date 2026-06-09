@@ -49,6 +49,12 @@ app.openapi(capabilitiesRoute, async (c) => {
   }
 
   const capabilities = await authorization.evaluateCapabilities(principal);
+
+  // Capabilities are derived purely from the principal's roles/status and
+  // change rarely. A short private cache lets the browser skip re-requesting on
+  // its own; route guards remain the authoritative server-side check. Kept
+  // short so role/status changes propagate quickly.
+  c.header("Cache-Control", "private, max-age=30");
   return c.json({ capabilities }, 200);
 });
 

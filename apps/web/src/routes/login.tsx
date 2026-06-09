@@ -24,10 +24,9 @@ export const Route = createFileRoute("/login")({
   validateSearch: z.object({
     redirect: z.string().optional(),
   }),
-  beforeLoad: ({ context, search }) => {
-    const session = context.queryClient.getQueryData(
-      sessionQueryOptions.queryKey
-    );
+  beforeLoad: async ({ context, search }) => {
+    const session =
+      await context.queryClient.ensureQueryData(sessionQueryOptions);
     if (session) {
       throw redirect({ to: search.redirect ?? "/dashboard" });
     }

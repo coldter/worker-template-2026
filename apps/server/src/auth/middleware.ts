@@ -23,13 +23,20 @@ export function resolvePrincipalFromContext(
 }
 
 function resolvePrincipal(c: Context<AppEnv>): Principal | null {
-  const user = c.get("user");
-  if (!user) {
-    return null;
+  const cached = c.get("principal");
+  if (cached !== undefined) {
+    return cached;
   }
-  return toBaseAuthorizationPrincipal(
-    buildAuthorizationPrincipal(user, c.get("session") ?? {})
-  );
+
+  const user = c.get("user");
+  const principal = user
+    ? toBaseAuthorizationPrincipal(
+        buildAuthorizationPrincipal(user, c.get("session") ?? {})
+      )
+    : null;
+
+  c.set("principal", principal);
+  return principal;
 }
 
 function resolveDb(c: Context<AppEnv>) {

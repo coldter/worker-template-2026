@@ -47,21 +47,19 @@ export async function auditTransaction<T>(
 
     const result = await callback(tx, audit);
 
-    for (const entry of entries) {
-      await auditLogService.create(
-        {
-          event: entry.event,
-          actorId: entry.actorId,
-          actorType: entry.actorType ?? "user",
-          targetId: entry.targetId,
-          targetType: entry.targetType,
-          ipAddress: auditContext.ipAddress,
-          userAgent: auditContext.userAgent,
-          metadata: entry.metadata,
-        },
-        tx
-      );
-    }
+    await auditLogService.createMany(
+      entries.map((entry) => ({
+        event: entry.event,
+        actorId: entry.actorId,
+        actorType: entry.actorType ?? "user",
+        targetId: entry.targetId,
+        targetType: entry.targetType,
+        ipAddress: auditContext.ipAddress,
+        userAgent: auditContext.userAgent,
+        metadata: entry.metadata,
+      })),
+      tx
+    );
 
     return result;
   });

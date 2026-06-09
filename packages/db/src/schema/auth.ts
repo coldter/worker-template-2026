@@ -48,6 +48,9 @@ export const users = pgTable(
       "users_status_check",
       sql`${table.status} in ('active', 'inactive', 'locked', 'deleted')`
     ),
+    index("users_created_at_idx").on(table.createdAt),
+    index("users_status_idx").on(table.status),
+    index("users_role_slugs_idx").using("gin", table.roleSlugs),
   ]
 );
 

@@ -1,11 +1,20 @@
 import { cors } from "hono/cors";
 
 export function createCorsMiddleware() {
+  // Parse the allowlist once per isolate instead of on every request. The env
+  // value is immutable for an isolate's lifetime, so we only rebuild the Set if
+  // the raw string changes (it does not in practice).
+  let cachedRaw: string | undefined;
+  let allowedOrigins = new Set<string>();
+
   return cors({
     origin: (origin, c) => {
       const raw = c.env.CORS_ORIGINS ?? "";
-      const allowed = raw.split(",").map((s: string) => s.trim());
-      if (allowed.includes(origin)) {
+      if (raw !== cachedRaw) {
+        cachedRaw = raw;
+        allowedOrigins = new Set(raw.split(",").map((s: string) => s.trim()));
+      }
+      if (allowedOrigins.has(origin)) {
         return origin;
       }
       return "";

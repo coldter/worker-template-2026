@@ -10,6 +10,22 @@ import {
   createPaginatedResponse,
   getPaginationParams,
 } from "@/utils/pagination";
+import type { AuditLogQueueMessage } from "./queue-message";
+
+function toInsertValues(
+  input: CriticalAuditLogInput
+): typeof auditLogs.$inferInsert {
+  return {
+    event: input.event,
+    actorId: input.actorId,
+    actorType: input.actorType ?? "user",
+    targetId: input.targetId,
+    targetType: input.targetType,
+    ipAddress: input.ipAddress,
+    userAgent: input.userAgent,
+    metadata: input.metadata,
+  };
+}
 
 const ALLOWED_SORT_COLUMNS = {
   event: auditLogs.event,
@@ -23,18 +39,35 @@ export const auditLogService = {
   async create(input: CriticalAuditLogInput, executor: Executor) {
     const [log] = await executor
       .insert(auditLogs)
-      .values({
-        event: input.event,
-        actorId: input.actorId,
-        actorType: input.actorType ?? "user",
-        targetId: input.targetId,
-        targetType: input.targetType,
-        ipAddress: input.ipAddress,
-        userAgent: input.userAgent,
-        metadata: input.metadata,
-      })
+      .values(toInsertValues(input))
       .returning();
     return log;
+  },
+
+  /**
+   * Insert multiple critical audit entries in a single statement. Used to flush
+   * all entries recorded during a transaction at once instead of issuing one
+   * round-trip per entry.
+   */
+  async createMany(inputs: CriticalAuditLogInput[], executor: Executor) {
+    if (inputs.length === 0) {
+      return;
+    }
+    await executor.insert(auditLogs).values(inputs.map(toInsertValues));
+  },
+
+  /**
+   * Send bufferable (non-mutating) audit events to the queue for batched,
+   * off-the-hot-path persistence. Critical events must use {@link create}
+   * inside the originating transaction instead. Sends are chunked to stay under
+   * Cloudflare's per-call sendBatch limit so a future bulk caller is safe.
+   */
+  async enqueue(queue: Queue, messages: AuditLogQueueMessage[]) {
+    const MAX_MESSAGES_PER_BATCH = 100;
+    for (let i = 0; i < messages.length; i += MAX_MESSAGES_PER_BATCH) {
+      const chunk = messages.slice(i, i + MAX_MESSAGES_PER_BATCH);
+      await queue.sendBatch(chunk.map((body) => ({ body })));
+    }
   },
 
   async find(db: DrizzleClient, query: FindAuditLogsQuery) {

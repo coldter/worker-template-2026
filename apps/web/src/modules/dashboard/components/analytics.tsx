@@ -5,7 +5,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/modules/ui/card";
-import { AnalyticsChart } from "./analytics-chart";
+import { LazyAnalyticsChart } from "./analytics-chart-lazy";
 
 export function Analytics() {
   return (
@@ -16,7 +16,7 @@ export function Analytics() {
           <CardDescription>Weekly clicks and unique visitors</CardDescription>
         </CardHeader>
         <CardContent className="px-6">
-          <AnalyticsChart />
+          <LazyAnalyticsChart />
         </CardContent>
       </Card>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

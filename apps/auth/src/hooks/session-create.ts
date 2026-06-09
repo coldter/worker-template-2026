@@ -24,6 +24,28 @@ export function createSessionCreateBeforeHook(
     const platform = detectPlatform(userAgent);
     const config = SESSION_CONFIG[platform];
 
+    // The org membership lookup is independent of the session read/delete chain
+    // below, so start it now and let it run concurrently. It is awaited later
+    // where its result is needed.
+    const membershipPromise = tolerateMissingOrgTables(
+      async () => {
+        const [row] = await db
+          .select({
+            organizationId: schema.members.organizationId,
+            role: schema.members.role,
+          })
+          .from(schema.members)
+          .where(eq(schema.members.userId, session.userId))
+          .orderBy(desc(schema.members.createdAt))
+          .limit(1);
+        return row;
+      },
+      {
+        reason: "Skipping org context on session create: org tables missing",
+        meta: { userId: session.userId },
+      }
+    );
+
     const [previousSession] = await db
       .select({
         userAgent: schema.sessions.userAgent,
@@ -33,7 +55,8 @@ export function createSessionCreateBeforeHook(
       .where(eq(schema.sessions.userId, session.userId))
       .limit(1);
 
-    // Single session per user.
+    // Single session per user. Must run after the previous-session read above,
+    // which reads the row this delete removes.
     await db
       .delete(schema.sessions)
       .where(eq(schema.sessions.userId, session.userId));
@@ -59,24 +82,7 @@ export function createSessionCreateBeforeHook(
 
     const expiresAt = new Date(Date.now() + config.expiresIn * 1000);
 
-    const firstMembership = await tolerateMissingOrgTables(
-      async () => {
-        const [row] = await db
-          .select({
-            organizationId: schema.members.organizationId,
-            role: schema.members.role,
-          })
-          .from(schema.members)
-          .where(eq(schema.members.userId, session.userId))
-          .orderBy(desc(schema.members.createdAt))
-          .limit(1);
-        return row;
-      },
-      {
-        reason: "Skipping org context on session create: org tables missing",
-        meta: { userId: session.userId },
-      }
-    );
+    const firstMembership = await membershipPromise;
 
     const orgContext = firstMembership
       ? {

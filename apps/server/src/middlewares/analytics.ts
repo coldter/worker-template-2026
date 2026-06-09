@@ -8,10 +8,11 @@ export const analyticsMiddleware = createMiddleware<AppEnv>(async (c, next) => {
   const duration = Date.now() - start;
 
   try {
+    const pathname = c.req.path;
     c.env.ANALYTICS?.writeDataPoint({
-      blobs: ["api", c.req.method, new URL(c.req.url).pathname],
+      blobs: ["api", c.req.method, pathname],
       doubles: [c.res.status, duration],
-      indexes: [new URL(c.req.url).pathname],
+      indexes: [pathname],
     });
   } catch (err) {
     logger.debug("Analytics writeDataPoint failed", {

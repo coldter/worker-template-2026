@@ -7,7 +7,7 @@
     "check-types:backup": "tsc --noEmit",
     "dev": "wrangler types --env-interface CloudflareBindings && wrangler dev --inspector-port 9229",
     "start": "wrangler dev",
-    "deploy": "wrangler deploy --minify --var NODE_ENV:production",
+    "deploy": "wrangler deploy --var NODE_ENV:production",
     "cf-typegen": "wrangler types --env-interface CloudflareBindings",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",

@@ -41,16 +41,39 @@ export type AuthBindings = Omit<CloudflareBindings, "API" | "NODE_ENV"> & {
 
 export type { SessionWithAdditionalFields };
 
+// env is immutable for an isolate's lifetime, so these pure env-derived values
+// are computed once on first use and reused across every per-request createAuth.
+let memoizedCorsOrigins: string[] | undefined;
+let memoizedBrand: ReturnType<typeof getBrandConfig> | undefined;
+
+function getCorsOrigins(env: AuthBindings): string[] {
+  if (!memoizedCorsOrigins) {
+    memoizedCorsOrigins = env.CORS_ORIGINS.split(",").map((s: string) =>
+      s.trim()
+    );
+  }
+  return memoizedCorsOrigins;
+}
+
+function getMemoizedBrandConfig(
+  env: AuthBindings
+): ReturnType<typeof getBrandConfig> {
+  if (!memoizedBrand) {
+    // boundary: getBrandConfig accepts Record<string, string | undefined>; narrow workerd CloudflareBindings to that shape.
+    memoizedBrand = getBrandConfig(
+      env as unknown as Record<string, string | undefined>
+    );
+  }
+  return memoizedBrand;
+}
+
 export function createAuth(
   db: DrizzleClient,
   env: AuthBindings,
   ctx: MinimalExecutionContext
 ) {
-  const corsOrigins = env.CORS_ORIGINS.split(",").map((s: string) => s.trim());
-  // boundary: getBrandConfig accepts Record<string, string | undefined>; narrow workerd CloudflareBindings to that shape.
-  const brand = getBrandConfig(
-    env as unknown as Record<string, string | undefined>
-  );
+  const corsOrigins = getCorsOrigins(env);
+  const brand = getMemoizedBrandConfig(env);
 
   const authConfig = {
     appName: brand.appName,
@@ -96,8 +119,20 @@ export function createAuth(
       // Mobile defaults so cookie Max-Age matches 7-day mobile sessions; web is shortened in hooks.
       expiresIn: 604_800,
       updateAge: 86_400,
+      // Cache a signed session snapshot in the cookie for up to 60s to avoid a
+      // secondary-storage / DB hit on every getSession. Deliberate trade-off:
+      // while the cached snapshot is valid, session/role/status/lockout
+      // revocation lags by up to 60s. In Better Auth 1.6.x the cookie cache
+      // stores the full parsed user and session output, so the custom fields
+      // the API principal relies on (platform, activeOrgRole, roleSlugs, status)
+      // are served from the cookie and are subject to the same 60s staleness
+      // window -- they are not re-fetched while the cache is fresh. The short
+      // 60s maxAge bounds that lag; secondary storage, storeSessionInDatabase,
+      // and session expiry are unchanged, so a deleted session still fails once
+      // the snapshot expires.
       cookieCache: {
-        enabled: false,
+        enabled: true,
+        maxAge: 60,
       },
       additionalFields: {
         platform: {

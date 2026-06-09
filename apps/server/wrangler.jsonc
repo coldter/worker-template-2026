@@ -9,10 +9,12 @@
   "placement": {
     "mode": "smart"
   },
+  "minify": true,
+  "upload_source_maps": true,
   "observability": {
     "enabled": true,
     "logs": {
-      "head_sampling_rate": 1
+      "head_sampling_rate": 0.25
     },
     "traces": {
       "enabled": true,
@@ -90,6 +92,23 @@
       "entrypoint": "AuthEntrypoint"
     }
   ],
+  "queues": {
+    "producers": [
+      {
+        "binding": "AUDIT_LOG_QUEUE",
+        "queue": "audit-log-queue"
+      }
+    ],
+    "consumers": [
+      {
+        "queue": "audit-log-queue",
+        "max_batch_size": 100,
+        "max_batch_timeout": 10,
+        "max_retries": 3,
+        "dead_letter_queue": "audit-log-dlq"
+      }
+    ]
+  },
   "vars": {
     "NODE_ENV": "development",
     "APP_URL": "http://localhost:8787",
