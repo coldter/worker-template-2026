@@ -50,7 +50,7 @@ export function createSendTwoFactorOTP(
         logger.error("Failed to send 2FA OTP email", {
           userId: user.id,
           email: user.email,
-          error: error instanceof Error ? error.message : String(error),
+          error,
         });
       })
     );

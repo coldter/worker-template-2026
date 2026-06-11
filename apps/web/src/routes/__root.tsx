@@ -9,6 +9,7 @@ import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import { StrictMode } from "react";
 import { ThemeProvider } from "@/context/theme-provider";
 import { brand } from "@/lib/brand";
+import { initErrorReporting } from "@/lib/report-error";
 import type { Session } from "@/modules/auth";
 import AppError from "@/modules/common/app-error";
 import { DownAlert } from "@/modules/common/down-alert";
@@ -21,6 +22,8 @@ export type RouterAppContext = {
   queryClient: QueryClient;
   session: Session | null;
 };
+
+initErrorReporting();
 
 export const Route = createRootRouteWithContext<RouterAppContext>()({
   component: RootComponent,

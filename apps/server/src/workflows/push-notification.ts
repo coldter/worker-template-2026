@@ -9,6 +9,7 @@ import { logger } from "@repo/shared/logger";
 import { DrizzleLogger } from "@repo/shared/logger-drizzle";
 import { eq, inArray } from "drizzle-orm";
 import { getPushProvider } from "@/lib/firebase";
+import { runWithWorkflowMetrics } from "@/lib/workflow-metrics";
 
 function getDrizzleLogger() {
   return process.env.NODE_ENV === "development"
@@ -25,6 +26,15 @@ export class PushNotificationWorkflow extends WorkflowEntrypoint<
   PushNotificationParams
 > {
   async run(
+    event: WorkflowEvent<PushNotificationParams>,
+    step: WorkflowStep
+  ): Promise<void> {
+    await runWithWorkflowMetrics(this.env, "push-notification", () =>
+      this.execute(event, step)
+    );
+  }
+
+  private async execute(
     event: WorkflowEvent<PushNotificationParams>,
     step: WorkflowStep
   ): Promise<void> {

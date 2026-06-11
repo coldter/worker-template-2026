@@ -35,7 +35,8 @@ export const rateLimitMiddleware = createMiddleware<AppEnv>(async (c, next) => {
       return next();
     } catch (err) {
       logger.warn("Rate limiter DO unavailable, falling back to KV", {
-        error: err instanceof Error ? err.message : String(err),
+        error: err,
+        requestId: c.get("requestId"),
       });
     }
   }
@@ -63,7 +64,7 @@ export const rateLimitMiddleware = createMiddleware<AppEnv>(async (c, next) => {
     );
   } catch (err) {
     logger.debug("Rate limiter KV waitUntil unavailable", {
-      error: err instanceof Error ? err.message : String(err),
+      error: err,
     });
   }
 

@@ -2,10 +2,10 @@ import { useNavigate, useRouter } from "@tanstack/react-router";
 import { ArrowLeft, Home, LogOut, ShieldX } from "lucide-react";
 
 import { authClient } from "@/lib/auth-client";
-import { clearSession } from "@/modules/auth";
+import { clearSession, resetSessionQuery } from "@/modules/auth/helpers";
 import { Button } from "@/modules/ui/button";
-import { queryClient } from "@/query/query-client";
-import { sessionQueryOptions } from "@/query/session-query";
+import { useAlertStore } from "@/store/alert";
+import { useUserStore } from "@/store/user";
 
 interface PermissionDeniedProps {
   children?: React.ReactNode;
@@ -31,11 +31,19 @@ export function PermissionDenied({
 
   const handleLogout = async () => {
     await authClient.signOut();
+    // Arm the global 401 guard before anything can refetch against the
+    // revoked cookie (e.g. a poll firing during the route transition).
+    useUserStore.getState().clearUser();
+    // Drop only the session entry so the login guard refetches instead
+    // of redirecting back on the stale cached session.
+    resetSessionQuery();
+    // A persisted down alert (e.g. an earlier expiry) must not greet the
+    // user on the login page after an intentional sign-out.
+    useAlertStore.getState().clearDownAlert();
+    await navigate({ to: "/login" });
+    // Only after the protected tree unmounts: clear() refires mounted
+    // observers, whose refetches would 401 against the revoked cookie.
     clearSession();
-    await queryClient.invalidateQueries({
-      queryKey: sessionQueryOptions.queryKey,
-    });
-    navigate({ to: "/login" });
   };
 
   const handleGoBack = () => {

@@ -9,6 +9,7 @@ import { getBrandConfig } from "@repo/shared/brand";
 import { logger } from "@repo/shared/logger";
 import { DrizzleLogger } from "@repo/shared/logger-drizzle";
 import { eq } from "drizzle-orm";
+import { runWithWorkflowMetrics } from "@/lib/workflow-metrics";
 
 function getDrizzleLogger() {
   return process.env.NODE_ENV === "development"
@@ -25,6 +26,15 @@ export class EmailNotificationWorkflow extends WorkflowEntrypoint<
   EmailNotificationParams
 > {
   async run(
+    event: WorkflowEvent<EmailNotificationParams>,
+    step: WorkflowStep
+  ): Promise<void> {
+    await runWithWorkflowMetrics(this.env, "email-notification", () =>
+      this.execute(event, step)
+    );
+  }
+
+  private async execute(
     event: WorkflowEvent<EmailNotificationParams>,
     step: WorkflowStep
   ): Promise<void> {

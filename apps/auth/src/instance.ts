@@ -34,9 +34,15 @@ import {
   type UserWithStatusFields,
 } from "./plugins/user-status";
 
-export type AuthBindings = Omit<CloudflareBindings, "API" | "NODE_ENV"> & {
+// NODE_ENV and ENABLE_SIGNUP widen to string: wrangler types emits the dev
+// literals from wrangler.jsonc, but --var deploy overrides change them at runtime.
+export type AuthBindings = Omit<
+  CloudflareBindings,
+  "API" | "NODE_ENV" | "ENABLE_SIGNUP"
+> & {
   API: CloudflareBindings["API"] & ApiBindingRpc;
   NODE_ENV: string;
+  ENABLE_SIGNUP: string;
 };
 
 export type { SessionWithAdditionalFields };
@@ -111,7 +117,10 @@ export function createAuth(
 
     emailAndPassword: {
       enabled: true,
-      disableSignUp: false,
+      // No signup UI exists in the web app, so registration stays closed unless
+      // explicitly enabled. Dev defaults ENABLE_SIGNUP to "true" in wrangler.jsonc;
+      // production deploys override it via --var (Wrangler vars are strings).
+      disableSignUp: env.ENABLE_SIGNUP !== "true",
       requireEmailVerification: true,
     },
 

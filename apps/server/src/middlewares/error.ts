@@ -1,10 +1,20 @@
 import { logger } from "@repo/shared/logger";
 import { DrizzleQueryError } from "drizzle-orm";
-import type { ErrorHandler } from "hono";
+import type { Context, ErrorHandler } from "hono";
 import { HTTPException } from "hono/http-exception";
 import pg from "pg";
 import { PostgresError } from "pg-error-enum";
 import type { AppEnv } from "@/lib/context";
+
+// Head sampling can drop the invocation log surrounding an error, so each
+// error line carries its own correlation ids: the client-visible X-Request-Id
+// and the deploy version the request ran on.
+function correlationContext(c: Context<AppEnv>) {
+  return {
+    requestId: c.get("requestId"),
+    version: c.env.CF_VERSION_METADATA?.id,
+  };
+}
 
 // boundary: typeof-guarded reads of `code` on an unknown error cause.
 function extractCauseCode(cause: unknown): string | null {
@@ -41,6 +51,7 @@ export const errorHandler: ErrorHandler<AppEnv> = (err, c) => {
         status: err.status,
         path: c.req.path,
         method: c.req.method,
+        ...correlationContext(c),
       });
     }
 
@@ -70,6 +81,7 @@ export const errorHandler: ErrorHandler<AppEnv> = (err, c) => {
   if (err instanceof DrizzleQueryError) {
     logger.error("DatabaseError", {
       error: err.message,
+      ...correlationContext(c),
     });
     if (
       err.cause instanceof pg.DatabaseError &&
@@ -89,6 +101,7 @@ export const errorHandler: ErrorHandler<AppEnv> = (err, c) => {
     name: err?.name,
     message: err?.message,
     stack: err?.stack,
+    ...correlationContext(c),
   });
 
   return c.json(

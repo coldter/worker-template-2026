@@ -8,6 +8,36 @@ import {
 } from "./queue-message";
 
 export const AUDIT_LOG_QUEUE_NAME = "audit-log-queue";
+export const AUDIT_LOG_DLQ_NAME = "audit-log-dlq";
+
+/**
+ * Consume the audit-log dead-letter queue. These messages exhausted their
+ * retries and the audit row was never written; without a consumer they would
+ * expire unseen. Each one is logged at error level (identifying fields only,
+ * not the full body, which carries ip/user-agent) and acked - alerting on the
+ * log message is the recovery signal, the log line the forensic record.
+ */
+export function handleAuditLogDlq(
+  batch: MessageBatch,
+  _env: CloudflareBindings,
+  _ctx: ExecutionContext
+): Promise<void> {
+  for (const message of batch.messages) {
+    const data = parseAuditLogMessage(message.body);
+    logger.error("Audit log message dead-lettered", {
+      messageId: message.id,
+      attempts: message.attempts,
+      enqueuedAt: message.timestamp.toISOString(),
+      event: data?.event,
+      actorId: data?.actorId,
+      targetId: data?.targetId,
+      targetType: data?.targetType,
+      occurredAt: data?.occurredAt,
+    });
+  }
+  batch.ackAll();
+  return Promise.resolve();
+}
 
 type PendingAuditRow = {
   message: MessageBatch["messages"][number];
@@ -49,8 +79,7 @@ async function flushAuditRows(
     // (and eventually dead-lettered) in isolation, rather than the whole batch.
     logger.warn("Audit log batch insert failed; falling back to per-row", {
       count: pending.length,
-      error:
-        batchError instanceof Error ? batchError.message : String(batchError),
+      error: batchError,
     });
     for (const { message, row } of pending) {
       try {
@@ -59,8 +88,7 @@ async function flushAuditRows(
       } catch (rowError) {
         logger.error("Audit log row insert failed; will retry", {
           event: row.event,
-          error:
-            rowError instanceof Error ? rowError.message : String(rowError),
+          error: rowError,
         });
         message.retry();
       }
@@ -115,7 +143,7 @@ export async function handleAuditLogQueue(
     // nothing was acked): retry the whole batch.
     logger.error("Audit log flush could not acquire DB; retrying batch", {
       count: pending.length,
-      error: error instanceof Error ? error.message : String(error),
+      error,
     });
     for (const { message } of pending) {
       message.retry();

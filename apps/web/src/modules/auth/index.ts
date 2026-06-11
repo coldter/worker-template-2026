@@ -1,5 +1,5 @@
 export { AuthStepTransition } from "./auth-step-transition";
-export { clearSession } from "./helpers";
+export { clearSession, resetSessionQuery } from "./helpers";
 export { sessionQueryOptions } from "./query";
 export { SignInForm } from "./sign-in-form";
 export { SignInPasswordStep } from "./sign-in-password-step";

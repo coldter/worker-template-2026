@@ -67,7 +67,7 @@ export function createSendVerificationOTP(
         logger.error("Failed to send verification OTP email", {
           email,
           type,
-          error: error instanceof Error ? error.message : String(error),
+          error,
         });
       })
     );

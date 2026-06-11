@@ -5,6 +5,7 @@ import {
   pushTokens,
 } from "@repo/db/schema";
 import { and, asc, count, desc, eq, type SQL, sql } from "drizzle-orm";
+import { HTTPException } from "hono/http-exception";
 import {
   buildOrderBy,
   createPaginatedResponse,
@@ -183,6 +184,14 @@ export const notificationService = {
       .from(pushTokens)
       .where(eq(pushTokens.token, input.token))
       .limit(1);
+
+    // The token column is unique, so updating here would silently rebind
+    // another user's push token to the caller (cross-user take-over).
+    if (existing && existing.userId !== userId) {
+      throw new HTTPException(409, {
+        message: "Token already registered to a different user",
+      });
+    }
 
     if (existing) {
       const [updated] = await db

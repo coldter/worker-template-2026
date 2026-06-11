@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "wrangler types --env-interface CloudflareBindings && wrangler dev --port 8788 --inspector-port 9230",
-    "deploy": "wrangler deploy --var NODE_ENV:production",
+    "deploy": "wrangler deploy --var NODE_ENV:production --var ENABLE_SIGNUP:false",
     "check-types": "tsgo --noEmit",
     "check-types:backup": "tsc --noEmit",
     "cf-typegen": "wrangler types --env-interface CloudflareBindings",

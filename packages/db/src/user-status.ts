@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, eq, gt, isNotNull, or } from "drizzle-orm";
 import type { Executor } from "./client";
 import { sessions, users } from "./schema";
 
@@ -29,10 +29,17 @@ export async function resetFailedLoginAttemptsByEmail(
   executor: Executor,
   email: string
 ): Promise<void> {
+  // Guard the reset so clean sign-ins skip a no-op write (one dead tuple per
+  // login otherwise).
   await executor
     .update(users)
     .set({ failedLoginAttempts: 0, lockedUntil: null })
-    .where(eq(users.email, email));
+    .where(
+      and(
+        eq(users.email, email),
+        or(gt(users.failedLoginAttempts, 0), isNotNull(users.lockedUntil))
+      )
+    );
 }
 
 export async function clearUserLockout(

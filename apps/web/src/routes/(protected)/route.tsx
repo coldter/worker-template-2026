@@ -1,6 +1,8 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { authorizationCapabilitiesQueryOptions } from "@/hooks/use-authorization";
-import { clearSession } from "@/modules/auth";
+// Deep import: the auth barrel would pull framer-motion-heavy components into
+// the eager route-tree chunk (beforeLoad is not extracted by autoCodeSplitting).
+import { clearSession } from "@/modules/auth/helpers";
 import { AuthenticatedLayout } from "@/modules/layout/authenticated-layout";
 import { sessionQueryOptions } from "@/query/session-query";
 import { useAlertStore } from "@/store/alert";
@@ -37,7 +39,6 @@ export const Route = createFileRoute("/(protected)")({
       session,
     };
   },
-  loader: ({ context }) => ({ session: context.session }),
   component: ProtectedLayout,
 });
 

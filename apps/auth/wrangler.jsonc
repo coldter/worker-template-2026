@@ -15,6 +15,10 @@
     "enabled": true,
     "logs": {
       "head_sampling_rate": 0.25
+    },
+    "traces": {
+      "enabled": true,
+      "head_sampling_rate": 0.01
     }
   },
   "hyperdrive": [
@@ -31,6 +35,15 @@
       "preview_id": "placeholder-kv-preview-id"
     }
   ],
+  "analytics_engine_datasets": [
+    {
+      "binding": "ANALYTICS",
+      "dataset": "auth_requests"
+    }
+  ],
+  "version_metadata": {
+    "binding": "CF_VERSION_METADATA"
+  },
   "services": [
     {
       "binding": "API",
@@ -46,6 +59,8 @@
   },
   "vars": {
     "NODE_ENV": "development",
+    // Dev default keeps local signup flows working; deploys override via --var.
+    "ENABLE_SIGNUP": "true",
     "APP_URL": "http://localhost:8787",
     "CORS_ORIGINS": "http://localhost:3001",
     "EMAIL_FROM": "noreply@example.com",

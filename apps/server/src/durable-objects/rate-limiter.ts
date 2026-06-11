@@ -82,7 +82,7 @@ export class RateLimiter extends DurableObject {
       await this.ctx.storage.setAlarm(Date.now() + WINDOW_MS * 2);
     } catch (err) {
       logger.error("RateLimiter alarm failed", {
-        error: err instanceof Error ? err.message : String(err),
+        error: err,
       });
     }
   }
@@ -102,7 +102,7 @@ export class RateLimiter extends DurableObject {
     } catch (err) {
       // checkLimit will fail closed on the next write if storage is genuinely down.
       logger.error("RateLimiter storage read failed", {
-        error: err instanceof Error ? err.message : String(err),
+        error: err,
       });
       this.hydrated = true;
     }
@@ -115,7 +115,7 @@ export class RateLimiter extends DurableObject {
       return true;
     } catch (err) {
       logger.error("RateLimiter storage write failed; failing closed", {
-        error: err instanceof Error ? err.message : String(err),
+        error: err,
       });
       return false;
     }
@@ -126,7 +126,7 @@ export class RateLimiter extends DurableObject {
       await this.ctx.storage.setAlarm(Date.now() + WINDOW_MS * 2);
     } catch (err) {
       logger.warn("RateLimiter setAlarm failed", {
-        error: err instanceof Error ? err.message : String(err),
+        error: err,
       });
     }
   }

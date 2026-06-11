@@ -55,7 +55,7 @@ async function safeNotifyStatusChange(
       userId,
       newStatus,
       previousStatus,
-      error: error instanceof Error ? error.message : String(error),
+      error,
     });
   }
 }

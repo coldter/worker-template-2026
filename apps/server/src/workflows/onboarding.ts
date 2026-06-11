@@ -4,6 +4,7 @@ import {
   type WorkflowStep,
 } from "cloudflare:workers";
 import { getBrandConfig } from "@repo/shared/brand";
+import { runWithWorkflowMetrics } from "@/lib/workflow-metrics";
 
 interface OnboardingParams {
   email: string;
@@ -16,6 +17,15 @@ export class OnboardingWorkflow extends WorkflowEntrypoint<
   OnboardingParams
 > {
   async run(
+    event: WorkflowEvent<OnboardingParams>,
+    step: WorkflowStep
+  ): Promise<void> {
+    await runWithWorkflowMetrics(this.env, "onboarding", () =>
+      this.execute(event, step)
+    );
+  }
+
+  private async execute(
     event: WorkflowEvent<OnboardingParams>,
     step: WorkflowStep
   ): Promise<void> {

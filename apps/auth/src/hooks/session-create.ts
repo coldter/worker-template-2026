@@ -46,20 +46,22 @@ export function createSessionCreateBeforeHook(
       }
     );
 
-    const [previousSession] = await db
-      .select({
+    // Single session per user: revoke existing rows before inserting. RETURNING
+    // feeds new-device detection, saving a separate SELECT round trip on the
+    // per-request client; sorting by createdAt desc makes the comparison use the
+    // latest session instead of whichever row an unordered LIMIT 1 happened to pick.
+    const revokedSessions = await db
+      .delete(schema.sessions)
+      .where(eq(schema.sessions.userId, session.userId))
+      .returning({
         userAgent: schema.sessions.userAgent,
         ipAddress: schema.sessions.ipAddress,
-      })
-      .from(schema.sessions)
-      .where(eq(schema.sessions.userId, session.userId))
-      .limit(1);
+        createdAt: schema.sessions.createdAt,
+      });
 
-    // Single session per user. Must run after the previous-session read above,
-    // which reads the row this delete removes.
-    await db
-      .delete(schema.sessions)
-      .where(eq(schema.sessions.userId, session.userId));
+    const [previousSession] = revokedSessions.sort(
+      (a, b) => b.createdAt.getTime() - a.createdAt.getTime()
+    );
 
     if (previousSession) {
       const isNewDevice =

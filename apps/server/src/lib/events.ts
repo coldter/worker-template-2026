@@ -55,7 +55,7 @@ export async function triggerWorkflow(
     return { workflowId };
   } catch (error) {
     logger.error(`Failed to trigger workflow: ${event.type}`, {
-      error: error instanceof Error ? error.message : String(error),
+      error,
     });
     throw error;
   }
@@ -98,7 +98,7 @@ export function dispatchEvent(
       }
       logger.warn(`Deferred workflow trigger failed: ${event.type}`, {
         ...eventContext(event),
-        error: error instanceof Error ? error.message : String(error),
+        error,
       });
     }
   );

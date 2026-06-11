@@ -1,3 +1,4 @@
+import { logger } from "@repo/shared/logger";
 import type { Logger as DrizzleLoggerInterface } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Client } from "pg";
@@ -25,6 +26,12 @@ export async function withDrizzleClient<T>(
   options?: WithDrizzleClientOptions
 ): Promise<T> {
   const client = new Client({ connectionString });
+  // node-postgres emits 'error' on the client when the server terminates the
+  // connection between queries; without a listener that is an unhandled
+  // 'error' event and crashes the isolate.
+  client.on("error", (error) => {
+    logger.error("Postgres client error", { error });
+  });
   // pg's connect() no-arg overload resolves to Promise<Client>; the callback
   // overload returns void, so we pin the type to the promise form we use.
   let connectPromise: Promise<Client> | undefined;
@@ -46,8 +53,10 @@ export async function withDrizzleClient<T>(
   } finally {
     if (connectPromise) {
       // Only tear down if a connection was actually established (or attempted).
+      // end() rejects when the socket already died; left uncaught inside
+      // waitUntil that becomes an unhandled rejection.
       const endPromise = connectPromise.then(
-        () => client.end(),
+        () => client.end().catch(() => undefined),
         () => undefined
       );
       if (options?.waitUntil) {

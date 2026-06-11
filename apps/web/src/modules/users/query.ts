@@ -1,4 +1,9 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  queryOptions,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { toast } from "sonner";
 
 import {
@@ -43,13 +48,21 @@ export const rolesKeys = {
   lists: () => [...rolesKeys.all, "list"] as const,
 };
 
-export function useUsersQuery(params: NonNullable<ListUsersData["query"]>) {
-  return useQuery({
+export function usersListQueryOptions(
+  params: NonNullable<ListUsersData["query"]>
+) {
+  return queryOptions({
     queryKey: usersKeys.list(params),
     queryFn: async ({ signal }) => {
       const response = await listUsers({ query: params, signal });
       return response;
     },
+  });
+}
+
+export function useUsersQuery(params: NonNullable<ListUsersData["query"]>) {
+  return useQuery({
+    ...usersListQueryOptions(params),
     placeholderData: (prev) => prev,
   });
 }

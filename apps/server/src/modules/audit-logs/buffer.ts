@@ -47,7 +47,7 @@ export function recordBufferableAuditEvent(
     auditLogService.enqueue(c.env.AUDIT_LOG_QUEUE, [message]).catch((error) => {
       logger.error("Failed to enqueue bufferable audit event", {
         event: input.event,
-        error: error instanceof Error ? error.message : String(error),
+        error,
       });
     })
   );
