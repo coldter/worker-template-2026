@@ -55,7 +55,10 @@
         "useAwait": "off",
         "noExplicitAny": "error",
         "noDocumentCookie": "error",
-        "noArrayIndexKey": "off"
+        "noArrayIndexKey": "off",
+        "noUnnecessaryConditions": "off",
+        "noLeakedRender": "off",
+        "noShadow": "off"
       },
       "performance": {
         "noNamespaceImport": "off",
@@ -75,10 +78,7 @@
         }
       },
       "nursery": {
-        "noUnnecessaryConditions": "off",
-        "useSortedClasses": "off",
-        "noLeakedRender": "off",
-        "noShadow": "off"
+        "useSortedClasses": "off"
       },
       "complexity": {
         "noExcessiveCognitiveComplexity": "off"
