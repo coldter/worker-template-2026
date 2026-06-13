@@ -19,11 +19,11 @@
     "@repo/shared": "workspace:*",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
-    "react-email": "^6.5.0",
+    "react-email": "^6.6.0",
     "resend": "^6.12.4"
   },
   "devDependencies": {
-    "@react-email/ui": "^6.5.0",
+    "@react-email/ui": "^6.6.0",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@typescript/native-preview": "beta",
