@@ -412,4 +412,3 @@ If you are adopting this package in a repo:
 
 - [Quick Start](./docs/quick-start.md)
 - [`@repo/authorization` source](./src/index.ts)
-- [Project auth architecture](../../.agent-docs/auth-architecture.md)
