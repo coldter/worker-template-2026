@@ -27,19 +27,8 @@ export type UserWithStatusFields = {
   twoFactorEnabled: boolean;
 };
 
-/**
- * User Status Plugin
- *
- * Extends the user schema with:
- * - Status tracking (active, inactive, locked, deleted)
- * - Deactivation tracking (who, when, why)
- * - Lockout tracking (failed attempts, lockout expiry)
- * - Role assignment (roleSlugs array)
- *
- * !important: fieldName must match the column name in the database adapter schema not necessarily the column name in the database schema
- */
-export const enhancedUserPlugin = () => {
-  return {
+export const enhancedUserPlugin = () =>
+  ({
     id: "user-status",
     schema: {
       user: {
@@ -95,7 +84,7 @@ export const enhancedUserPlugin = () => {
             required: true,
             type: "string",
           },
-          // Managed by the twoFactor plugin.
+
           twoFactorEnabled: {
             defaultValue: false,
             fieldName: "twoFactorEnabled",
@@ -106,5 +95,4 @@ export const enhancedUserPlugin = () => {
         },
       },
     },
-  } satisfies BetterAuthPlugin;
-};
+  }) satisfies BetterAuthPlugin;

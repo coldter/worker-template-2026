@@ -1,4 +1,3 @@
-// Hono middleware adapter for @repo/authorization
 import type { Context, MiddlewareHandler } from "hono";
 import { HTTPException } from "hono/http-exception";
 import type { RegistryInstance } from "./registry";
@@ -8,9 +7,6 @@ import type { DenyReason, PolicyDecision, Principal } from "./types";
 
 const AUTHORIZED_RESOURCE_KEY = "authorizedResource";
 
-// Build the HTTPException for any deny path in this adapter. UNAUTHENTICATED
-// surfaces as 401; everything else collapses to a uniform FORBIDDEN body
-// (the wire intentionally hides the specific deny reason -- see S-3 above).
 function denyReasonOf(input: PolicyDecision | DenyReason): DenyReason {
   if (typeof input === "string") {
     return input;
@@ -40,12 +36,6 @@ function denyResponse(
 export interface CreateAuthorizeOptions<
   TEnv extends Record<string, unknown> = Record<string, unknown>,
 > {
-  /**
-   * Whitelist of labels that may be passed to `unsafeBypassAuthorization`.
-   * Any other label throws at middleware-construction time so unreviewed
-   * bypasses cannot reach a deployment. Empty/undefined means no labels
-   * are allowed and any bypass call throws.
-   */
   allowedBypassLabels?: readonly string[];
   resolveDb?: (c: Context<TEnv>) => unknown;
   resolvePrincipal: (c: Context<TEnv>) => Principal | null | undefined;
@@ -68,11 +58,6 @@ export interface AuthorizeFunction<
     AnyResourceDef
   >,
 > {
-  /**
-   * Mark a route as intentionally not authorized. Construction-time guard
-   * rejects labels not in `allowedBypassLabels`; each invocation logs a
-   * structured `authorization.bypass` warning so production usage is loud.
-   */
   unsafeBypassAuthorization: (label: string) => MiddlewareHandler;
   <K extends keyof TResources & string>(
     resource: K,
@@ -90,12 +75,13 @@ export function createAuthorize<
 ): AuthorizeFunction<TResources> {
   const allowedBypass = new Set(options.allowedBypassLabels ?? []);
 
-  const authorizeImpl = (
-    resource: string,
-    action: string,
-    opts?: AuthorizeOptions
-  ): MiddlewareHandler => {
-    return async (c, next) => {
+  const authorizeImpl =
+    (
+      resource: string,
+      action: string,
+      opts?: AuthorizeOptions
+    ): MiddlewareHandler =>
+    async (c, next) => {
       const principal = options.resolvePrincipal(c as Context<TEnv>);
 
       let loadedResource: unknown;
@@ -106,10 +92,6 @@ export function createAuthorize<
         }
       }
 
-      // boundary: registry.can carries a typed action union per resource;
-      // the impl here is generic over `string` because the public callable
-      // signature on AuthorizeFunction enforces the typed action -- the
-      // narrowing happened at the call site in user code.
       const decision = await registry.can(
         principal,
         resource,
@@ -130,7 +112,6 @@ export function createAuthorize<
 
       await next();
     };
-  };
 
   const unsafeBypassAuthorization = (label: string): MiddlewareHandler => {
     if (!allowedBypass.has(label)) {
@@ -141,9 +122,6 @@ export function createAuthorize<
       );
     }
     return async (c, next) => {
-      // Loud signal: production logs/metrics MUST be able to spot bypassed
-      // routes. The package is dependency-free; consumers can intercept
-      // stdout or wrap console if structured logging is required.
       console.warn(
         JSON.stringify({
           event: "authorization.bypass",
@@ -156,9 +134,6 @@ export function createAuthorize<
     };
   };
 
-  // boundary: the public callable signature on AuthorizeFunction is more
-  // strict than the impl (typed action union per resource). The impl widens
-  // to `string` because narrowing happens at the call site in user code.
   const authorize = Object.assign(authorizeImpl, {
     unsafeBypassAuthorization,
   }) as unknown as AuthorizeFunction<TResources>;
@@ -166,13 +141,6 @@ export function createAuthorize<
   return authorize;
 }
 
-/**
- * Retrieve the resource loaded by authorize() middleware. Throws if the
- * caller invokes this on a route whose middleware did not declare a
- * `loadResource` (or whose loader produced a nullish value that the
- * middleware would have already converted to a 403), so downstream
- * handlers can rely on a non-null `T`.
- */
 export function getAuthorizedResource<T>(c: Context): T {
   const value = c.get(AUTHORIZED_RESOURCE_KEY);
   if (value === undefined || value === null) {
@@ -181,15 +149,10 @@ export function getAuthorizedResource<T>(c: Context): T {
         "Ensure the route's authorize(...) middleware passes `loadResource`."
     );
   }
-  // boundary: caller declared T; runtime value originated from loadResource
-  // whose return type was constrained to TResource at the middleware site.
+
   return value as T;
 }
 
-/**
- * Hono-specific helper that throws HTTPException(403) on deny.
- * For use in handlers when you need to check authorization after the middleware.
- */
 export async function assertCanOrThrow<
   TResources extends Record<string, AnyResourceDef>,
   K extends keyof TResources & string,

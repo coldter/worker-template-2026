@@ -6,9 +6,8 @@ import { users } from "./auth";
 export const authRelationsTable = pgTable(
   "auth_relations",
   {
-    // Intentionally immutable, no updatedAt: callers delete + recreate.
     createdAt: createdAt(),
-    // Nullable so onDelete "set null" applies when the creating user is deleted.
+
     createdBy: text("created_by").references(() => users.id, {
       onDelete: "set null",
     }),

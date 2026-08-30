@@ -19,14 +19,6 @@ type BufferableAuditInput = {
   metadata?: AuditLogMetadata;
 };
 
-/**
- * Record a bufferable (non-mutating) audit event without blocking the response.
- * The event is timestamped, enriched with the request's IP/user-agent, and
- * enqueued to the AUDIT_LOG_QUEUE via `waitUntil`, so a queue outage can never
- * affect the user-facing request. Use this for reads/list views; critical
- * events that accompany a write must use `auditLogService.create` inside the
- * transaction instead.
- */
 export function recordBufferableAuditEvent(
   c: Context<AppEnv>,
   input: BufferableAuditInput

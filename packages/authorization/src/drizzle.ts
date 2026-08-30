@@ -1,9 +1,3 @@
-// Drizzle ORM adapter for relationship queries.
-// One DrizzleLike type captures the subset of the Drizzle client surface
-// this module touches; one AuthRelationsTable type captures the column
-// shape. Both avoid importing @repo/db so this package stays self-contained
-// while drizzle-orm remains an optional peer dependency.
-// boundary: drizzle-orm generic variance
 import { and, type Column, eq, inArray, or, type SQL } from "drizzle-orm";
 
 export interface RelationTuple {
@@ -38,8 +32,6 @@ export interface ListRelationsInput {
   subject?: RelationEntity;
 }
 
-// Structural shape of the auth_relations table. Columns are typed as
-// drizzle-orm Column so eq/inArray overloads resolve.
 type AuthRelationsTable = {
   subjectType: Column;
   subjectId: Column;
@@ -49,11 +41,6 @@ type AuthRelationsTable = {
   createdBy: Column;
 };
 
-// Subset of the Drizzle client surface used by this module. Each chain
-// step returns the next builder; final terminal calls return Promises.
-// Per-function arguments use `Pick<DrizzleLike, ...>` so test mocks can
-// implement only the verbs they need.
-// boundary: drizzle-orm generic variance
 type SelectChain<TRow> = {
   from: (table: unknown) => {
     where: (condition: unknown) => Promise<TRow[]> & {
@@ -163,7 +150,6 @@ export async function checkRelationBatch(
   return keyMap;
 }
 
-// Silently ignores duplicates via onConflictDoNothing.
 export async function createRelation(
   db: Pick<DrizzleLike, "insert">,
   table: AuthRelationsTable,

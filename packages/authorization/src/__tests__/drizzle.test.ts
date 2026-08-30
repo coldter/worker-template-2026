@@ -13,13 +13,6 @@ import {
   listRelations,
 } from "../drizzle";
 
-// ---------------------------------------------------------------------------
-// Fake table reference -- structural shape only, values are not used in tests.
-// The drizzle module expects columns typed as SQLWrapper (from drizzle-orm);
-// here we feed string sentinels so the mocks can assert equality on them.
-// boundary: test fixture reflection
-// ---------------------------------------------------------------------------
-
 type FakeTable = Parameters<typeof checkRelation>[1];
 
 const fakeTable = {
@@ -30,10 +23,6 @@ const fakeTable = {
   subjectId: "subjectId_col",
   subjectType: "subjectType_col",
 } as unknown as FakeTable;
-
-// ---------------------------------------------------------------------------
-// Helpers to build mock db instances
-// ---------------------------------------------------------------------------
 
 function makeSelectDb(rows: RelationTuple[]) {
   const limitFn = vi.fn().mockResolvedValue(rows);
@@ -65,10 +54,6 @@ function makeDeleteDb() {
   return { db: { delete: deleteFn }, deleteFn, whereFn };
 }
 
-// ---------------------------------------------------------------------------
-// Test data
-// ---------------------------------------------------------------------------
-
 const subject = { id: "usr_1", type: "user" };
 const object = { id: "doc_1", type: "document" };
 const relation = "editor";
@@ -81,10 +66,6 @@ const createInput: CreateRelationInput = {
   relation,
   subject,
 };
-
-// ---------------------------------------------------------------------------
-// checkRelation
-// ---------------------------------------------------------------------------
 
 describe("checkRelation", () => {
   it("returns true when a matching row is found", async () => {
@@ -127,10 +108,6 @@ describe("checkRelation", () => {
     expect(limitFn).toHaveBeenCalledWith(1);
   });
 });
-
-// ---------------------------------------------------------------------------
-// checkRelationBatch
-// ---------------------------------------------------------------------------
 
 describe("checkRelationBatch", () => {
   it("returns an empty map for empty input without querying", async () => {
@@ -219,7 +196,6 @@ describe("checkRelationBatch", () => {
       },
     ];
     const rows: RelationTuple[] = [
-      // This row was returned by the broad WHERE but does not match the input tuple
       {
         objectId: "d99",
         objectType: "doc",
@@ -233,10 +209,6 @@ describe("checkRelationBatch", () => {
     expect(result.get("user:usr_1:editor:doc:d1")).toBe(false);
   });
 });
-
-// ---------------------------------------------------------------------------
-// createRelation
-// ---------------------------------------------------------------------------
 
 describe("createRelation", () => {
   it("calls db.insert with the table", async () => {
@@ -272,10 +244,6 @@ describe("createRelation", () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// deleteRelation
-// ---------------------------------------------------------------------------
-
 describe("deleteRelation", () => {
   it("calls db.delete with the table", async () => {
     const { db, deleteFn } = makeDeleteDb();
@@ -288,7 +256,7 @@ describe("deleteRelation", () => {
     const { db, whereFn } = makeDeleteDb();
     await deleteRelation(db, fakeTable, checkInput);
     expect(whereFn).toHaveBeenCalledOnce();
-    // The condition argument is a drizzle-orm SQL expression; just verify it was passed
+
     expect(whereFn.mock.calls[0]?.[0]).toBeDefined();
   });
 
@@ -298,10 +266,6 @@ describe("deleteRelation", () => {
     expect(result).toBeUndefined();
   });
 });
-
-// ---------------------------------------------------------------------------
-// listRelations
-// ---------------------------------------------------------------------------
 
 describe("listRelations", () => {
   function makeListDb(rows: RelationTuple[]) {

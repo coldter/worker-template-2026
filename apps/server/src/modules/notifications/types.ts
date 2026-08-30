@@ -11,7 +11,6 @@ import type { PaginationQuery } from "@/utils/pagination";
 
 import type { NotificationsSortColumn, NotificationType } from "./constants";
 
-// Re-export schema types
 export type {
   NotificationChannel,
   NotificationPriority,
@@ -29,11 +28,11 @@ export interface ListNotificationsQuery extends PaginationQuery {
 
 export interface SendNotificationInput {
   body: string;
-  /** Override default channels */
+
   channels?: NotificationChannel[];
-  /** Override default priority */
+
   priority?: NotificationPriority;
-  /** Additional props for templates/deep links */
+
   props?: Record<string, unknown>;
   subject: string;
   type: NotificationType;
@@ -44,7 +43,7 @@ export interface RegisterPushTokenInput {
   deviceId?: string;
   deviceName?: string;
   platform: PushPlatform;
-  /** FCM/APNs token */
+
   token: string;
 }
 
@@ -52,7 +51,7 @@ export interface UpdatePreferencesInput {
   emailEnabled?: boolean;
   pushEnabled?: boolean;
   smsEnabled?: boolean;
-  /** Per-type pattern preferences (e.g., "security.*" -> { channels: ["push"] }) */
+
   typeOverrides?: Record<
     string,
     {
@@ -64,9 +63,6 @@ export interface UpdatePreferencesInput {
 
 export type NotificationRecord = Notification;
 
-/**
- * Notification summary for API responses.
- */
 export interface NotificationSummary {
   body: string | null;
   channel: NotificationChannel;
@@ -83,14 +79,8 @@ export interface NotificationSummary {
   type: string;
 }
 
-/**
- * Push token record from database.
- */
 export type PushTokenRecord = PushToken;
 
-/**
- * Push token summary for API responses.
- */
 export interface PushTokenSummary {
   createdAt: string;
   deviceId: string | null;
@@ -102,14 +92,8 @@ export interface PushTokenSummary {
   sessionId: string;
 }
 
-/**
- * User notification preferences.
- */
 export type PreferencesRecord = NotificationPreference;
 
-/**
- * Preferences summary for API responses.
- */
 export interface PreferencesSummary {
   emailEnabled: boolean;
   pushEnabled: boolean;
@@ -123,16 +107,12 @@ export interface PreferencesSummary {
   > | null;
 }
 
-/**
- * Result of sending a notification.
- */
 export interface SendResult {
-  /** Channels attempted */
   channels: NotificationChannel[];
-  /** Failed channels with errors */
+
   failedChannels: { channel: NotificationChannel; error: string }[];
-  /** Notification IDs (one per channel) */
+
   notificationIds: string[];
-  /** Successfully sent to channels */
+
   sentChannels: NotificationChannel[];
 }

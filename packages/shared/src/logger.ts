@@ -8,10 +8,6 @@ export interface Logger {
   warn: (message: string, context?: LogContext) => void;
 }
 
-// JSON.stringify omits Error fields by default; serialize them explicitly.
-// `cause` is included because wrapped errors (DrizzleQueryError around a pg
-// DatabaseError) keep the actionable detail there; the replacer recurses into
-// it, so a nested Error serializes the same way.
 function replaceErrors(_key: string, value: unknown): unknown {
   if (value instanceof Error) {
     return {

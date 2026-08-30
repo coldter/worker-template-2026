@@ -16,7 +16,6 @@ export interface SendEmailParams<T> {
   to: string | string[];
 }
 
-// Per-isolate cache: amortises client construction across requests in the same Worker isolate.
 const resendClients = new Map<string, Resend>();
 
 function getResendClient(apiKey: string): Resend {

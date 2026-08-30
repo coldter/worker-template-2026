@@ -1,7 +1,3 @@
-// Node.js module loader hooks that stub `cloudflare:*` imports.
-// Used by scripts that import server code outside the Workers runtime
-// (e.g., OpenAPI generation under tsx/Node).
-
 const STUB_SOURCE = [
   "const handler = {",
   "  get(_, prop) {",

@@ -11,7 +11,6 @@ export const rateLimitMiddleware = createMiddleware<AppEnv>(async (c, next) => {
     return next();
   }
 
-  // Only `CF-Connecting-IP` is trusted; `X-Forwarded-For` is client-controllable and would let an attacker mint unlimited buckets.
   const ip = getClientIp(c) ?? "unknown";
 
   const identifier = `ip:${ip}`;

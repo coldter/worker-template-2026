@@ -11,10 +11,6 @@ import type { Context } from "hono";
 import type { AppEnv } from "@/lib/context";
 import { authorization } from "./registry";
 
-/**
- * Exported so other code (e.g. capabilities route) can reuse the same logic
- * without duplicating the user/session field extraction.
- */
 export function resolvePrincipalFromContext(
   c: Context<AppEnv>
 ): Principal | null {

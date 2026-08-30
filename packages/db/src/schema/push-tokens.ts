@@ -33,7 +33,6 @@ export const pushTokens = pgTable(
       .notNull()
       .references(() => sessions.id, { onDelete: "cascade" }),
 
-    // Token from FCM/APNs
     token: text("token").notNull(),
     updatedAt: updatedAt(),
 

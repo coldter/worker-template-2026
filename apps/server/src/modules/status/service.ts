@@ -7,14 +7,10 @@ export type ReadinessChecks = {
   cache: boolean;
 };
 
-// Single get signature instead of the full KVNamespace so tests can pass a
-// plain stub; a real KVNamespace remains assignable.
 export type ReadinessCache = {
   get(key: string): Promise<string | null>;
 };
 
-// A hung Hyperdrive origin should flip readiness fast; uptime checks cannot
-// wait out a full query timeout.
 const DEFAULT_PROBE_TIMEOUT_MS = 2000;
 
 async function withProbeTimeout<T>(
@@ -57,7 +53,6 @@ async function probeCache(
   timeoutMs: number
 ): Promise<boolean> {
   try {
-    // A get on a missing key is still a full KV round-trip.
     await withProbeTimeout(cache.get("readiness-probe"), timeoutMs);
     return true;
   } catch (error) {

@@ -1,20 +1,5 @@
 #!/usr/bin/env bun
 // biome-ignore-all lint/suspicious/noConsole: CLI script — console output is the interface.
-/**
- * Template initialization script.
- *
- * Renames the monorepo from the generic `repo` / `@repo/*` template scope to a
- * user-supplied app name and package scope, then writes brand defaults into the
- * `.env.example` file(s). Optionally prefixes Cloudflare Worker names in each
- * `wrangler.jsonc` with the new app name so deployed workers are namespaced.
- * Self-deletes when finished so the script only runs once per cloned template.
- *
- * Usage:
- *   bun scripts/init-template.ts
- *   bun scripts/init-template.ts --dry-run
- *
- * Run from the repo root.
- */
 
 import { readdir, readFile, stat, unlink, writeFile } from "node:fs/promises";
 import { dirname, join, relative, resolve } from "node:path";
@@ -35,7 +20,6 @@ const QUOTE_PATTERN = /"/g;
 const README_HEADING_PATTERN = /^#\s+.*$/m;
 const YES_PATTERN = /^(y|yes)$/i;
 
-// Worker names currently set in each apps/*/wrangler.jsonc.
 const WORKER_APPS = ["server", "auth", "web"] as const;
 
 type Answers = {
@@ -182,7 +166,6 @@ async function collectTargetFiles(): Promise<string[]> {
   ).filter((dir): dir is string => dir !== null);
   const nestedFiles = await Promise.all(existingDirs.map(walkWithExtensions));
 
-  // Always include root package.json.
   return [nestedFiles.flat(), join(ROOT, "package.json")].flat();
 }
 
@@ -220,11 +203,9 @@ function renameWorkerInWranglerConfig(
 ): string {
   let next = content;
   for (const worker of WORKER_APPS) {
-    // Rewrite the worker's own "name": "<worker>" declaration.
     const namePattern = new RegExp(`"name"\\s*:\\s*"${worker}"`, "g");
     next = next.replace(namePattern, `"name": "${appName}-${worker}"`);
-    // Rewrite service-binding references ("service": "<worker>") so bindings
-    // keep pointing at the renamed workers.
+
     const servicePattern = new RegExp(`"service"\\s*:\\s*"${worker}"`, "g");
     next = next.replace(servicePattern, `"service": "${appName}-${worker}"`);
   }
@@ -340,8 +321,7 @@ async function main(): Promise<void> {
 
   console.info("Updating env examples...");
   await updateEnvExample(join(ROOT, ".env.example"), answers);
-  // Per-app .dev.vars.example files are not part of the default template,
-  // but rewrite them if a downstream fork has added them.
+
   await updateEnvExample(join(ROOT, "apps/server/.dev.vars.example"), answers);
   await updateEnvExample(join(ROOT, "apps/auth/.dev.vars.example"), answers);
   await updateEnvExample(join(ROOT, "apps/web/.dev.vars.example"), answers);

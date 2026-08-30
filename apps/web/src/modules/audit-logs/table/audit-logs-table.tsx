@@ -55,7 +55,6 @@ export function AuditLogsTable() {
     return rows.find((row) => row.id === selectedLogId) ?? null;
   }, [rows, selectedLogId]);
 
-  // Close sheet when selected row drops out of the current page after refetch.
   useEffect(() => {
     if (detailOpen && selectedLogId && !selectedLog) {
       setDetailOpen(false);

@@ -4,9 +4,6 @@ import chalk from "chalk";
 import { type PermissionKey, SYSTEM_ROLES } from "@/modules/roles";
 import { db } from "../utils";
 
-/**
- * System roles that are guaranteed to exist.
- */
 const systemRoles: Array<{
   slug: string;
   name: string;
@@ -23,10 +20,6 @@ const systemRoles: Array<{
   },
 ];
 
-/**
- * Idempotent: skips existing roles rather than duplicating them, and does
- * not override permissions for existing roles (they might be customized).
- */
 export const rolesSeed = async () => {
   console.info("Seeding system roles...");
 

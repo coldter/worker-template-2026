@@ -34,8 +34,6 @@ import {
   type UserWithStatusFields,
 } from "./plugins/user-status";
 
-// NODE_ENV and ENABLE_SIGNUP widen to string: wrangler types emits the dev
-// literals from wrangler.jsonc, but --var deploy overrides change them at runtime.
 export type AuthBindings = Omit<
   CloudflareBindings,
   "API" | "NODE_ENV" | "ENABLE_SIGNUP"
@@ -47,8 +45,6 @@ export type AuthBindings = Omit<
 
 export type { SessionWithAdditionalFields };
 
-// env is immutable for an isolate's lifetime, so these pure env-derived values
-// are computed once on first use and reused across every per-request createAuth.
 let memoizedCorsOrigins: string[] | undefined;
 let memoizedBrand: ReturnType<typeof getBrandConfig> | undefined;
 
@@ -65,7 +61,6 @@ function getMemoizedBrandConfig(
   env: AuthBindings
 ): ReturnType<typeof getBrandConfig> {
   if (!memoizedBrand) {
-    // boundary: getBrandConfig accepts Record<string, string | undefined>; narrow workerd CloudflareBindings to that shape.
     memoizedBrand = getBrandConfig(
       env as unknown as Record<string, string | undefined>
     );
@@ -124,9 +119,6 @@ export function createAuth(
     },
 
     emailAndPassword: {
-      // No signup UI exists in the web app, so registration stays closed unless
-      // explicitly enabled. Dev defaults ENABLE_SIGNUP to "true" in wrangler.jsonc;
-      // production deploys override it via --var (Wrangler vars are strings).
       disableSignUp: env.ENABLE_SIGNUP !== "true",
       enabled: true,
       requireEmailVerification: true,
@@ -147,9 +139,9 @@ export function createAuth(
           period: TWO_FACTOR_CONFIG.twoFactorOtpPeriodMinutes,
           sendOTP: createSendTwoFactorOTP(env, ctx, brand),
         },
-        // Email OTP only; no TOTP enrollment flow to verify against.
+
         skipVerificationOnEnable: true,
-        // usePlural: true on the Drizzle adapter requires the singular model name to resolve to "twoFactors".
+
         twoFactorTable: "twoFactor",
       }),
       openAPI({
@@ -164,7 +156,6 @@ export function createAuth(
         jwt: {
           audience: env.APP_URL,
           definePayload: ({ user, session }) => {
-            // boundary: better-auth additionalFields generic variance -- user-status plugin fields not visible to this callback's generic.
             const typedUser = user as typeof user & UserWithStatusFields;
             return {
               email: user.email,
@@ -188,7 +179,6 @@ export function createAuth(
       },
     ],
 
-    // Global limit set above lockout threshold so custom lockout triggers first.
     rateLimit: {
       customRules: {
         "/sign-in/email": {
@@ -206,8 +196,7 @@ export function createAuth(
         await kvDelete(env.CACHE, key);
       },
       get: async (key) => kvGetJson(env.CACHE, key),
-      // KV has no atomic get-and-delete; the previous adapter's get+delete
-      // pair had the same single-use window, so behavior is unchanged.
+
       getAndDelete: async (key) => {
         const value = await kvGetJson(env.CACHE, key);
         if (value !== null) {
@@ -215,9 +204,7 @@ export function createAuth(
         }
         return value;
       },
-      // KV has no counter primitive; read-modify-write matches the pre-1.7
-      // adapter behavior (read-your-writes within a colo). TTL is applied
-      // only on creation so the window never extends, per the 1.7 contract.
+
       increment: async (key, ttl) => {
         const current = await kvGetJson<number>(env.CACHE, key);
         const next = (typeof current === "number" ? current : 0) + 1;
@@ -246,22 +233,12 @@ export function createAuth(
           type: [...platformSchema.options],
         },
       },
-      // Cache a signed session snapshot in the cookie for up to 60s to avoid a
-      // secondary-storage / DB hit on every getSession. Deliberate trade-off:
-      // while the cached snapshot is valid, session/role/status/lockout
-      // revocation lags by up to 60s. In Better Auth 1.6.x the cookie cache
-      // stores the full parsed user and session output, so the custom fields
-      // the API principal relies on (platform, activeOrgRole, roleSlugs, status)
-      // are served from the cookie and are subject to the same 60s staleness
-      // window -- they are not re-fetched while the cache is fresh. The short
-      // 60s maxAge bounds that lag; secondary storage, storeSessionInDatabase,
-      // and session expiry are unchanged, so a deleted session still fails once
-      // the snapshot expires.
+
       cookieCache: {
         enabled: true,
         maxAge: 60,
       },
-      // Mobile defaults so cookie Max-Age matches 7-day mobile sessions; web is shortened in hooks.
+
       expiresIn: 604_800,
       updateAge: 86_400,
     },

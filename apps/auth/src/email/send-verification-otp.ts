@@ -49,7 +49,6 @@ export function createSendVerificationOTP(
 
     const templateType = type === "change-email" ? "email-verification" : type;
 
-    // Async send prevents timing attacks.
     ctx.waitUntil(
       sendEmail({
         apiKey: env.RESEND_API_KEY,

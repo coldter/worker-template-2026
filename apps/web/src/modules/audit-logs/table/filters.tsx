@@ -26,7 +26,6 @@ type AuditLogsFiltersProps = {
   navigate: NavigateFn;
 };
 
-// Group events by category for the dropdown
 const eventCategories = [
   {
     events: ALL_EVENT_TYPES.filter((e) => e.startsWith("auth.")),

@@ -5,8 +5,7 @@ import {
   useSearch,
 } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-// zod/mini: autoCodeSplitting cannot extract validateSearch, so classic zod
-// here would ship in the eager entry chunk for every visitor.
+
 import * as z from "zod/mini";
 import { Logo } from "@/assets/logo";
 import {
@@ -24,7 +23,6 @@ import { useLastUserStore } from "@/store";
 
 export const Route = createFileRoute("/login")({
   beforeLoad: async ({ context, search }) => {
-    // Fail open to the form: a failed session probe must not block sign-in.
     const session = await context.queryClient
       .ensureQueryData(sessionQueryOptions)
       .catch(() => null);

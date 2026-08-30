@@ -17,9 +17,6 @@ const app = new Hono<AuthEnv>();
 
 app.use("*", trimTrailingSlash());
 
-// Auth requests bypass the server worker's analytics middleware (the proxy
-// forwards them untouched), so sign-in failure rates and latency need their
-// own unsampled dataset; Workers Logs alone is head-sampled at 25%.
 app.use("*", async (c, next) => {
   const start = Date.now();
   await next();
@@ -47,7 +44,6 @@ app.use("*", async (c, next) => {
   }
 });
 
-// Per-request DB connection lifecycle.
 app.use("*", async (c, next) => {
   await withDrizzleClient(
     c.env.HYPERDRIVE.connectionString,

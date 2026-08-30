@@ -12,22 +12,11 @@ type QueueConsumer = (
   ctx: ExecutionContext
 ) => Promise<void>;
 
-/**
- * Registry of queue consumers keyed by queue name. The worker exposes a single
- * `queue` handler (Cloudflare delivers every queue's batches to it), so this
- * map is what keeps batches from different queues isolated. Adding a new queue
- * is: write its consumer in the owning module, then register it here and add the
- * producer/consumer entries to wrangler.jsonc.
- */
 const QUEUE_CONSUMERS: Record<string, QueueConsumer> = {
   [AUDIT_LOG_QUEUE_NAME]: handleAuditLogQueue,
   [AUDIT_LOG_DLQ_NAME]: handleAuditLogDlq,
 };
 
-// Queue batches never pass the HTTP analytics middleware, so consumer health
-// (throughput, processing time, delivery lag, retry pressure) gets its own
-// unsampled data points. Lag spiking while counts stay flat means the consumer
-// is falling behind; rising attempts means poison messages or DB trouble.
 function recordBatchMetrics(
   batch: MessageBatch,
   env: CloudflareBindings,
@@ -59,11 +48,6 @@ function recordBatchMetrics(
   }
 }
 
-/**
- * Dispatch a queue batch to the consumer registered for its queue. An
- * unregistered queue is acked (not retried) to avoid an infinite redelivery
- * loop, and logged loudly so the misconfiguration is visible.
- */
 export async function routeQueueBatch(
   batch: MessageBatch,
   env: CloudflareBindings,

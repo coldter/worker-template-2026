@@ -85,7 +85,6 @@ class FcmHttpProvider implements PushProvider {
     });
 
     if (response.ok) {
-      // boundary: external FCM success response validated by fcmSuccessSchema
       const rawResult: unknown = await response.json();
       const parsedResult = fcmSuccessSchema.safeParse(rawResult);
       if (!parsedResult.success) {
@@ -94,7 +93,6 @@ class FcmHttpProvider implements PushProvider {
       return { messageId: parsedResult.data.name, success: true };
     }
 
-    // boundary: external FCM error response validated by fcmErrorSchema
     const rawError: unknown = await response.json();
     const parsedError = fcmErrorSchema.safeParse(rawError);
     if (!parsedError.success) {

@@ -31,7 +31,6 @@ export const NOTIFICATION_PRIORITY = [
 ] as const;
 export type NotificationPriority = (typeof NOTIFICATION_PRIORITY)[number];
 
-// Audit trail for all sent notifications.
 export const notifications = pgTable(
   "notifications",
   {
@@ -49,7 +48,6 @@ export const notifications = pgTable(
       .notNull()
       .default("medium"),
 
-    // Context for re-rendering if needed
     props: jsonb("props").$type<Record<string, unknown>>(),
 
     providerMessageId: varchar("provider_message_id", { length: 255 }),
@@ -60,10 +58,8 @@ export const notifications = pgTable(
       .notNull()
       .default("pending"),
 
-    // Content (for audit/debugging)
     subject: text("subject"),
 
-    // Notification type (e.g., "user.welcome", "security.login_new_device")
     type: varchar("type", { length: 100 }).notNull(),
     updatedAt: updatedAt(),
 
@@ -76,9 +72,7 @@ export const notifications = pgTable(
     index("notifications_type_idx").on(table.type),
     index("notifications_status_idx").on(table.status),
     index("notifications_created_at_idx").on(table.createdAt),
-    // Partial index serving the unread-push badge count + mark-all-read hot
-    // query: filters userId with constant predicates channel = 'push',
-    // read_at is null, status in ('sent', 'delivered').
+
     index("notifications_unread_idx")
       .on(table.userId)
       .where(

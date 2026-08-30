@@ -55,7 +55,6 @@ export const createAccountId = (): AccountId =>
 export const createVerificationId = (): VerificationId =>
   generatePrefixedCuid(ID_PREFIXES.verification) as VerificationId;
 
-// Called by Better Auth's advanced.database.generateId for every model; unknown models fall back to "ent" so plugin inserts keep working.
 export const generateIdForModel = (model: string): string => {
   if (model in ID_PREFIXES) {
     const prefix = ID_PREFIXES[model as keyof typeof ID_PREFIXES];

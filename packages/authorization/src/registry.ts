@@ -13,11 +13,6 @@ export interface RegistryOptions {
   systemAdminRoles: readonly string[];
 }
 
-/**
- * Typed capability map keyed by `${ResourceName}:${ActionName}`. Powers
- * autocomplete on `caps["user:list"]` while still degrading to `boolean`
- * for keys outside the registry's vocabulary at the value-level shape.
- */
 export type CapabilityKey<TResources extends Record<string, AnyResourceDef>> = {
   [K in keyof TResources & string]: `${K}:${ActionsOf<TResources[K]> & string}`;
 }[keyof TResources & string];
@@ -51,15 +46,6 @@ export interface RegistryInstance<
     }
   ): Promise<PolicyDecision>;
 
-  /**
-   * Build an OPTIMISTIC capability map keyed by `${resource}:${action}` for
-   * the given principal. Intended for UI gating only -- nav items, page
-   * entry points, broad presentation. Conditional allows (e.g. `whereOwner`,
-   * `withRelation`) resolve to `true` without evaluating against a concrete
-   * resource, and conditional denies that depend on a resource are skipped;
-   * both lean optimistic. NOT an authoritative permission check -- always
-   * use server responses for record-level actions and destructive flows.
-   */
   evaluateCapabilities(
     principal: Principal
   ): Promise<CapabilityMap<TResources>>;
@@ -75,7 +61,6 @@ export function buildRegistryInstance<
   resources: TResources,
   options: RegistryOptions
 ): RegistryInstance<TResources> {
-  // Validate at construction time
   validateRegistry(
     resources,
     options.schemaRoles,
@@ -111,7 +96,6 @@ export function buildRegistryInstance<
     },
 
     async evaluateCapabilities(principal) {
-      // evaluate() is pure and each task writes a unique `${name}:${action}` key, so parallelising is safe.
       const tasks: Promise<readonly [string, boolean]>[] = [];
       for (const [name, resourceDef] of Object.entries(resources)) {
         for (const action of resourceDef.actions) {
@@ -138,7 +122,6 @@ export function buildRegistryInstance<
         capabilities[key] = allowed;
       }
 
-      // boundary: runtime keys derived from registry actions match CapabilityMap by construction
       return capabilities as unknown as CapabilityMap<TResources>;
     },
 

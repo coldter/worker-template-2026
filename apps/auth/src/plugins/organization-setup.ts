@@ -60,7 +60,6 @@ export function createOrganizationPlugin(
       },
 
       afterUpdateMemberRole: async ({ member }) => {
-        // Sync existing sessions in place rather than invalidating; keeps users signed in while updating their cached org role.
         await tolerateMissingOrgTables(
           () =>
             db

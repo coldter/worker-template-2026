@@ -1,7 +1,3 @@
-/**
- * Domain-specific test helpers for creating entities and parsing responses.
- */
-
 export async function parseResponse<T>(response: {
   json: () => Promise<unknown>;
 }): Promise<T> {

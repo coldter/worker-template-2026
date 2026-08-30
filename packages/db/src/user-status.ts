@@ -29,8 +29,6 @@ export async function resetFailedLoginAttemptsByEmail(
   executor: Executor,
   email: string
 ): Promise<void> {
-  // Guard the reset so clean sign-ins skip a no-op write (one dead tuple per
-  // login otherwise).
   await executor
     .update(users)
     .set({ failedLoginAttempts: 0, lockedUntil: null })

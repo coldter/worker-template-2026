@@ -9,9 +9,7 @@ export const analyticsMiddleware = createMiddleware<AppEnv>(async (c, next) => {
 
   try {
     const { path } = c.req;
-    // Unlike Workers Logs, these data points are not head-sampled, so error
-    // rates and latency stay exact even with logs sampled at 25%. Country/colo
-    // localize incidents; the version id ties regressions to a deploy.
+
     const { cf } = c.req.raw;
     c.env.ANALYTICS?.writeDataPoint({
       blobs: [

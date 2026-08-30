@@ -24,9 +24,6 @@ export function createSessionCreateBeforeHook(
     const platform = detectPlatform(userAgent);
     const config = SESSION_CONFIG[platform];
 
-    // The org membership lookup is independent of the session read/delete chain
-    // below, so start it now and let it run concurrently. It is awaited later
-    // where its result is needed.
     const membershipPromise = tolerateMissingOrgTables(
       async () => {
         const [row] = await db
@@ -46,10 +43,6 @@ export function createSessionCreateBeforeHook(
       }
     );
 
-    // Single session per user: revoke existing rows before inserting. RETURNING
-    // feeds new-device detection, saving a separate SELECT round trip on the
-    // per-request client; sorting by createdAt desc makes the comparison use the
-    // latest session instead of whichever row an unordered LIMIT 1 happened to pick.
     const revokedSessions = await db
       .delete(schema.sessions)
       .where(eq(schema.sessions.userId, session.userId))

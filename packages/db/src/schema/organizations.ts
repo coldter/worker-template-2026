@@ -43,7 +43,6 @@ export const members = pgTable(
 export const invitations = pgTable(
   "invitation",
   {
-    // Intentionally immutable, no updatedAt: terminal-write only.
     createdAt: createdAt(),
     email: text("email").notNull(),
     expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),

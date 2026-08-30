@@ -8,7 +8,6 @@ import type { Principal } from "../types";
 const NO_RESOURCE_LOADED = /no resource was loaded/;
 const NOT_IN_ALLOWED_BYPASS = /not in allowedBypassLabels/;
 
-// Set up a test schema and registry
 const auth = createAuthSchema({
   globalPolicies: (p) => [p.deny("*").to("*").where(principalNotActive())],
   principal: { status: principalAttribute<string>() },
@@ -34,7 +33,6 @@ const testResource = auth.createResource<TestResource>("test", {
 
 const registry = auth.buildRegistry({ test: testResource });
 
-// Helpers for test principals
 const adminPrincipal: Principal = {
   attributes: { status: "active" },
   id: "usr_admin",
@@ -47,7 +45,6 @@ const userPrincipal: Principal = {
 };
 
 describe("createAuthorize", () => {
-  // resolvePrincipal reads from a custom header for testing
   const authorize = createAuthorize(registry, {
     allowedBypassLabels: ["health-check"],
     resolvePrincipal: (c) => {
@@ -187,11 +184,6 @@ describe("createAuthorize", () => {
     }).toThrow(NOT_IN_ALLOWED_BYPASS);
   });
 
-  // Operational/programmer errors thrown from loadResource must NOT be
-  // flattened to 403 by the middleware. They should propagate to Hono's
-  // global onError handler so logs/metrics can distinguish ops failures
-  // from policy denials. The default Hono behaviour without onError is a
-  // 500 response.
   it("propagates loadResource errors to Hono onError (does not 403)", async () => {
     const app = new Hono();
     app.onError((err, c) =>
@@ -219,10 +211,6 @@ describe("createAuthorize", () => {
     expect(body.error.message).toBe("db error");
   });
 
-  // The wire body is intentionally indistinguishable between "resource not
-  // found" and "policy denied" -- both surface as FORBIDDEN to avoid a
-  // resource-existence side channel. Server logs use decision.reason for
-  // operational distinction.
   it("returns FORBIDDEN with uniform body when loadResource returns null", async () => {
     const app = new Hono();
     app.use(

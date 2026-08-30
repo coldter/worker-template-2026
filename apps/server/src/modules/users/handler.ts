@@ -60,8 +60,6 @@ const usersHandler = app
   .openapi(usersRoutes.getMyAccount, async (c) => {
     const currentUser = requireCurrentUser(c);
 
-    // The account summary and unread count are independent reads; run them
-    // concurrently instead of serially.
     const [account, unreadCount] = await Promise.all([
       userService.findAccountSummaryById(c.var.db, currentUser.id),
       notificationService.getUnreadCount(c.var.db, currentUser.id),

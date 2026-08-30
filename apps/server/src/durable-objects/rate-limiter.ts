@@ -50,7 +50,6 @@ export class RateLimiter extends DurableObject {
 
     const persisted = await this.persist(next);
     if (!persisted) {
-      // fail closed: a storage outage must not allow unlimited requests.
       return { allowed: false, remaining: 0 };
     }
     this.timestamps = next;
@@ -100,7 +99,6 @@ export class RateLimiter extends DurableObject {
       }
       this.hydrated = true;
     } catch (err) {
-      // checkLimit will fail closed on the next write if storage is genuinely down.
       logger.error("RateLimiter storage read failed", {
         error: err,
       });
@@ -108,7 +106,6 @@ export class RateLimiter extends DurableObject {
     }
   }
 
-  // callers must not mutate in-memory state when this returns false (persist-first ordering).
   private async persist(next: number[]): Promise<boolean> {
     try {
       await this.ctx.storage.put(STORAGE_KEY, next);

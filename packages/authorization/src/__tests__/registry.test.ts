@@ -6,7 +6,6 @@ import type { Principal } from "../types";
 const KEY_MISMATCH_PATTERN = /does not match resource name/i;
 
 describe("buildRegistry", () => {
-  // Create a full schema + resource + registry for testing
   const auth = createAuthSchema({
     globalPolicies: (p) => [p.deny("*").to("*").where(principalNotActive())],
     principal: {
@@ -55,7 +54,6 @@ describe("buildRegistry", () => {
     roles: ["user"],
   };
 
-  // can() returns PolicyDecision
   it("admin can do everything", async () => {
     const decision = await registry.can(adminPrincipal, "test", "list");
     expect(decision.allowed).toBe(true);
@@ -108,7 +106,6 @@ describe("buildRegistry", () => {
     }
   });
 
-  // can().allowed yields the boolean directly
   it("can() returns allowed=true on permitted action", async () => {
     expect((await registry.can(adminPrincipal, "test", "list")).allowed).toBe(
       true
@@ -127,7 +124,6 @@ describe("buildRegistry", () => {
     );
   });
 
-  // assertCan() throws on deny
   it("assertCan throws AuthorizationError on deny", async () => {
     const { AuthorizationError } = await import("../errors");
     await expect(
@@ -141,7 +137,6 @@ describe("buildRegistry", () => {
     ).resolves.toBeUndefined();
   });
 
-  // evaluateCapabilities returns Record<string, boolean>
   it("evaluateCapabilities returns correct map for admin", async () => {
     const caps = await registry.evaluateCapabilities(adminPrincipal);
     expect(caps["test:list"]).toBe(true);
@@ -154,11 +149,11 @@ describe("buildRegistry", () => {
   it("evaluateCapabilities returns correct map for user", async () => {
     const caps = await registry.evaluateCapabilities(userPrincipal);
     expect(caps["test:list"]).toBe(true);
-    // view and update are conditionally allowed (whereOwner) - should be true in capabilities
+
     expect(caps["test:view"]).toBe(true);
     expect(caps["test:update"]).toBe(true);
     expect(caps["test:create"]).toBe(false);
-    // delete has a deny for self-target, but has an allow for admin. For user role, no allow matches -> false
+
     expect(caps["test:delete"]).toBe(false);
   });
 });
@@ -178,7 +173,6 @@ describe("registry validation", () => {
       policies: (p) => [p.allow("admin").to("read")],
     });
 
-    // Create a second resource with the same name by manually constructing
     const res2 = auth.createResource<{ id: string }>("dupe", {
       actions: ["write"],
       policies: (p) => [p.allow("admin").to("write")],

@@ -16,7 +16,6 @@ import {
 } from "../constants";
 import { userStatusSchema } from "./user-status";
 
-// createAuthMiddleware does not propagate endpoint body types; re-validate the field we need.
 const emailBodySchema = z
   .object({
     email: z.string().email().optional(),
@@ -28,7 +27,6 @@ function readEmailFromBody(body: unknown): string | undefined {
   return parsed.success ? parsed.data.email : undefined;
 }
 
-// 2FA users get `{ twoFactorRedirect: true }` -- not yet fully authenticated, so don't clear failed-attempt counters.
 const twoFactorRedirectSchema = z
   .object({
     twoFactorRedirect: z.boolean().optional(),
@@ -65,8 +63,8 @@ export const AUTH_ERROR_CODES = {
   INVALID_CREDENTIALS: "INVALID_CREDENTIALS",
 } as const;
 
-export const loginSecurityPlugin = (db: DrizzleClient) => {
-  return {
+export const loginSecurityPlugin = (db: DrizzleClient) =>
+  ({
     hooks: {
       after: [
         {
@@ -113,7 +111,6 @@ export const loginSecurityPlugin = (db: DrizzleClient) => {
               });
             }
 
-            // Hold counter open across 2FA redirect; reset happens in the /two-factor/verify-otp after-hook.
             if (isTwoFactorRedirect(ctx.context.returned)) {
               return;
             }
@@ -215,5 +212,4 @@ export const loginSecurityPlugin = (db: DrizzleClient) => {
       ],
     },
     id: "login-security",
-  } satisfies BetterAuthPlugin;
-};
+  }) satisfies BetterAuthPlugin;

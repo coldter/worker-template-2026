@@ -3,8 +3,6 @@ import { describe, expect, it } from "vitest";
 
 import { checkReadiness, type ReadinessCache } from "@/modules/status/service";
 
-// boundary: test fixture; the probe only calls `execute`, so a single-method
-// stub stands in for the full Drizzle client.
 function fakeDb(execute: () => Promise<unknown>): DrizzleClient {
   return { execute } as unknown as DrizzleClient;
 }

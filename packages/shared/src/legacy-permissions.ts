@@ -1,4 +1,3 @@
-// Transitional: legacy permission keys retained until clients migrate to authorization resources.
 import type { AuthorizationRole } from "./authorization-schema";
 import { SYSTEM_ROLES } from "./roles";
 

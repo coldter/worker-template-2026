@@ -64,8 +64,8 @@ function assertStatusMutationResult(result: StatusMutationResult): void {
   }
 }
 
-export const adminPlugin = (apiBinding: ApiBindingRpc) => {
-  return {
+export const adminPlugin = (apiBinding: ApiBindingRpc) =>
+  ({
     endpoints: {
       activateUser: createAuthEndpoint(
         "/admin/activate-user",
@@ -100,7 +100,6 @@ export const adminPlugin = (apiBinding: ApiBindingRpc) => {
           use: [sessionMiddleware],
         },
         async (ctx) => {
-          // boundary: better-auth plugin endpoint ctx lacks $Infer narrowing for user-status additional fields.
           const currentUser = ctx.context.session.user as AuthSessionUser;
 
           await assertCanManageUserStatusWithApiError(
@@ -152,7 +151,6 @@ export const adminPlugin = (apiBinding: ApiBindingRpc) => {
           use: [sessionMiddleware],
         },
         async (ctx) => {
-          // boundary: better-auth plugin endpoint ctx lacks $Infer narrowing for user-status additional fields.
           const currentUser = ctx.context.session.user as AuthSessionUser;
 
           await assertCanManageUserStatusWithApiError(
@@ -204,7 +202,6 @@ export const adminPlugin = (apiBinding: ApiBindingRpc) => {
           use: [sessionMiddleware],
         },
         async (ctx) => {
-          // boundary: better-auth plugin endpoint ctx lacks $Infer narrowing for user-status additional fields.
           const currentUser = ctx.context.session.user as AuthSessionUser;
 
           await assertCanManageUserStatusWithApiError(
@@ -224,8 +221,7 @@ export const adminPlugin = (apiBinding: ApiBindingRpc) => {
       ),
     },
     id: "admin",
-  } satisfies BetterAuthPlugin;
-};
+  }) satisfies BetterAuthPlugin;
 
 export async function assertCanManageUserStatus(
   actor: AuthSessionUser,

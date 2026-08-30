@@ -33,7 +33,6 @@ export function useAuthorization() {
   };
 }
 
-// fail-closed during loading
 export function useCan(capability: Capability): {
   allowed: boolean;
   isLoading: boolean;
@@ -45,7 +44,6 @@ export function useCan(capability: Capability): {
   return { allowed: capabilities[capability] === true, isLoading: false };
 }
 
-// null/undefined capability treated as public; fail-closed during loading
 export function useCapabilityChecker(): {
   check: (capability: Capability | null | undefined) => boolean;
   isLoading: boolean;

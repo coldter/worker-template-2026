@@ -6,9 +6,6 @@ import { TwoFactorOtpEmail } from "../templates/two-factor-otp";
 import { VerificationOtpEmail } from "../templates/verification-otp";
 import { WelcomeEmail } from "../templates/welcome";
 
-// Snapshots pin rendered HTML so unintentional copy or layout changes surface
-// during review.
-
 describe("Email template snapshots", () => {
   test("NotificationEmail renders with action button", async () => {
     const html = await render(

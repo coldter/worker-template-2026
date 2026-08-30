@@ -1,7 +1,5 @@
 import { beforeEach, describe, expect, test, vi } from "vitest";
 
-// Responses the next `emails.send` invocations produce; empty defaults to
-// success. Tests push here before invoking `sendEmail`.
 type SendResponse =
   | { kind: "ok"; data: { id: string } }
   | { kind: "apiError"; message: string }
@@ -9,8 +7,6 @@ type SendResponse =
 
 const sendQueue: SendResponse[] = [];
 
-// Track every Resend instance constructed so we can assert on the
-// module-level constructor cache.
 const resendInstances: Array<{ apiKey: string }> = [];
 
 vi.mock("resend", () => {
@@ -60,10 +56,7 @@ function DummyTemplate({ name }: DummyProps) {
 beforeEach(() => {
   resendInstances.length = 0;
   sendQueue.length = 0;
-  // Reset the modules so the module-scoped `resendClients` cache in
-  // `lib/send.ts` starts empty for each test. The mocked `resend` module is
-  // re-evaluated alongside it, but the captured `sendQueue` and
-  // `resendInstances` arrays stay shared via closure.
+
   vi.resetModules();
 });
 
@@ -106,8 +99,6 @@ describe("sendEmail", () => {
       to: "ada@example.com",
     });
 
-    // Only one Resend was constructed despite two sends, proving the
-    // module-scoped cache returned the same instance for the shared key.
     expect(resendInstances).toHaveLength(1);
   });
 

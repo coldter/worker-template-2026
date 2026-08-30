@@ -28,8 +28,6 @@ export function buildAuthorizationPrincipal(
   const allSlugs = user.roleSlugs ?? [];
   const roles = allSlugs.filter(isAuthorizationRole);
 
-  // Only do the second pass to surface dropped roles when there actually are
-  // any (the common case has none), keeping `roles` strongly typed via the guard.
   if (roles.length !== allSlugs.length) {
     const droppedRoles = allSlugs.filter((role) => !isAuthorizationRole(role));
     logger.warn("Dropped unknown roles for user", {

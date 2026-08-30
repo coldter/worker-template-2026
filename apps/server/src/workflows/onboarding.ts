@@ -34,8 +34,7 @@ export class OnboardingWorkflow extends WorkflowEntrypoint<
       { retries: { backoff: "exponential", delay: "5 seconds", limit: 3 } },
       async () => {
         const { sendEmail, WelcomeEmail } = await import("@repo/email");
-        // boundary: workerd env bindings are typed via wrangler codegen; cast
-        // to a plain record for the brand helper.
+
         const brand = getBrandConfig(
           this.env as unknown as Record<string, string | undefined>
         );

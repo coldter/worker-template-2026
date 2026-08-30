@@ -33,7 +33,6 @@ const SENSITIVE_COLUMNS: readonly string[] = [
 
 const REDACTED = "[REDACTED]";
 
-// Separate regexes: column refs may be qualified (`t.password`); table refs may not.
 const SENSITIVE_TABLES_RE = new RegExp(
   `(^|[\\s,"\`(])"?(${SENSITIVE_TABLES.join("|")})"?($|[\\s,."\`)])`
 );

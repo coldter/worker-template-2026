@@ -7,7 +7,6 @@ export interface RedactOptions {
   maxDepth?: number;
 }
 
-// 24-char minimum filters out everyday short strings while catching opaque tokens.
 export function looksLikeToken(value: string): boolean {
   return value.length >= 24 && TOKEN_LIKE.test(value);
 }

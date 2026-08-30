@@ -6,9 +6,6 @@ import pg from "pg";
 import { PostgresError } from "pg-error-enum";
 import type { AppEnv } from "@/lib/context";
 
-// Head sampling can drop the invocation log surrounding an error, so each
-// error line carries its own correlation ids: the client-visible X-Request-Id
-// and the deploy version the request ran on.
 function correlationContext(c: Context<AppEnv>) {
   return {
     requestId: c.get("requestId"),
@@ -16,7 +13,6 @@ function correlationContext(c: Context<AppEnv>) {
   };
 }
 
-// boundary: typeof-guarded reads of `code` on an unknown error cause.
 function extractCauseCode(cause: unknown): string | null {
   if (
     typeof cause === "object" &&

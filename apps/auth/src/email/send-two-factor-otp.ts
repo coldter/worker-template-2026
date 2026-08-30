@@ -17,7 +17,6 @@ export function createSendTwoFactorOTP(
     }: { user: { id: string; email: string; name: string }; otp: string },
     reqCtx?: { headers?: Headers }
   ) => {
-    // Never log the OTP value; only record that one was generated.
     if (env.NODE_ENV === "development") {
       logger.info("2FA OTP generated", {
         email: user.email,
@@ -31,7 +30,6 @@ export function createSendTwoFactorOTP(
       : undefined;
     const userAgent = reqCtx?.headers?.get("user-agent") ?? undefined;
 
-    // Async send prevents timing attacks.
     ctx.waitUntil(
       sendEmail({
         apiKey: env.RESEND_API_KEY,

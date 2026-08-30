@@ -10,16 +10,10 @@ import type {
 export interface EvaluateInput {
   action: string;
   globalPolicies: PolicyRule[];
-  /**
-   * When true, resource conditions (requires_resource) are treated as
-   * automatically passing instead of being skipped. Used by
-   * evaluateCapabilities to report conditionally-allowed actions as true.
-   */
+
   ignoreResourceConditions?: boolean;
   principal: Principal | null | undefined;
-  // Resource parameter is typed `never` (covariant-safe trick used by
-  // AnyResourceDef) so concrete (resource: TResource) => ... signatures
-  // assign without a cast at the registry call site.
+
   resolveOrganization?: (resource: never) => string | null | undefined;
   resolveRelation?: (
     subjectType: string,
@@ -193,7 +187,6 @@ function hasResourceConditions(policy: PolicyRule): boolean {
   return policy.conditions.some((c) => c.effect === "requires_resource");
 }
 
-// Catch is narrowed to condition.evaluate; operational errors from resolveRelation/resolveOrganization propagate.
 type MatchResult = { matched: boolean; conditionError?: true };
 
 async function matchPolicy(
@@ -232,7 +225,6 @@ async function matchPolicy(
         return { matched: false };
       }
     } catch (error) {
-      // console here avoids a @repo/shared <-> @repo/authorization circular dep.
       const errInfo =
         error instanceof Error
           ? { message: error.message, name: error.name, stack: error.stack }
@@ -268,12 +260,6 @@ function checkOrgScoping(
   policy: PolicyRule,
   systemAdminRoles: readonly string[]
 ): OrgCheckResult {
-  // Bypass org scoping for system admins. The policy's role list might be
-  // ["member","admin"]; we must check if ANY of the principal's roles is a
-  // system admin, not just the first one that matches the policy. Using
-  // find() to pick a single matched role would let a genuine system admin
-  // miss the bypass when a non-admin role happens to come first in the
-  // policy's role list.
   if (
     (policy.roles === "*" ||
       policy.roles.some((r) => principal.roles.includes(r))) &&
@@ -282,17 +268,11 @@ function checkOrgScoping(
     return "pass";
   }
 
-  // Principal must have an active org
   const org = principal.organization;
   if (!org) {
     return { skip: "ORG_CONTEXT_MISSING" };
   }
 
-  // Resource must resolve to an org. resolveOrganization is typed
-  // (resource: never) => ... for covariant assignment from concrete
-  // ResourceDef signatures; the actual runtime value is the resource
-  // shape the caller defined.
-  // boundary: covariant function-pointer variance
   const resourceOrgId = (
     resolveOrganization as (r: unknown) => string | null | undefined
   )(resource);
@@ -300,7 +280,6 @@ function checkOrgScoping(
     return { skip: "ORG_RESOLUTION_FAILED" };
   }
 
-  // Org IDs must match
   if (org.id !== resourceOrgId) {
     return { skip: "TENANT_MISMATCH" };
   }

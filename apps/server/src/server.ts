@@ -28,20 +28,14 @@ app.use("*", createCorsMiddleware());
 app.use("*", analyticsMiddleware);
 app.use("*", rateLimitMiddleware);
 
-// Auth proxy - BEFORE db/auth middleware (no DB needed for auth requests)
 const authProxy = new Hono<AppEnv>();
 authProxy.all("/*", async (c) => {
-  // Forward the generated id so auth-worker logs and analytics correlate with
-  // the X-Request-Id this worker returned to the client. The Request
-  // constructor drops `cf`, so it is re-attached explicitly - the auth
-  // worker's analytics middleware reads country/colo from it.
   const request = new Request(c.req.raw, { cf: c.req.raw.cf });
   request.headers.set("X-Request-Id", c.get("requestId"));
   return c.env.AUTH.fetch(request);
 });
 app.route("/api/auth", authProxy);
 
-// Scoped middleware -- DB + auth for /api/*
 app.use("/api/*", dbMiddleware);
 app.use("/api/*", authContextMiddleware);
 app.use("/api/*", auditContextMiddleware);
@@ -53,7 +47,6 @@ app.route("/api/audit-logs", auditLogsHandler);
 app.route("/api/notifications", notificationsHandler);
 app.route("/api/authorization/capabilities", capabilitiesHandler);
 
-// OpenAPI docs + Scalar UI (non-production only)
 setupDocs(app);
 
 app.notFound((c) =>

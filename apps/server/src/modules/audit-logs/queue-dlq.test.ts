@@ -1,7 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
 
-// The workers vitest pool cannot load pg's CJS internals; queue.ts reaches it
-// via @repo/db, which the DLQ consumer never touches at runtime.
 vi.mock("pg", () => ({ Client: class {}, default: {}, Pool: class {} }));
 vi.mock("drizzle-orm/node-postgres", () => ({ drizzle: () => ({}) }));
 
@@ -28,7 +26,7 @@ describe("handleAuditLogDlq", () => {
       makeMessage("not even an object"),
     ];
     const ackAll = vi.fn();
-    // boundary: test fixture reflection - minimal MessageBatch stub.
+
     const batch = {
       ackAll,
       messages,
@@ -36,7 +34,6 @@ describe("handleAuditLogDlq", () => {
       retryAll: vi.fn(),
     } as unknown as MessageBatch;
 
-    // boundary: test fixture reflection - the DLQ consumer touches no bindings.
     await handleAuditLogDlq(
       batch,
       {} as CloudflareBindings,

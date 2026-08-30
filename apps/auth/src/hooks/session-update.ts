@@ -69,7 +69,7 @@ export function createSessionUpdateBeforeHook(db: DrizzleClient) {
                 )
               )
               .limit(1);
-            // Wrap row so caller can distinguish "tables missing" (undefined) from "no row" ({ row: undefined }).
+
             return { row };
           },
           {
@@ -95,7 +95,6 @@ export function createSessionUpdateBeforeHook(db: DrizzleClient) {
       return { data: session };
     }
 
-    // Update payload omits session id/token, so detect platform from request UA (same as create hook).
     const userAgent = context?.headers?.get("user-agent") ?? null;
     const platform = detectPlatform(userAgent);
 

@@ -39,11 +39,6 @@ if (!rootElement) {
 if (!rootElement.innerHTML) {
   const root = ReactDOM.createRoot(rootElement);
 
-  // Render immediately so the app shell paints while the protected route's
-  // beforeLoad resolves the session via ensureQueryData. The session is no
-  // longer awaited up front: the protected beforeLoad is the source of truth
-  // for the authenticated-redirect, and the router shows defaultPendingComponent
-  // while it is in flight.
   root.render(
     <QueryClientProvider client={queryClient}>
       <RouterProvider

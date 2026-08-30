@@ -12,7 +12,6 @@ function getDrizzleLogger() {
 }
 
 export class ApiEntrypoint extends WorkerEntrypoint<CloudflareBindings> {
-  /** Called by Auth Worker after a new user is created */
   async onUserCreated(user: {
     id: string;
     email: string;
@@ -24,7 +23,6 @@ export class ApiEntrypoint extends WorkerEntrypoint<CloudflareBindings> {
     return { workflowId: instance.id };
   }
 
-  /** Called by Auth Worker when sign-in from a new device is detected */
   async onNewDeviceLogin(params: {
     userId: string;
     ipAddress: string;
@@ -52,7 +50,6 @@ export class ApiEntrypoint extends WorkerEntrypoint<CloudflareBindings> {
     );
   }
 
-  /** Called by Auth Worker admin plugin when user status changes */
   async onUserStatusChange(params: {
     userId: string;
     newStatus: string;

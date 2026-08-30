@@ -3,7 +3,6 @@ import { timestamp } from "drizzle-orm/pg-core";
 export const createdAt = () =>
   timestamp("created_at", { withTimezone: true }).defaultNow().notNull();
 
-// $onUpdate stamps a fresh Date on every Drizzle-level update.
 export const updatedAt = () =>
   timestamp("updated_at", { withTimezone: true })
     .defaultNow()
@@ -27,7 +26,7 @@ export async function firstOrThrow<T>(
 ): Promise<T> {
   const rows = await query;
   const [row] = rows;
-  // Explicit null+undefined check so falsy primitive rows (0, "", false) pass.
+
   if (row === undefined || row === null) {
     throw new Error(message);
   }

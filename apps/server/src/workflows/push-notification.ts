@@ -38,7 +38,6 @@ export class PushNotificationWorkflow extends WorkflowEntrypoint<
     event: WorkflowEvent<PushNotificationParams>,
     step: WorkflowStep
   ): Promise<void> {
-    // Step 1: Load notification and push tokens
     const data = await step.do(
       "load-notification-and-tokens",
       { retries: { backoff: "exponential", delay: "2 seconds", limit: 3 } },
@@ -77,7 +76,6 @@ export class PushNotificationWorkflow extends WorkflowEntrypoint<
       return;
     }
 
-    // Step 2: Send push notifications via FCM
     const sendResults = await step.do(
       "send-push",
       { retries: { backoff: "exponential", delay: "5 seconds", limit: 3 } },
@@ -115,7 +113,6 @@ export class PushNotificationWorkflow extends WorkflowEntrypoint<
       }
     );
 
-    // Step 3: Update notification status and clean up invalid tokens
     await step.do(
       "update-status",
       { retries: { backoff: "exponential", delay: "2 seconds", limit: 3 } },
@@ -134,7 +131,6 @@ export class PushNotificationWorkflow extends WorkflowEntrypoint<
               })
               .where(eq(schema.notifications.id, event.payload.notificationId));
 
-            // Remove invalid tokens so future sends skip them
             const invalidTokens = sendResults
               .filter((r) => r.invalidToken)
               .map((r) => r.token);

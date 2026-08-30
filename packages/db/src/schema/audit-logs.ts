@@ -25,7 +25,6 @@ export const auditLogs = pgTable(
     }),
     actorType: text("actor_type").$type<ActorType>().default("user").notNull(),
 
-    // Audit log rows are immutable once written: no `updatedAt` by design.
     createdAt: createdAt(),
 
     event: text("event").$type<AuditEventKey>().notNull(),

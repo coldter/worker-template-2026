@@ -47,7 +47,6 @@ const eventDisplayNames: Record<string, string> = {
   "user.viewed": "User Viewed",
 };
 
-// Badge styles keyed by event name for fine-grained control
 const eventBadgeStyles: Record<string, BadgeStyle> = {
   "auth.login.failed": {
     className:
@@ -161,8 +160,6 @@ const eventBadgeDotClassNames = [
   ["slate", "bg-slate-500"],
 ] as const;
 
-// Lucide icon name strings -- we dynamically import in the component,
-// but keep a string map here so the util stays pure (no React deps).
 const eventIconNames: Record<string, string> = {
   "auth.login.failed": "ShieldX",
   "auth.login.success": "LogIn",
@@ -317,12 +314,6 @@ export function getEventDescription(
   }
 }
 
-/**
- * All unique event types for filter options.
- */
 export const ALL_EVENT_TYPES = Object.keys(eventDisplayNames);
 
-/**
- * All unique target types for filter options.
- */
 export const ALL_TARGET_TYPES = ["user", "role", "session"] as const;

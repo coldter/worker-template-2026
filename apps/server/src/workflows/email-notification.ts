@@ -38,7 +38,6 @@ export class EmailNotificationWorkflow extends WorkflowEntrypoint<
     event: WorkflowEvent<EmailNotificationParams>,
     step: WorkflowStep
   ): Promise<void> {
-    // Step 1: Load notification and resolve email
     const notificationData = await step.do(
       "load-notification",
       { retries: { backoff: "exponential", delay: "2 seconds", limit: 3 } },
@@ -81,14 +80,12 @@ export class EmailNotificationWorkflow extends WorkflowEntrypoint<
 
     const recipientEmail = notificationData.email;
 
-    // Step 2: Send email via Resend
     await step.do(
       "send-email",
       { retries: { backoff: "exponential", delay: "5 seconds", limit: 3 } },
       async () => {
         const { sendEmail, NotificationEmail } = await import("@repo/email");
-        // boundary: workerd env bindings are typed via wrangler codegen; cast
-        // to a plain record for the brand helper.
+
         const brand = getBrandConfig(
           this.env as unknown as Record<string, string | undefined>
         );
@@ -106,7 +103,6 @@ export class EmailNotificationWorkflow extends WorkflowEntrypoint<
       }
     );
 
-    // Step 3: Update notification status
     await step.do(
       "update-status",
       { retries: { backoff: "exponential", delay: "2 seconds", limit: 3 } },

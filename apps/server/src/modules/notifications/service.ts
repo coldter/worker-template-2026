@@ -42,7 +42,6 @@ export const notificationService = {
     return result.length > 0;
   },
 
-  // remove tokens that FCM reports as invalid
   async deletePushTokenByToken(
     db: DrizzleClient,
     token: string
@@ -138,7 +137,6 @@ export const notificationService = {
     }
 
     if (query.status) {
-      // explicit status filter takes precedence over unreadOnly
       conditions.push(eq(notifications.status, query.status));
     } else if (query.unreadOnly) {
       conditions.push(eq(notifications.channel, "push"));
@@ -235,8 +233,6 @@ export const notificationService = {
       .where(eq(pushTokens.token, input.token))
       .limit(1);
 
-    // The token column is unique, so updating here would silently rebind
-    // another user's push token to the caller (cross-user take-over).
     if (existing && existing.userId !== userId) {
       throw new HTTPException(409, {
         message: "Token already registered to a different user",
@@ -340,7 +336,6 @@ export const notificationService = {
         );
       }
 
-      // Read back inside the tx so callers see the post-upsert state atomically.
       return tx
         .select()
         .from(notificationPreferences)

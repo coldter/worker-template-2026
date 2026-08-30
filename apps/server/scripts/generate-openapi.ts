@@ -2,7 +2,6 @@ import { writeFileSync } from "node:fs";
 import { register } from "node:module";
 import { resolve } from "node:path";
 
-// Stub cloudflare:* imports so the server module can be loaded under Node/tsx
 register("./cloudflare-stub-hooks.mjs", import.meta.url);
 
 process.env.SKIP_DB = "true";

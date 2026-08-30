@@ -29,7 +29,6 @@ const FCM_SCOPE = "https://www.googleapis.com/auth/firebase.messaging";
 const TOKEN_URL = "https://oauth2.googleapis.com/token";
 const TOKEN_REFRESH_MARGIN_MS = 5 * 60 * 1000;
 
-// Module-scope caches (persist across requests in the same isolate)
 let cachedToken: CachedToken | null = null;
 let cachedCryptoKey: CryptoKey | null = null;
 let cachedServiceAccount: ServiceAccount | null = null;
@@ -63,7 +62,7 @@ export function parseServiceAccount(): ServiceAccount {
   }
 
   const json = atob(keyBase64);
-  // boundary: service-account JSON external input validated by serviceAccountSchema below
+
   const raw: unknown = JSON.parse(json);
   const result = serviceAccountSchema.safeParse(raw);
 
@@ -154,7 +153,6 @@ async function fetchAccessToken(
     );
   }
 
-  // boundary: external OAuth2 token response validated by oauthTokenResponseSchema
   const rawData: unknown = await response.json();
   const parsedData = oauthTokenResponseSchema.safeParse(rawData);
   if (!parsedData.success) {
@@ -170,7 +168,6 @@ async function fetchAccessToken(
 export async function getAccessToken(
   serviceAccount: ServiceAccount
 ): Promise<string> {
-  // Tier 1: module-scope in-memory cache
   if (
     cachedToken &&
     Date.now() < cachedToken.expiresAt - TOKEN_REFRESH_MARGIN_MS
@@ -178,7 +175,6 @@ export async function getAccessToken(
     return cachedToken.accessToken;
   }
 
-  // Tier 2: KV cache
   try {
     const stored = (await env.CACHE.get(
       "fcm:access_token",
@@ -192,11 +188,9 @@ export async function getAccessToken(
     // KV unavailable - proceed to generate
   }
 
-  // Tier 3: generate new token
   const token = await fetchAccessToken(serviceAccount);
   cachedToken = token;
 
-  // Persist to KV (best-effort)
   try {
     await env.CACHE.put("fcm:access_token", JSON.stringify(token), {
       expirationTtl: 3300,

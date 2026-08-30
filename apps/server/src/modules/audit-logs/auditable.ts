@@ -23,14 +23,6 @@ export type AuditBuffer = {
   record: (entry: AuditLogEntry) => void;
 };
 
-/**
- * Run a callback inside a database transaction and automatically flush any
- * recorded audit entries to {@link auditLogService.create} before commit.
- *
- * This concentrates the cross-cutting concern of "critical events must be
- * logged in the same transaction as the action they describe" in one place.
- * Callers use `audit.record(...)` instead of manually calling the service.
- */
 export async function auditTransaction<T>(
   db: DrizzleClient,
   auditContext: AuditContext,

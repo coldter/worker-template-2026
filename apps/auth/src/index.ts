@@ -16,9 +16,6 @@ export class AuthEntrypoint extends WorkerEntrypoint<CloudflareBindings> {
     return app.fetch(request, this.env, this.ctx);
   }
 
-  // getSession runs once per authenticated API request over the service
-  // binding, bypassing both workers' HTTP middleware - this wrapper is the
-  // only place its latency and failure rate can be recorded.
   private async recordRpc<T>(
     method: string,
     run: () => Promise<T>
@@ -60,7 +57,6 @@ export class AuthEntrypoint extends WorkerEntrypoint<CloudflareBindings> {
       withDrizzleClient(
         this.env.HYPERDRIVE.connectionString,
         async (db) => {
-          // boundary: workerd codegen -- AuthBindings narrows env.API to ApiBindingRpc; runtime object is identical.
           const auth = createAuth(db, this.env as AuthBindings, this.ctx);
           return await auth.api.getSession({ headers });
         },

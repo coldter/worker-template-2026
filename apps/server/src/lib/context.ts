@@ -15,13 +15,11 @@ export type AppEnv = {
     session: AuthSession | null;
     auditContext: AuditContext;
     authorizedResource: unknown;
-    // Memoized per request so repeated authorize() guards and the capabilities
-    // route reuse one built Principal instead of rebuilding it each call.
+
     principal?: Principal | null;
   };
 };
 
-// Re-export for backward compat with files that import `Env`
 export type Env = AppEnv;
 
 export type AuthUser = AuthorizationUserInput;

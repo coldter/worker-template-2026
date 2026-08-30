@@ -25,7 +25,7 @@ export const users = pgTable(
     name: text("name").notNull(),
     ...timestamps(),
     deactivatedAt: timestamp("deactivated_at", { withTimezone: true }),
-    // AnyPgColumn cast breaks the circular self-FK type inference.
+
     deactivatedBy: varchar("deactivated_by", { length: 255 }).references(
       (): AnyPgColumn => users.id,
       { onDelete: "set null" }
@@ -123,7 +123,6 @@ export const verifications = pgTable(
 );
 
 export const jwkss = pgTable("jwks", {
-  // Intentionally immutable, no updatedAt: rotation inserts new rows.
   createdAt: createdAt(),
   expiresAt: timestamp("expires_at", { withTimezone: true }),
   id: varchar("id", { length: 255 })
@@ -140,7 +139,7 @@ export const twoFactors = pgTable(
     id: varchar("id", { length: 255 })
       .primaryKey()
       .$defaultFn(() => generatePrefixedCuid("2fa")),
-    // Required by better-auth twoFactor plugin schema; unused in our email-OTP-only flow.
+
     secret: text("secret"),
     userId: varchar("user_id", { length: 255 })
       .notNull()

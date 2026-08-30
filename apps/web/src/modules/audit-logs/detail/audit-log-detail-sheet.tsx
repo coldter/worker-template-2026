@@ -109,7 +109,6 @@ function MetadataValue({ data }: { data: unknown }) {
     );
   }
 
-  // Handle "changes" format: { field: { from, to } }
   if (typeof data === "object") {
     const obj = data as Record<string, unknown>;
 
@@ -139,7 +138,6 @@ function MetadataValue({ data }: { data: unknown }) {
 function MetadataSection({ metadata }: { metadata: Record<string, unknown> }) {
   const entries = Object.entries(metadata);
 
-  // Separate "changes" and "changedFields" from other top-level keys
   const changes = metadata.changes as Record<string, unknown> | undefined;
   const changedFields = metadata.changedFields as string[] | undefined;
   const otherEntries = entries.filter(
@@ -149,7 +147,6 @@ function MetadataSection({ metadata }: { metadata: Record<string, unknown> }) {
   return (
     <div className="space-y-3">
       {otherEntries.map(([key, value]) => {
-        // Skip complex nested objects not in "changes" pattern
         if (
           typeof value === "object" &&
           value !== null &&
@@ -204,7 +201,6 @@ function parseUserAgent(ua: string): { browser: string; os: string } {
   let browser = "Unknown";
   let os = "Unknown";
 
-  // OS detection
   if (ua.includes("Windows")) {
     os = "Windows";
   } else if (ua.includes("Mac OS X") || ua.includes("Macintosh")) {
@@ -217,7 +213,6 @@ function parseUserAgent(ua: string): { browser: string; os: string } {
     os = "iOS";
   }
 
-  // Browser detection
   if (ua.includes("FakerBot")) {
     browser = "FakerBot";
   } else if (ua.includes("Googlebot")) {

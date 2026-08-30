@@ -1,7 +1,3 @@
-/**
- * Static test fixtures - constants and default values used across tests.
- */
-
 export const defaultHeaders = {
   "Content-Type": "application/json",
   "x-forwarded-for": "127.0.0.1",

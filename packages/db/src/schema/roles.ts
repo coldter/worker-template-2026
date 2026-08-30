@@ -9,7 +9,6 @@ import {
 } from "drizzle-orm/pg-core";
 import { generatePrefixedCuid, ID_PREFIXES } from "../ids";
 
-// Separate from the better-auth generated schema.
 export const roles = pgTable(
   "roles",
   {

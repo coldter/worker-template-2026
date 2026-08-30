@@ -1,10 +1,5 @@
 import { logger } from "@repo/shared/logger";
 
-// Workflows run outside the HTTP middleware chain, so their completion rate
-// and duration get their own unsampled data points, like requests and queue
-// batches. The engine replays run() with cached step results after retries or
-// hibernation, so a duration sample covers one engine invocation, not
-// necessarily the end-to-end wall time of the instance.
 export async function runWithWorkflowMetrics<T>(
   env: CloudflareBindings,
   workflow: string,

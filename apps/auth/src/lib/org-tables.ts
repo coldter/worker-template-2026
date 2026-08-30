@@ -1,13 +1,12 @@
 import { logger } from "@repo/shared/logger";
 
-// PG SQLSTATE 42P01 = undefined_table.
 const PG_UNDEFINED_TABLE = "42P01";
 
 export function isUndefinedTableError(err: unknown): boolean {
   if (!(err instanceof Error)) {
     return false;
   }
-  // boundary: pg DatabaseError exposes `code` at runtime but not on the Error type.
+
   const { code } = err as Error & { code?: unknown };
   return typeof code === "string" && code === PG_UNDEFINED_TABLE;
 }

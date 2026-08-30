@@ -44,11 +44,6 @@ export const auditLogService = {
     return log;
   },
 
-  /**
-   * Insert multiple critical audit entries in a single statement. Used to flush
-   * all entries recorded during a transaction at once instead of issuing one
-   * round-trip per entry.
-   */
   async createMany(inputs: CriticalAuditLogInput[], executor: Executor) {
     if (inputs.length === 0) {
       return;
@@ -56,12 +51,6 @@ export const auditLogService = {
     await executor.insert(auditLogs).values(inputs.map(toInsertValues));
   },
 
-  /**
-   * Send bufferable (non-mutating) audit events to the queue for batched,
-   * off-the-hot-path persistence. Critical events must use {@link create}
-   * inside the originating transaction instead. Sends are chunked to stay under
-   * Cloudflare's per-call sendBatch limit so a future bulk caller is safe.
-   */
   async enqueue(queue: Queue, messages: AuditLogQueueMessage[]) {
     const MAX_MESSAGES_PER_BATCH = 100;
     const chunks: AuditLogQueueMessage[][] = [];

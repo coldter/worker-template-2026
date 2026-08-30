@@ -21,7 +21,6 @@ export const notificationPreferences = pgTable(
     pushEnabled: boolean("push_enabled").notNull().default(true),
     smsEnabled: boolean("sms_enabled").notNull().default(false),
 
-    // Preference type pattern (e.g., "security.*", "user.*", or "*" for global)
     typePattern: varchar("type_pattern", { length: 100 }).notNull(),
     updatedAt: updatedAt(),
 
