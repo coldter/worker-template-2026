@@ -19,7 +19,7 @@ export class ApiEntrypoint extends WorkerEntrypoint<CloudflareBindings> {
     name: string;
   }): Promise<{ workflowId: string }> {
     const instance = await this.env.ONBOARDING_WF.create({
-      params: { userId: user.id, email: user.email, name: user.name },
+      params: { email: user.email, name: user.name, userId: user.id },
     });
     return { workflowId: instance.id };
   }
@@ -37,15 +37,15 @@ export class ApiEntrypoint extends WorkerEntrypoint<CloudflareBindings> {
         const deviceDesc =
           params.platform === "mobile" ? "a mobile device" : "a web browser";
         await notificationDispatch.send(db, {
-          userId: params.userId,
-          type: NOTIFICATION_TYPES.SECURITY_LOGIN_NEW_DEVICE,
-          subject: "New device sign-in",
           body: `A new sign-in was detected from ${deviceDesc}.`,
           props: {
             ipAddress: params.ipAddress,
-            userAgent: params.userAgent,
             platform: params.platform,
+            userAgent: params.userAgent,
           },
+          subject: "New device sign-in",
+          type: NOTIFICATION_TYPES.SECURITY_LOGIN_NEW_DEVICE,
+          userId: params.userId,
         });
       },
       { logger: getDrizzleLogger(), waitUntil: (p) => this.ctx.waitUntil(p) }

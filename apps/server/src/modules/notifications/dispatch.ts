@@ -28,7 +28,7 @@ async function markNotificationFailed(
   try {
     await db
       .update(notifications)
-      .set({ status: "failed", errorMessage })
+      .set({ errorMessage, status: "failed" })
       .where(eq(notifications.id, notificationId));
   } catch (updateError) {
     logger.error("Failed to mark notification as failed", {
@@ -48,13 +48,13 @@ function buildWorkflowEvent(
 ) {
   if (channel === "email") {
     return {
-      type: "notification.email" as const,
       payload: { notificationId },
+      type: "notification.email" as const,
     };
   }
   return {
-    type: "notification.push" as const,
     payload: { notificationId },
+    type: "notification.push" as const,
   };
 }
 
@@ -81,10 +81,10 @@ export const notificationDispatch = {
 
     if (channels.length === 0) {
       return {
-        notificationIds: [],
         channels: requestedChannels,
-        sentChannels: [],
         failedChannels: [],
+        notificationIds: [],
+        sentChannels: [],
       };
     }
 
@@ -93,60 +93,71 @@ export const notificationDispatch = {
     const notificationIds: string[] = [];
     const { waitUntil } = options;
 
-    for (const channel of channels) {
-      let notificationId: string | undefined;
-      try {
-        const notification = await firstOrThrow(
-          db
-            .insert(notifications)
-            .values({
-              userId: input.userId,
-              type: input.type,
-              channel,
-              status: "pending",
-              priority,
-              subject: input.subject,
-              body: input.body,
-              props: input.props ?? null,
-            })
-            .returning(),
-          "Failed to create notification record"
-        );
-        notificationId = notification.id;
-        notificationIds.push(notification.id);
-
-        const event = buildWorkflowEvent(channel, notification.id);
-
-        if (waitUntil) {
-          const deferredId = notification.id;
-          dispatchEvent(
-            event,
-            { waitUntil },
-            {
-              onFailure: (error) =>
-                markNotificationFailed(db, deferredId, error),
-            }
+    const results = await Promise.all(
+      channels.map(async (channel) => {
+        let notificationId: string | undefined;
+        try {
+          const notification = await firstOrThrow(
+            db
+              .insert(notifications)
+              .values({
+                body: input.body,
+                channel,
+                priority,
+                props: input.props ?? null,
+                status: "pending",
+                subject: input.subject,
+                type: input.type,
+                userId: input.userId,
+              })
+              .returning(),
+            "Failed to create notification record"
           );
-          sentChannels.push(channel);
-        } else {
+          notificationId = notification.id;
+
+          const event = buildWorkflowEvent(channel, notification.id);
+
+          if (waitUntil) {
+            const deferredId = notification.id;
+            dispatchEvent(
+              event,
+              { waitUntil },
+              {
+                onFailure: (error) =>
+                  markNotificationFailed(db, deferredId, error),
+              }
+            );
+            return { channel, notificationId, sent: true as const };
+          }
           await triggerWorkflow(event);
-          sentChannels.push(channel);
+          return { channel, notificationId, sent: true as const };
+        } catch (error) {
+          const errorMessage =
+            error instanceof Error ? error.message : "Unknown error";
+          if (notificationId) {
+            await markNotificationFailed(db, notificationId, error);
+          }
+          return { channel, error: errorMessage, sent: false as const };
         }
-      } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : "Unknown error";
-        failedChannels.push({ channel, error: errorMessage });
-        if (notificationId) {
-          await markNotificationFailed(db, notificationId, error);
+      })
+    );
+
+    for (const result of results) {
+      if (result.sent) {
+        sentChannels.push(result.channel);
+        if (result.notificationId) {
+          notificationIds.push(result.notificationId);
         }
+      } else {
+        failedChannels.push({ channel: result.channel, error: result.error });
       }
     }
 
     return {
-      notificationIds,
       channels: requestedChannels,
-      sentChannels,
       failedChannels,
+      notificationIds,
+      sentChannels,
     };
   },
 };

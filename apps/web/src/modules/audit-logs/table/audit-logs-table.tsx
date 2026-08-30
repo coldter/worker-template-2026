@@ -33,19 +33,19 @@ export function AuditLogsTable() {
 
   const { table, navigate, search, rows, isLoading, isError, total } =
     useServerTable<AuditLog, AuditLogsSearch, AuditLogsQueryParams>({
-      route: Route,
-      columns: auditLogsColumns,
-      useData: useAuditLogsQuery,
-      defaultSort: "createdAt",
       buildQueryParams: ({ page, perPage, sort, search: s }) => ({
+        actorId: s.actorId,
+        event: s.event,
+        order: sort.desc ? "desc" : "asc",
         page,
         perPage,
         sort: sort.id,
-        order: sort.desc ? "desc" : "asc",
-        event: s.event,
-        actorId: s.actorId,
         targetType: s.targetType,
       }),
+      columns: auditLogsColumns,
+      defaultSort: "createdAt",
+      route: Route,
+      useData: useAuditLogsQuery,
     });
 
   const selectedLog = useMemo(() => {

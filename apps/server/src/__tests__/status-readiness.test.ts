@@ -17,7 +17,7 @@ describe("readiness checks", () => {
       fakeDb(() => Promise.resolve([])),
       healthyCache
     );
-    expect(checks).toEqual({ database: true, cache: true });
+    expect(checks).toEqual({ cache: true, database: true });
   });
 
   it("reports database unavailable when the probe rejects", async () => {
@@ -25,7 +25,7 @@ describe("readiness checks", () => {
       fakeDb(() => Promise.reject(new Error("connection refused"))),
       healthyCache
     );
-    expect(checks).toEqual({ database: false, cache: true });
+    expect(checks).toEqual({ cache: true, database: false });
   });
 
   it("reports database unavailable when the probe hangs past the timeout", async () => {
@@ -34,7 +34,7 @@ describe("readiness checks", () => {
       healthyCache,
       20
     );
-    expect(checks).toEqual({ database: false, cache: true });
+    expect(checks).toEqual({ cache: true, database: false });
   });
 
   it("reports cache unavailable when the KV probe rejects", async () => {
@@ -44,6 +44,6 @@ describe("readiness checks", () => {
         get: () => Promise.reject(new Error("kv unavailable")),
       }
     );
-    expect(checks).toEqual({ database: true, cache: false });
+    expect(checks).toEqual({ cache: false, database: true });
   });
 });

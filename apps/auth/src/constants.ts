@@ -5,8 +5,8 @@
  * Lockout lasts for lockoutDurationMinutes.
  */
 export const LOCKOUT_CONFIG = {
-  maxFailedAttempts: 3,
   lockoutDurationMinutes: 15,
+  maxFailedAttempts: 3,
 } as const;
 
 /**
@@ -16,16 +16,16 @@ export const LOCKOUT_CONFIG = {
  * Better-auth rate limit: 10/min for sign-in > our 3 attempt lockout
  */
 export const RATE_LIMIT_CONFIG = {
-  signIn: {
+  global: {
+    max: 1000,
     /** Time window in seconds */
     window: 60,
+  },
+  signIn: {
     /** Higher than lockout maxFailedAttempts so custom lockout triggers first */
     max: 100,
-  },
-  global: {
     /** Time window in seconds */
     window: 60,
-    max: 1000,
   },
 } as const;
 
@@ -48,8 +48,8 @@ export function isLockoutExpired(lockedUntil: Date | null): boolean {
  * Email OTP is mandatory for all users. TOTP is not supported.
  */
 export const TWO_FACTOR_CONFIG = {
-  otpLength: 6,
   /** Email OTP expiry time in seconds (5 minutes) */
   emailOtpExpiresIn: 300,
+  otpLength: 6,
   twoFactorOtpPeriodMinutes: 3,
 } as const;

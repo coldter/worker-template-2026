@@ -41,8 +41,8 @@ export function createSessionCreateBeforeHook(
         return row;
       },
       {
-        reason: "Skipping org context on session create: org tables missing",
         meta: { userId: session.userId },
+        reason: "Skipping org context on session create: org tables missing",
       }
     );
 
@@ -54,9 +54,9 @@ export function createSessionCreateBeforeHook(
       .delete(schema.sessions)
       .where(eq(schema.sessions.userId, session.userId))
       .returning({
-        userAgent: schema.sessions.userAgent,
-        ipAddress: schema.sessions.ipAddress,
         createdAt: schema.sessions.createdAt,
+        ipAddress: schema.sessions.ipAddress,
+        userAgent: schema.sessions.userAgent,
       });
 
     const [previousSession] = revokedSessions.sort(
@@ -71,10 +71,10 @@ export function createSessionCreateBeforeHook(
       if (isNewDevice) {
         ctx.waitUntil(
           env.API.onNewDeviceLogin({
-            userId: session.userId,
             ipAddress: ipAddress ?? "",
-            userAgent: userAgent ?? "",
             platform,
+            userAgent: userAgent ?? "",
+            userId: session.userId,
           }).catch((err: unknown) => {
             console.error("Failed to trigger new device notification:", err);
           })
@@ -96,8 +96,8 @@ export function createSessionCreateBeforeHook(
     return {
       data: {
         ...session,
-        platform,
         expiresAt,
+        platform,
         ...(orgContext ?? {}),
       },
     };

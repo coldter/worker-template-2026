@@ -10,11 +10,11 @@ const NOT_IN_ALLOWED_BYPASS = /not in allowedBypassLabels/;
 
 // Set up a test schema and registry
 const auth = createAuthSchema({
+  globalPolicies: (p) => [p.deny("*").to("*").where(principalNotActive())],
+  principal: { status: principalAttribute<string>() },
+  relations: [],
   roles: ["admin", "user"],
   systemAdminRoles: ["admin"],
-  relations: [],
-  principal: { status: principalAttribute<string>() },
-  globalPolicies: (p) => [p.deny("*").to("*").where(principalNotActive())],
 });
 
 interface TestResource {
@@ -36,19 +36,20 @@ const registry = auth.buildRegistry({ test: testResource });
 
 // Helpers for test principals
 const adminPrincipal: Principal = {
+  attributes: { status: "active" },
   id: "usr_admin",
   roles: ["admin"],
-  attributes: { status: "active" },
 };
 const userPrincipal: Principal = {
+  attributes: { status: "active" },
   id: "usr_1",
   roles: ["user"],
-  attributes: { status: "active" },
 };
 
 describe("createAuthorize", () => {
   // resolvePrincipal reads from a custom header for testing
   const authorize = createAuthorize(registry, {
+    allowedBypassLabels: ["health-check"],
     resolvePrincipal: (c) => {
       const principalHeader = c.req.header("x-test-principal");
       if (!principalHeader) {
@@ -56,7 +57,6 @@ describe("createAuthorize", () => {
       }
       return JSON.parse(principalHeader) as Principal;
     },
-    allowedBypassLabels: ["health-check"],
   });
 
   it("authorize(resource, action) allows admin", async () => {
@@ -95,7 +95,7 @@ describe("createAuthorize", () => {
     app.use(
       "/test/:id",
       authorize("test", "view", {
-        loadResource: async () => ({ id: "res_1", createdBy: "usr_1" }),
+        loadResource: async () => ({ createdBy: "usr_1", id: "res_1" }),
       })
     );
     app.get("/test/:id", (c) => {
@@ -138,7 +138,7 @@ describe("createAuthorize", () => {
     app.use(
       "/test/:id",
       authorize("test", "view", {
-        loadResource: async () => ({ id: "res_1", createdBy: "usr_other" }),
+        loadResource: async () => ({ createdBy: "usr_other", id: "res_1" }),
       })
     );
     app.get("/test/:id", (c) => c.json({ ok: true }));

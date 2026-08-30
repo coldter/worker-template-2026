@@ -96,7 +96,6 @@ function validateAppName(value: string): string | undefined {
   if (!APP_NAME_PATTERN.test(value)) {
     return "App name must be lowercase letters, numbers, and dashes only.";
   }
-  return;
 }
 
 function validatePackageScope(value: string): string | undefined {
@@ -106,7 +105,6 @@ function validatePackageScope(value: string): string | undefined {
   if (!PACKAGE_SCOPE_PATTERN.test(value)) {
     return "Package scope must start with '@' followed by lowercase letters, numbers, and dashes.";
   }
-  return;
 }
 
 function validateEmail(value: string): string | undefined {
@@ -116,7 +114,6 @@ function validateEmail(value: string): string | undefined {
   if (!EMAIL_PATTERN.test(value)) {
     return "Invalid email address.";
   }
-  return;
 }
 
 function gatherAnswers(): Answers {
@@ -138,43 +135,55 @@ function gatherAnswers(): Answers {
     `Prefix Cloudflare Worker names with "${appName}-" in each wrangler.jsonc? (deployed worker names will be "${appName}-server", "${appName}-auth", "${appName}-web")`,
     true
   );
-  return { appName, packageScope, companyName, supportEmail, renameWorkers };
+  return { appName, companyName, packageScope, renameWorkers, supportEmail };
 }
 
-async function* walk(dir: string): AsyncGenerator<string> {
+async function walk(dir: string): Promise<string[]> {
   const entries = await readdir(dir, { withFileTypes: true });
-  for (const entry of entries) {
-    const full = join(dir, entry.name);
-    if (entry.isDirectory()) {
-      if (SKIP_DIRS.has(entry.name)) {
-        continue;
+  const files = await Promise.all(
+    entries.map(async (entry) => {
+      const full = join(dir, entry.name);
+      if (entry.isDirectory()) {
+        if (SKIP_DIRS.has(entry.name)) {
+          return [];
+        }
+        return walk(full);
       }
-      yield* walk(full);
-    } else if (entry.isFile()) {
-      yield full;
-    }
-  }
+      if (entry.isFile()) {
+        return [full];
+      }
+      return [];
+    })
+  );
+  return files.flat();
+}
+
+function walkWithExtensions(dir: string): Promise<string[]> {
+  return walk(dir).then((files) =>
+    files.filter((file) =>
+      FILE_EXTENSIONS.has(file.slice(file.lastIndexOf(".")))
+    )
+  );
 }
 
 async function collectTargetFiles(): Promise<string[]> {
-  const files: string[] = [];
-  for (const dir of SCAN_DIRS) {
-    const abs = join(ROOT, dir);
-    try {
-      await stat(abs);
-    } catch {
-      continue;
-    }
-    for await (const file of walk(abs)) {
-      const ext = file.slice(file.lastIndexOf("."));
-      if (FILE_EXTENSIONS.has(ext)) {
-        files.push(file);
-      }
-    }
-  }
+  const existingDirs = (
+    await Promise.all(
+      SCAN_DIRS.map(async (dir) => {
+        const abs = join(ROOT, dir);
+        try {
+          await stat(abs);
+          return abs;
+        } catch {
+          return null;
+        }
+      })
+    )
+  ).filter((dir): dir is string => dir !== null);
+  const nestedFiles = await Promise.all(existingDirs.map(walkWithExtensions));
+
   // Always include root package.json.
-  files.push(join(ROOT, "package.json"));
-  return files;
+  return [nestedFiles.flat(), join(ROOT, "package.json")].flat();
 }
 
 async function rewriteFile(
@@ -229,17 +238,19 @@ async function renameWorkerNames(answers: Answers): Promise<void> {
     );
     return;
   }
-  for (const worker of WORKER_APPS) {
-    const path = join(ROOT, "apps", worker, "wrangler.jsonc");
-    try {
-      await stat(path);
-    } catch {
-      continue;
-    }
-    await rewriteFile(path, (content) =>
-      renameWorkerInWranglerConfig(content, answers.appName)
-    );
-  }
+  await Promise.all(
+    WORKER_APPS.map(async (worker) => {
+      const path = join(ROOT, "apps", worker, "wrangler.jsonc");
+      try {
+        await stat(path);
+      } catch {
+        return;
+      }
+      await rewriteFile(path, (content) =>
+        renameWorkerInWranglerConfig(content, answers.appName)
+      );
+    })
+  );
 }
 
 async function updateEnvExample(path: string, answers: Answers): Promise<void> {
@@ -318,15 +329,10 @@ async function main(): Promise<void> {
 
   const files = await collectTargetFiles();
   const replace = makeReplacer(answers);
-  let touched = 0;
-  for (const file of files) {
-    const changed = await rewriteFile(file, (content) =>
-      replace(content, file)
-    );
-    if (changed) {
-      touched += 1;
-    }
-  }
+  const results = await Promise.all(
+    files.map((file) => rewriteFile(file, (content) => replace(content, file)))
+  );
+  const touched = results.filter(Boolean).length;
   console.info(`Rewrote scope/name in ${touched} files.`);
 
   console.info("Updating wrangler.jsonc worker names...");

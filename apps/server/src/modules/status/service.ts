@@ -77,5 +77,5 @@ export async function checkReadiness(
     probeDatabase(db, timeoutMs),
     probeCache(cache, timeoutMs),
   ]);
-  return { database, cache: cacheOk };
+  return { cache: cacheOk, database };
 }

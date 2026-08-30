@@ -2,19 +2,19 @@ import { describe, expect, it, vi } from "vitest";
 
 // The workers vitest pool cannot load pg's CJS internals; queue.ts reaches it
 // via @repo/db, which the DLQ consumer never touches at runtime.
-vi.mock("pg", () => ({ default: {}, Client: class {}, Pool: class {} }));
+vi.mock("pg", () => ({ Client: class {}, default: {}, Pool: class {} }));
 vi.mock("drizzle-orm/node-postgres", () => ({ drizzle: () => ({}) }));
 
 import { handleAuditLogDlq } from "@/modules/audit-logs/queue";
 
 function makeMessage(body: unknown) {
   return {
-    id: "msg_1",
-    attempts: 4,
-    timestamp: new Date("2026-06-11T00:00:00.000Z"),
-    body,
     ack: vi.fn(),
+    attempts: 4,
+    body,
+    id: "msg_1",
     retry: vi.fn(),
+    timestamp: new Date("2026-06-11T00:00:00.000Z"),
   };
 }
 
@@ -30,9 +30,9 @@ describe("handleAuditLogDlq", () => {
     const ackAll = vi.fn();
     // boundary: test fixture reflection - minimal MessageBatch stub.
     const batch = {
-      queue: "audit-log-dlq",
-      messages,
       ackAll,
+      messages,
+      queue: "audit-log-dlq",
       retryAll: vi.fn(),
     } as unknown as MessageBatch;
 

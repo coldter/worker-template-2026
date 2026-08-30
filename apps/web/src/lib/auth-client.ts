@@ -8,28 +8,28 @@ import { createAuthClient } from "better-auth/react";
 const parsedUrl = new URL(
   import.meta.env.VITE_SERVER_URL || "http://localhost:8787"
 );
-const pathname = parsedUrl.pathname;
+const { pathname } = parsedUrl;
 
 export const authClient = createAuthClient({
-  baseURL: parsedUrl.origin,
   basePath: pathname === "/" ? "/api/auth" : `${pathname}/api/auth`,
+  baseURL: parsedUrl.origin,
   plugins: [
     organizationClient(),
     twoFactorClient(),
     inferAdditionalFields({
+      session: {
+        activeOrgRole: { type: "string" },
+        platform: { type: "string" },
+      },
       user: {
-        status: { type: "string" },
         deactivatedAt: { type: "date" },
         deactivatedBy: { type: "string" },
         deactivatedReason: { type: "string" },
         failedLoginAttempts: { type: "number" },
         lockedUntil: { type: "date" },
         roleSlugs: { type: "string[]" },
+        status: { type: "string" },
         twoFactorEnabled: { type: "boolean" },
-      },
-      session: {
-        platform: { type: "string" },
-        activeOrgRole: { type: "string" },
       },
     }),
   ],

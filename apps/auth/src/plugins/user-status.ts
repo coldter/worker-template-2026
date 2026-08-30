@@ -3,9 +3,9 @@ import { z } from "zod";
 
 export const USER_STATUS = {
   ACTIVE: "active",
+  DELETED: "deleted",
   INACTIVE: "inactive",
   LOCKED: "locked",
-  DELETED: "deleted",
 } as const;
 
 export const USER_STATUS_VALUES = Object.values(USER_STATUS) as [
@@ -44,64 +44,64 @@ export const enhancedUserPlugin = () => {
     schema: {
       user: {
         fields: {
-          status: {
-            type: "string",
-            fieldName: "status",
-            required: true,
-            defaultValue: "active",
-            input: false,
-          },
           deactivatedAt: {
-            type: "date",
             fieldName: "deactivatedAt",
-            required: false,
             input: false,
+            required: false,
+            type: "date",
           },
           deactivatedBy: {
-            type: "string",
             fieldName: "deactivatedBy",
-            required: false,
             input: false,
+            required: false,
+            type: "string",
           },
           deactivatedReason: {
-            type: "string",
             fieldName: "deactivatedReason",
-            required: false,
             input: false,
+            required: false,
+            type: "string",
           },
           failedLoginAttempts: {
-            type: "number",
-            fieldName: "failedLoginAttempts",
-            required: true,
             defaultValue: 0,
+            fieldName: "failedLoginAttempts",
             input: false,
+            required: true,
+            type: "number",
           },
           lockedUntil: {
-            type: "date",
             fieldName: "lockedUntil",
+            input: false,
             required: false,
-            input: false,
-          },
-          roleSlugs: {
-            type: "string[]",
-            fieldName: "roleSlugs",
-            required: true,
-            defaultValue: [],
-            input: false,
+            type: "date",
           },
           onboardingCompletedAt: {
-            type: "date",
             fieldName: "onboardingCompletedAt",
-            required: false,
             input: false,
+            required: false,
+            type: "date",
+          },
+          roleSlugs: {
+            defaultValue: [],
+            fieldName: "roleSlugs",
+            input: false,
+            required: true,
+            type: "string[]",
+          },
+          status: {
+            defaultValue: "active",
+            fieldName: "status",
+            input: false,
+            required: true,
+            type: "string",
           },
           // Managed by the twoFactor plugin.
           twoFactorEnabled: {
-            type: "boolean",
-            fieldName: "twoFactorEnabled",
-            required: true,
             defaultValue: false,
+            fieldName: "twoFactorEnabled",
             input: false,
+            required: true,
+            type: "boolean",
           },
         },
       },

@@ -1,3 +1,4 @@
+// biome-ignore-all lint/performance/noAwaitInLoops: policy evaluation is ordered (deny precedence) and short-circuits on first match, so parallelising would change outcomes.
 import type {
   ConditionContext,
   DenyReason,
@@ -70,8 +71,8 @@ export async function evaluate(input: EvaluateInput): Promise<PolicyDecision> {
     if (matched) {
       return {
         allowed: false,
-        reason: "GLOBAL_DENY",
         matchedPolicy: policy.label,
+        reason: "GLOBAL_DENY",
       };
     }
   }
@@ -115,8 +116,8 @@ export async function evaluate(input: EvaluateInput): Promise<PolicyDecision> {
     if (matched) {
       return {
         allowed: false,
-        reason: "EXPLICIT_DENY",
         matchedPolicy: policy.label,
+        reason: "EXPLICIT_DENY",
       };
     }
   }
@@ -222,8 +223,8 @@ async function matchPolicy(
 
     const ctx: ConditionContext = {
       principal,
-      resource,
       resolveRelation,
+      resource,
     };
     try {
       const result = await condition.evaluate(ctx);
@@ -234,20 +235,20 @@ async function matchPolicy(
       // console here avoids a @repo/shared <-> @repo/authorization circular dep.
       const errInfo =
         error instanceof Error
-          ? { name: error.name, message: error.message, stack: error.stack }
+          ? { message: error.message, name: error.name, stack: error.stack }
           : { value: String(error) };
       console.error(
         JSON.stringify({
-          level: "error",
-          message: "authorization.evaluator.condition_error",
-          ts: Date.now(),
-          policyId: policy.label,
-          principalId: principal.id,
           action,
           error: errInfo,
+          level: "error",
+          message: "authorization.evaluator.condition_error",
+          policyId: policy.label,
+          principalId: principal.id,
+          ts: Date.now(),
         })
       );
-      return { matched: false, conditionError: true };
+      return { conditionError: true, matched: false };
     }
   }
 

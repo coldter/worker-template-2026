@@ -11,20 +11,20 @@
   "scripts": {
     "check-types": "tsgo --noEmit",
     "check-types:backup": "tsc --noEmit",
-    "db:push": "drizzle-kit push",
-    "db:studio": "drizzle-kit studio",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate"
+    "db:migrate": "drizzle-kit migrate",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
     "@repo/shared": "workspace:*",
-    "drizzle-orm": "^1.0.0-rc.4-5d5b77c",
-    "pg": "^8.21.0"
+    "drizzle-orm": "^1.0.0-rc.5-ab785fc",
+    "pg": "^8.23.0"
   },
   "devDependencies": {
-    "@types/pg": "^8.20.0",
+    "@types/pg": "^8.23.1",
     "@typescript/native-preview": "beta",
-    "drizzle-kit": "^1.0.0-rc.4-ca0f029",
-    "typescript": "^6.0.3"
+    "drizzle-kit": "^1.0.0-rc.5-ab785fc",
+    "typescript": "^7.0.2"
   }
 }

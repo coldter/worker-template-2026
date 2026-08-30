@@ -26,11 +26,11 @@ export function RoleMultiSelect({ value, onChange }: RoleMultiSelectProps) {
   const [open, setOpen] = useState(false);
 
   const { data: rolesData, isLoading } = useQuery({
-    queryKey: rolesKeys.lists(),
     queryFn: async ({ signal }) => {
       const response = await listRoles({ signal });
       return response.roles;
     },
+    queryKey: rolesKeys.lists(),
   });
 
   const roles = rolesData ?? [];

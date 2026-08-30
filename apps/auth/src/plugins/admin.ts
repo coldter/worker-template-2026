@@ -28,11 +28,11 @@ type AuthSessionUser = {
 
 function getAuthorizationActor(user: AuthSessionUser) {
   return {
+    email: user.email,
+    emailVerified: user.emailVerified,
     id: user.id,
     roleSlugs: user.roleSlugs ?? [],
     status: user.status,
-    email: user.email,
-    emailVerified: user.emailVerified,
   };
 }
 
@@ -45,7 +45,10 @@ async function assertCanManageUserStatusWithApiError(
     await assertCanManageUserStatus(actor, action, targetUserId);
   } catch (error) {
     if (error instanceof AuthorizationError) {
-      throw new APIError("FORBIDDEN", { message: "Permission denied" });
+      throw new APIError("FORBIDDEN", {
+        cause: error,
+        message: "Permission denied",
+      });
     }
     throw error;
   }
@@ -63,93 +66,38 @@ function assertStatusMutationResult(result: StatusMutationResult): void {
 
 export const adminPlugin = (apiBinding: ApiBindingRpc) => {
   return {
-    id: "admin",
     endpoints: {
-      deactivateUser: createAuthEndpoint(
-        "/admin/deactivate-user",
-        {
-          method: "POST",
-          use: [sessionMiddleware],
-          body: z.object({
-            userId: z.string().min(1),
-            reason: z.string().optional(),
-          }),
-          metadata: {
-            openapi: {
-              operationId: "deactivateUser",
-              summary: "Deactivate a user",
-              description:
-                "Sets user status to inactive and revokes all sessions",
-              responses: {
-                200: {
-                  description: "User deactivated successfully",
-                  content: {
-                    "application/json": {
-                      schema: {
-                        type: "object",
-                        properties: {
-                          success: { type: "boolean" },
-                        },
-                      },
-                    },
-                  },
-                },
-              },
-            },
-          },
-        },
-        async (ctx) => {
-          // boundary: better-auth plugin endpoint ctx lacks $Infer narrowing for user-status additional fields.
-          const currentUser = ctx.context.session.user as AuthSessionUser;
-
-          await assertCanManageUserStatusWithApiError(
-            currentUser,
-            "deactivate",
-            ctx.body.userId
-          );
-
-          const result = await apiBinding.adminDeactivateUser({
-            userId: ctx.body.userId,
-            actorId: currentUser.id,
-            reason: ctx.body.reason ?? null,
-          });
-          assertStatusMutationResult(result);
-
-          return ctx.json({ success: true });
-        }
-      ),
-
       activateUser: createAuthEndpoint(
         "/admin/activate-user",
         {
-          method: "POST",
-          use: [sessionMiddleware],
           body: z.object({
             userId: z.string().min(1),
           }),
           metadata: {
             openapi: {
-              operationId: "activateUser",
-              summary: "Activate a user",
               description:
                 "Sets user status to active and clears deactivation info",
+              operationId: "activateUser",
               responses: {
                 200: {
-                  description: "User activated successfully",
                   content: {
                     "application/json": {
                       schema: {
-                        type: "object",
                         properties: {
                           success: { type: "boolean" },
                         },
+                        type: "object",
                       },
                     },
                   },
+                  description: "User activated successfully",
                 },
               },
+              summary: "Activate a user",
             },
           },
+          method: "POST",
+          use: [sessionMiddleware],
         },
         async (ctx) => {
           // boundary: better-auth plugin endpoint ctx lacks $Infer narrowing for user-status additional fields.
@@ -162,8 +110,61 @@ export const adminPlugin = (apiBinding: ApiBindingRpc) => {
           );
 
           const result = await apiBinding.adminActivateUser({
-            userId: ctx.body.userId,
             actorId: currentUser.id,
+            userId: ctx.body.userId,
+          });
+          assertStatusMutationResult(result);
+
+          return ctx.json({ success: true });
+        }
+      ),
+      deactivateUser: createAuthEndpoint(
+        "/admin/deactivate-user",
+        {
+          body: z.object({
+            reason: z.string().optional(),
+            userId: z.string().min(1),
+          }),
+          metadata: {
+            openapi: {
+              description:
+                "Sets user status to inactive and revokes all sessions",
+              operationId: "deactivateUser",
+              responses: {
+                200: {
+                  content: {
+                    "application/json": {
+                      schema: {
+                        properties: {
+                          success: { type: "boolean" },
+                        },
+                        type: "object",
+                      },
+                    },
+                  },
+                  description: "User deactivated successfully",
+                },
+              },
+              summary: "Deactivate a user",
+            },
+          },
+          method: "POST",
+          use: [sessionMiddleware],
+        },
+        async (ctx) => {
+          // boundary: better-auth plugin endpoint ctx lacks $Infer narrowing for user-status additional fields.
+          const currentUser = ctx.context.session.user as AuthSessionUser;
+
+          await assertCanManageUserStatusWithApiError(
+            currentUser,
+            "deactivate",
+            ctx.body.userId
+          );
+
+          const result = await apiBinding.adminDeactivateUser({
+            actorId: currentUser.id,
+            reason: ctx.body.reason ?? null,
+            userId: ctx.body.userId,
           });
           assertStatusMutationResult(result);
 
@@ -174,33 +175,33 @@ export const adminPlugin = (apiBinding: ApiBindingRpc) => {
       unlockUser: createAuthEndpoint(
         "/admin/unlock-user",
         {
-          method: "POST",
-          use: [sessionMiddleware],
           body: z.object({
             userId: z.string().min(1),
           }),
           metadata: {
             openapi: {
-              operationId: "unlockUser",
-              summary: "Unlock a user",
               description: "Resets lockout status and failed login attempts",
+              operationId: "unlockUser",
               responses: {
                 200: {
-                  description: "User unlocked successfully",
                   content: {
                     "application/json": {
                       schema: {
-                        type: "object",
                         properties: {
                           success: { type: "boolean" },
                         },
+                        type: "object",
                       },
                     },
                   },
+                  description: "User unlocked successfully",
                 },
               },
+              summary: "Unlock a user",
             },
           },
+          method: "POST",
+          use: [sessionMiddleware],
         },
         async (ctx) => {
           // boundary: better-auth plugin endpoint ctx lacks $Infer narrowing for user-status additional fields.
@@ -213,8 +214,8 @@ export const adminPlugin = (apiBinding: ApiBindingRpc) => {
           );
 
           const result = await apiBinding.adminUnlockUser({
-            userId: ctx.body.userId,
             actorId: currentUser.id,
+            userId: ctx.body.userId,
           });
           assertStatusMutationResult(result);
 
@@ -222,6 +223,7 @@ export const adminPlugin = (apiBinding: ApiBindingRpc) => {
         }
       ),
     },
+    id: "admin",
   } satisfies BetterAuthPlugin;
 };
 

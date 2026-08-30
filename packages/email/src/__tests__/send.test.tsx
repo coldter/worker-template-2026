@@ -38,7 +38,7 @@ vi.mock("resend", () => {
           if (next.kind === "apiError") {
             return {
               data: null,
-              error: { name: "validation_error", message: next.message },
+              error: { message: next.message, name: "validation_error" },
             };
           }
           return { data: next.data, error: null };
@@ -69,7 +69,7 @@ beforeEach(() => {
 
 describe("sendEmail", () => {
   test("returns success on a successful send", async () => {
-    sendQueue.push({ kind: "ok", data: { id: "msg_123" } });
+    sendQueue.push({ data: { id: "msg_123" }, kind: "ok" });
     const { sendEmail } = await import("../lib/send");
 
     const result = await sendEmail<DummyProps>({
@@ -158,7 +158,7 @@ describe("sendEmail", () => {
   });
 
   test("catches thrown errors from the Resend client", async () => {
-    sendQueue.push({ kind: "throw", error: new Error("network down") });
+    sendQueue.push({ error: new Error("network down"), kind: "throw" });
     const { sendEmail } = await import("../lib/send");
 
     const result = await sendEmail<DummyProps>({

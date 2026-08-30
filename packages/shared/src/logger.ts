@@ -15,8 +15,8 @@ export interface Logger {
 function replaceErrors(_key: string, value: unknown): unknown {
   if (value instanceof Error) {
     return {
-      name: value.name,
       message: value.message,
+      name: value.name,
       stack: value.stack,
       ...(value.cause === undefined ? {} : { cause: value.cause }),
     };
@@ -49,7 +49,7 @@ function log(level: LogLevel, message: string, context?: LogContext): void {
 
 export const logger: Logger = {
   debug: (message, context) => log("debug", message, context),
+  error: (message, context) => log("error", message, context),
   info: (message, context) => log("info", message, context),
   warn: (message, context) => log("warn", message, context),
-  error: (message, context) => log("error", message, context),
 };

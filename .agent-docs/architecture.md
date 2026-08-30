@@ -15,7 +15,7 @@
 
 `apps/server` and `apps/auth` communicate through Cloudflare Service Bindings:
 
-- `apps/server` -> `AUTH` (`AuthEntrypoint`): HTTP proxy for `/api/auth/*` and RPC (`getSession`, `getToken`).
+- `apps/server` -> `AUTH` (`AuthEntrypoint`): HTTP proxy for `/api/auth/*` and RPC (`getSession`).
 - `apps/auth` -> `API` (`ApiEntrypoint`): RPC hooks for auth lifecycle events (`onUserCreated`, `onNewDeviceLogin`, `onUserStatusChange`).
 
 This keeps auth internal while exposing a single public API origin.

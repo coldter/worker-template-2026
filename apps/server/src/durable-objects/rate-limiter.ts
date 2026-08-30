@@ -21,8 +21,8 @@ export class RateLimiter extends DurableObject {
     if (limit > MAX_TIMESTAMPS && !this.clampWarned) {
       this.clampWarned = true;
       logger.warn("RateLimiter limit clamped to MAX_TIMESTAMPS", {
-        requested: limit,
         effective: effectiveLimit,
+        requested: limit,
       });
     }
 

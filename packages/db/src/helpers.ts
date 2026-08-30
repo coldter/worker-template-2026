@@ -26,7 +26,7 @@ export async function firstOrThrow<T>(
   message = "Row not found"
 ): Promise<T> {
   const rows = await query;
-  const row = rows[0];
+  const [row] = rows;
   // Explicit null+undefined check so falsy primitive rows (0, "", false) pass.
   if (row === undefined || row === null) {
     throw new Error(message);

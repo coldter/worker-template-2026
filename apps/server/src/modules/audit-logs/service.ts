@@ -16,23 +16,23 @@ function toInsertValues(
   input: CriticalAuditLogInput
 ): typeof auditLogs.$inferInsert {
   return {
-    event: input.event,
     actorId: input.actorId,
     actorType: input.actorType ?? "user",
+    event: input.event,
+    ipAddress: input.ipAddress,
+    metadata: input.metadata,
     targetId: input.targetId,
     targetType: input.targetType,
-    ipAddress: input.ipAddress,
     userAgent: input.userAgent,
-    metadata: input.metadata,
   };
 }
 
 const ALLOWED_SORT_COLUMNS = {
-  event: auditLogs.event,
   actorType: auditLogs.actorType,
-  targetType: auditLogs.targetType,
-  ipAddress: auditLogs.ipAddress,
   createdAt: auditLogs.createdAt,
+  event: auditLogs.event,
+  ipAddress: auditLogs.ipAddress,
+  targetType: auditLogs.targetType,
 } as const;
 
 export const auditLogService = {
@@ -64,10 +64,13 @@ export const auditLogService = {
    */
   async enqueue(queue: Queue, messages: AuditLogQueueMessage[]) {
     const MAX_MESSAGES_PER_BATCH = 100;
+    const chunks: AuditLogQueueMessage[][] = [];
     for (let i = 0; i < messages.length; i += MAX_MESSAGES_PER_BATCH) {
-      const chunk = messages.slice(i, i + MAX_MESSAGES_PER_BATCH);
-      await queue.sendBatch(chunk.map((body) => ({ body })));
+      chunks.push(messages.slice(i, i + MAX_MESSAGES_PER_BATCH));
     }
+    await Promise.all(
+      chunks.map((chunk) => queue.sendBatch(chunk.map((body) => ({ body }))))
+    );
   },
 
   async find(db: DrizzleClient, query: FindAuditLogsQuery) {
@@ -122,8 +125,8 @@ export const auditLogService = {
 
     return createPaginatedResponse({
       data,
-      total: countResult?.total ?? 0,
       query,
+      total: countResult?.total ?? 0,
     });
   },
 };

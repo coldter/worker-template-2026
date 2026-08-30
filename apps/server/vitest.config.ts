@@ -10,7 +10,6 @@ export default defineConfig({
   },
   test: {
     pool: cloudflarePool({
-      wrangler: { configPath: "./wrangler.jsonc" },
       miniflare: {
         // Stub the AUTH service binding for tests. Miniflare serviceBindings
         // only supports fetch-based stubs. For tests that exercise protected
@@ -20,6 +19,7 @@ export default defineConfig({
           AUTH: () => new Response("stub", { status: 503 }),
         },
       },
+      wrangler: { configPath: "./wrangler.jsonc" },
     }),
   },
 });

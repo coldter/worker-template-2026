@@ -8,6 +8,11 @@ export function createCorsMiddleware() {
   let allowedOrigins = new Set<string>();
 
   return cors({
+    allowHeaders: ["Content-Type", "Authorization", "X-Request-Id"],
+    allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    credentials: true,
+    exposeHeaders: ["X-Request-Id", "X-RateLimit-Remaining"],
+    maxAge: 86_400,
     origin: (origin, c) => {
       const raw = c.env.CORS_ORIGINS ?? "";
       if (raw !== cachedRaw) {
@@ -19,10 +24,5 @@ export function createCorsMiddleware() {
       }
       return "";
     },
-    allowHeaders: ["Content-Type", "Authorization", "X-Request-Id"],
-    allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    exposeHeaders: ["X-Request-Id", "X-RateLimit-Remaining"],
-    maxAge: 86_400,
-    credentials: true,
   });
 }

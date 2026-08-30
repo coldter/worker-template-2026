@@ -10,8 +10,6 @@ import { ApiError, clientConfig } from "@/lib/api";
 export const createClientConfig: CreateClientConfig = (baseConfig) => ({
   ...baseConfig,
   baseUrl: import.meta.env.VITE_SERVER_URL || "http://localhost:8787",
-  responseStyle: "data",
-  throwOnError: true,
   fetch: async (input: RequestInfo | URL, init?: RequestInit) => {
     const response = await clientConfig.fetch(input, init);
 
@@ -22,4 +20,6 @@ export const createClientConfig: CreateClientConfig = (baseConfig) => ({
     const json = await response.json();
     throw new ApiError(json, response.status);
   },
+  responseStyle: "data",
+  throwOnError: true,
 });

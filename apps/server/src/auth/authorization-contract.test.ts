@@ -10,11 +10,11 @@ import { describe, expect, it } from "vitest";
 describe("shared authorization contract", () => {
   it("admin capabilities stay aligned with the registry", async () => {
     const principal = buildAuthorizationPrincipal({
+      email: "admin@example.com",
+      emailVerified: true,
       id: "usr_admin",
       roleSlugs: ["admin"],
       status: "active",
-      email: "admin@example.com",
-      emailVerified: true,
     });
 
     const capabilities = await authorization.evaluateCapabilities(
@@ -37,11 +37,11 @@ describe("shared authorization contract", () => {
 
   it("user capabilities preserve the current route and UI behavior", async () => {
     const principal = buildAuthorizationPrincipal({
+      email: "user@example.com",
+      emailVerified: true,
       id: "usr_user",
       roleSlugs: ["user"],
       status: "active",
-      email: "user@example.com",
-      emailVerified: true,
     });
 
     const capabilities = await authorization.evaluateCapabilities(

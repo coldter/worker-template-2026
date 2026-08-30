@@ -36,19 +36,19 @@ export async function sendEmail<T>(
     const resend = getResendClient(params.apiKey);
     const { error } = await resend.emails.send({
       from: params.from,
-      to: params.to,
-      subject: params.subject,
       react: params.template(params.props),
+      subject: params.subject,
+      to: params.to,
     });
 
     if (error) {
-      return { success: false, error: new Error(error.message) };
+      return { error: new Error(error.message), success: false };
     }
     return { success: true };
   } catch (error) {
     return {
-      success: false,
       error: error instanceof Error ? error : new Error(String(error)),
+      success: false,
     };
   }
 }

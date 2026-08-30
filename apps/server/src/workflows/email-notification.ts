@@ -41,7 +41,7 @@ export class EmailNotificationWorkflow extends WorkflowEntrypoint<
     // Step 1: Load notification and resolve email
     const notificationData = await step.do(
       "load-notification",
-      { retries: { limit: 3, delay: "2 seconds", backoff: "exponential" } },
+      { retries: { backoff: "exponential", delay: "2 seconds", limit: 3 } },
       async () =>
         withDrizzleClient(
           this.env.HYPERDRIVE.connectionString,
@@ -57,14 +57,14 @@ export class EmailNotificationWorkflow extends WorkflowEntrypoint<
             }
 
             const user = await db.query.users.findFirst({
-              where: { id: { eq: notification.userId } },
               columns: { email: true, name: true },
+              where: { id: { eq: notification.userId } },
             });
 
             return {
-              subject: notification.subject,
               body: notification.body,
               email: user?.email,
+              subject: notification.subject,
               userName: user?.name,
             };
           },
@@ -84,7 +84,7 @@ export class EmailNotificationWorkflow extends WorkflowEntrypoint<
     // Step 2: Send email via Resend
     await step.do(
       "send-email",
-      { retries: { limit: 3, delay: "5 seconds", backoff: "exponential" } },
+      { retries: { backoff: "exponential", delay: "5 seconds", limit: 3 } },
       async () => {
         const { sendEmail, NotificationEmail } = await import("@repo/email");
         // boundary: workerd env bindings are typed via wrangler codegen; cast
@@ -95,13 +95,13 @@ export class EmailNotificationWorkflow extends WorkflowEntrypoint<
         await sendEmail({
           apiKey: this.env.RESEND_API_KEY,
           from: `${brand.appName} <${this.env.EMAIL_FROM}>`,
-          to: recipientEmail,
+          props: {
+            body: notificationData.body ?? "",
+            subject: notificationData.subject ?? "",
+          },
           subject: notificationData.subject ?? "",
           template: NotificationEmail,
-          props: {
-            subject: notificationData.subject ?? "",
-            body: notificationData.body ?? "",
-          },
+          to: recipientEmail,
         });
       }
     );
@@ -109,7 +109,7 @@ export class EmailNotificationWorkflow extends WorkflowEntrypoint<
     // Step 3: Update notification status
     await step.do(
       "update-status",
-      { retries: { limit: 3, delay: "2 seconds", backoff: "exponential" } },
+      { retries: { backoff: "exponential", delay: "2 seconds", limit: 3 } },
       async () => {
         await withDrizzleClient(
           this.env.HYPERDRIVE.connectionString,

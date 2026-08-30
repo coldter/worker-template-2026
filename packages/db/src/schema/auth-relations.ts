@@ -6,20 +6,20 @@ import { users } from "./auth";
 export const authRelationsTable = pgTable(
   "auth_relations",
   {
-    id: text("id")
-      .primaryKey()
-      .$defaultFn(() => generatePrefixedCuid(ID_PREFIXES.relation)),
-    subjectType: text("subject_type").notNull(),
-    subjectId: text("subject_id").notNull(),
-    relation: text("relation").notNull(),
-    objectType: text("object_type").notNull(),
-    objectId: text("object_id").notNull(),
+    // Intentionally immutable, no updatedAt: callers delete + recreate.
+    createdAt: createdAt(),
     // Nullable so onDelete "set null" applies when the creating user is deleted.
     createdBy: text("created_by").references(() => users.id, {
       onDelete: "set null",
     }),
-    // Intentionally immutable, no updatedAt: callers delete + recreate.
-    createdAt: createdAt(),
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => generatePrefixedCuid(ID_PREFIXES.relation)),
+    objectId: text("object_id").notNull(),
+    objectType: text("object_type").notNull(),
+    relation: text("relation").notNull(),
+    subjectId: text("subject_id").notNull(),
+    subjectType: text("subject_type").notNull(),
   },
   (t) => [
     uniqueIndex("auth_rel_unique").on(

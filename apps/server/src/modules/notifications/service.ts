@@ -29,6 +29,101 @@ const SORT_COLUMNS = {
 } as const;
 
 export const notificationService = {
+  async deactivatePushToken(
+    db: DrizzleClient,
+    tokenId: string,
+    userId: string
+  ): Promise<boolean> {
+    const result = await db
+      .update(pushTokens)
+      .set({ isActive: false })
+      .where(and(eq(pushTokens.id, tokenId), eq(pushTokens.userId, userId)))
+      .returning({ id: pushTokens.id });
+    return result.length > 0;
+  },
+
+  // remove tokens that FCM reports as invalid
+  async deletePushTokenByToken(
+    db: DrizzleClient,
+    token: string
+  ): Promise<boolean> {
+    const result = await db
+      .delete(pushTokens)
+      .where(eq(pushTokens.token, token))
+      .returning({ id: pushTokens.id });
+    return result.length > 0;
+  },
+
+  async ensureDefaultPreferences(
+    db: DrizzleClient,
+    userId: string
+  ): Promise<PreferencesRecord[]> {
+    const existing = await this.getPreferences(db, userId);
+    if (existing.length === 0) {
+      return this.updatePreferences(db, userId, {
+        emailEnabled: true,
+        pushEnabled: true,
+        smsEnabled: false,
+      });
+    }
+    return existing;
+  },
+
+  async findById(
+    db: DrizzleClient,
+    notificationId: string
+  ): Promise<NotificationRecord | null> {
+    const [notification] = await db
+      .select()
+      .from(notifications)
+      .where(eq(notifications.id, notificationId))
+      .limit(1);
+    return notification ?? null;
+  },
+
+  async findByIdAndUser(
+    db: DrizzleClient,
+    notificationId: string,
+    userId: string
+  ): Promise<NotificationRecord | null> {
+    const [notification] = await db
+      .select()
+      .from(notifications)
+      .where(
+        and(
+          eq(notifications.id, notificationId),
+          eq(notifications.userId, userId)
+        )
+      )
+      .limit(1);
+    return notification ?? null;
+  },
+
+  async getPreferences(
+    db: DrizzleClient,
+    userId: string
+  ): Promise<PreferencesRecord[]> {
+    return db
+      .select()
+      .from(notificationPreferences)
+      .where(eq(notificationPreferences.userId, userId))
+      .orderBy(asc(notificationPreferences.typePattern));
+  },
+
+  async getUnreadCount(db: DrizzleClient, userId: string): Promise<number> {
+    const [result] = await db
+      .select({ count: count() })
+      .from(notifications)
+      .where(
+        and(
+          eq(notifications.userId, userId),
+          eq(notifications.channel, "push"),
+          sql`${notifications.readAt} IS NULL`,
+          sql`${notifications.status} IN ('sent', 'delivered')`
+        )
+      );
+    return result?.count ?? 0;
+  },
   async listByUser(
     db: DrizzleClient,
     userId: string,
@@ -72,45 +167,28 @@ export const notificationService = {
 
     return createPaginatedResponse({
       data: notificationsList,
-      total: countResult?.total ?? 0,
       query,
+      total: countResult?.total ?? 0,
     });
   },
 
-  async findById(
+  async listPushTokens(
     db: DrizzleClient,
-    notificationId: string
-  ): Promise<NotificationRecord | null> {
-    const [notification] = await db
-      .select()
-      .from(notifications)
-      .where(eq(notifications.id, notificationId))
-      .limit(1);
-    return notification ?? null;
-  },
-
-  async findByIdAndUser(
-    db: DrizzleClient,
-    notificationId: string,
     userId: string
-  ): Promise<NotificationRecord | null> {
-    const [notification] = await db
+  ): Promise<PushTokenRecord[]> {
+    return db
       .select()
-      .from(notifications)
-      .where(
-        and(
-          eq(notifications.id, notificationId),
-          eq(notifications.userId, userId)
-        )
-      )
-      .limit(1);
-    return notification ?? null;
+      .from(pushTokens)
+      .where(and(eq(pushTokens.userId, userId), eq(pushTokens.isActive, true)))
+      .orderBy(desc(pushTokens.createdAt));
   },
 
-  async getUnreadCount(db: DrizzleClient, userId: string): Promise<number> {
-    const [result] = await db
-      .select({ count: count() })
-      .from(notifications)
+  async markAllAsRead(db: DrizzleClient, userId: string): Promise<number> {
+    const result = await db
+      .update(notifications)
+      .set({
+        readAt: new Date(),
+      })
       .where(
         and(
           eq(notifications.userId, userId),
@@ -118,8 +196,9 @@ export const notificationService = {
           sql`${notifications.readAt} IS NULL`,
           sql`${notifications.status} IN ('sent', 'delivered')`
         )
-      );
-    return result?.count ?? 0;
+      )
+      .returning({ id: notifications.id });
+    return result.length;
   },
 
   async markAsRead(
@@ -142,35 +221,6 @@ export const notificationService = {
       )
       .returning();
     return updated ?? null;
-  },
-
-  async markAllAsRead(db: DrizzleClient, userId: string): Promise<number> {
-    const result = await db
-      .update(notifications)
-      .set({
-        readAt: new Date(),
-      })
-      .where(
-        and(
-          eq(notifications.userId, userId),
-          eq(notifications.channel, "push"),
-          sql`${notifications.readAt} IS NULL`,
-          sql`${notifications.status} IN ('sent', 'delivered')`
-        )
-      )
-      .returning({ id: notifications.id });
-    return result.length;
-  },
-
-  async listPushTokens(
-    db: DrizzleClient,
-    userId: string
-  ): Promise<PushTokenRecord[]> {
-    return db
-      .select()
-      .from(pushTokens)
-      .where(and(eq(pushTokens.userId, userId), eq(pushTokens.isActive, true)))
-      .orderBy(desc(pushTokens.createdAt));
   },
 
   async registerPushToken(
@@ -197,13 +247,13 @@ export const notificationService = {
       const [updated] = await db
         .update(pushTokens)
         .set({
-          userId,
-          sessionId,
-          platform: input.platform,
           deviceId: input.deviceId ?? existing.deviceId,
           deviceName: input.deviceName ?? existing.deviceName,
           isActive: true,
           lastUsedAt: new Date(),
+          platform: input.platform,
+          sessionId,
+          userId,
         })
         .where(eq(pushTokens.id, existing.id))
         .returning();
@@ -214,55 +264,19 @@ export const notificationService = {
       db
         .insert(pushTokens)
         .values({
-          userId,
-          sessionId,
-          token: input.token,
-          platform: input.platform,
           deviceId: input.deviceId ?? null,
           deviceName: input.deviceName ?? null,
           isActive: true,
+          platform: input.platform,
+          sessionId,
+          token: input.token,
+          userId,
         })
         .returning(),
       "Failed to create push token"
     );
 
     return newToken;
-  },
-
-  async deactivatePushToken(
-    db: DrizzleClient,
-    tokenId: string,
-    userId: string
-  ): Promise<boolean> {
-    const result = await db
-      .update(pushTokens)
-      .set({ isActive: false })
-      .where(and(eq(pushTokens.id, tokenId), eq(pushTokens.userId, userId)))
-      .returning({ id: pushTokens.id });
-    return result.length > 0;
-  },
-
-  // remove tokens that FCM reports as invalid
-  async deletePushTokenByToken(
-    db: DrizzleClient,
-    token: string
-  ): Promise<boolean> {
-    const result = await db
-      .delete(pushTokens)
-      .where(eq(pushTokens.token, token))
-      .returning({ id: pushTokens.id });
-    return result.length > 0;
-  },
-
-  async getPreferences(
-    db: DrizzleClient,
-    userId: string
-  ): Promise<PreferencesRecord[]> {
-    return db
-      .select()
-      .from(notificationPreferences)
-      .where(eq(notificationPreferences.userId, userId))
-      .orderBy(asc(notificationPreferences.typePattern));
   },
 
   async updatePreferences(
@@ -272,56 +286,58 @@ export const notificationService = {
   ): Promise<PreferencesRecord[]> {
     return db.transaction(async (tx) => {
       const globalValues = {
-        userId,
-        typePattern: "*",
         emailEnabled: input.emailEnabled ?? true,
-        smsEnabled: input.smsEnabled ?? false,
         pushEnabled: input.pushEnabled ?? true,
+        smsEnabled: input.smsEnabled ?? false,
+        typePattern: "*",
+        userId,
       };
 
       await tx
         .insert(notificationPreferences)
         .values(globalValues)
         .onConflictDoUpdate({
+          set: {
+            emailEnabled: sql`EXCLUDED.email_enabled`,
+            pushEnabled: sql`EXCLUDED.push_enabled`,
+            smsEnabled: sql`EXCLUDED.sms_enabled`,
+          },
           target: [
             notificationPreferences.userId,
             notificationPreferences.typePattern,
           ],
-          set: {
-            emailEnabled: sql`EXCLUDED.email_enabled`,
-            smsEnabled: sql`EXCLUDED.sms_enabled`,
-            pushEnabled: sql`EXCLUDED.push_enabled`,
-          },
         });
 
       if (input.typeOverrides) {
-        for (const [typePattern, override] of Object.entries(
-          input.typeOverrides
-        )) {
-          const channels = override.channels ?? [];
-          const typeValues = {
-            userId,
-            typePattern,
-            emailEnabled: channels.includes("email"),
-            smsEnabled: channels.includes("sms"),
-            pushEnabled: channels.includes("push"),
-          };
+        await Promise.all(
+          Object.entries(input.typeOverrides).map(
+            async ([typePattern, override]) => {
+              const channels = override.channels ?? [];
+              const typeValues = {
+                emailEnabled: channels.includes("email"),
+                pushEnabled: channels.includes("push"),
+                smsEnabled: channels.includes("sms"),
+                typePattern,
+                userId,
+              };
 
-          await tx
-            .insert(notificationPreferences)
-            .values(typeValues)
-            .onConflictDoUpdate({
-              target: [
-                notificationPreferences.userId,
-                notificationPreferences.typePattern,
-              ],
-              set: {
-                emailEnabled: sql`EXCLUDED.email_enabled`,
-                smsEnabled: sql`EXCLUDED.sms_enabled`,
-                pushEnabled: sql`EXCLUDED.push_enabled`,
-              },
-            });
-        }
+              await tx
+                .insert(notificationPreferences)
+                .values(typeValues)
+                .onConflictDoUpdate({
+                  set: {
+                    emailEnabled: sql`EXCLUDED.email_enabled`,
+                    pushEnabled: sql`EXCLUDED.push_enabled`,
+                    smsEnabled: sql`EXCLUDED.sms_enabled`,
+                  },
+                  target: [
+                    notificationPreferences.userId,
+                    notificationPreferences.typePattern,
+                  ],
+                });
+            }
+          )
+        );
       }
 
       // Read back inside the tx so callers see the post-upsert state atomically.
@@ -331,20 +347,5 @@ export const notificationService = {
         .where(eq(notificationPreferences.userId, userId))
         .orderBy(asc(notificationPreferences.typePattern));
     });
-  },
-
-  async ensureDefaultPreferences(
-    db: DrizzleClient,
-    userId: string
-  ): Promise<PreferencesRecord[]> {
-    const existing = await this.getPreferences(db, userId);
-    if (existing.length === 0) {
-      return this.updatePreferences(db, userId, {
-        emailEnabled: true,
-        smsEnabled: false,
-        pushEnabled: true,
-      });
-    }
-    return existing;
   },
 };

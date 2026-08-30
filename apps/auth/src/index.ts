@@ -68,20 +68,6 @@ export class AuthEntrypoint extends WorkerEntrypoint<CloudflareBindings> {
       )
     );
   }
-
-  async getToken(headers: Headers) {
-    return this.recordRpc("getToken", () =>
-      withDrizzleClient(
-        this.env.HYPERDRIVE.connectionString,
-        async (db) => {
-          // boundary: workerd codegen -- see getSession.
-          const auth = createAuth(db, this.env as AuthBindings, this.ctx);
-          return await auth.api.getToken({ headers });
-        },
-        { logger: getDrizzleLogger(), waitUntil: (p) => this.ctx.waitUntil(p) }
-      )
-    );
-  }
 }
 
 export default {

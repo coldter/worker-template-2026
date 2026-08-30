@@ -5,11 +5,11 @@ import { createAuthSchema, principalAttribute } from "../schema";
 describe("createAuthSchema", () => {
   it("infers role literal types", () => {
     const auth = createAuthSchema({
+      globalPolicies: () => [],
+      principal: { status: principalAttribute<string>() },
+      relations: [],
       roles: ["admin", "user"],
       systemAdminRoles: ["admin"],
-      relations: [],
-      principal: { status: principalAttribute<string>() },
-      globalPolicies: () => [],
     });
 
     expect(auth.roleValues).toEqual(["admin", "user"]);
@@ -20,11 +20,11 @@ describe("createAuthSchema", () => {
 
   it("infers relation literal types", () => {
     const auth = createAuthSchema({
+      globalPolicies: () => [],
+      principal: { status: principalAttribute<string>() },
+      relations: ["owner", "member"],
       roles: ["admin"],
       systemAdminRoles: ["admin"],
-      relations: ["owner", "member"],
-      principal: { status: principalAttribute<string>() },
-      globalPolicies: () => [],
     });
 
     expect(auth.relationValues).toEqual(["owner", "member"]);
@@ -32,12 +32,12 @@ describe("createAuthSchema", () => {
 
   it("supports optional organizationRoles", () => {
     const auth = createAuthSchema({
-      roles: ["admin"],
-      systemAdminRoles: ["admin"],
-      relations: [],
+      globalPolicies: () => [],
       organizationRoles: ["owner", "admin", "member"],
       principal: { status: principalAttribute<string>() },
-      globalPolicies: () => [],
+      relations: [],
+      roles: ["admin"],
+      systemAdminRoles: ["admin"],
     });
 
     expect(auth.orgRoleValues).toEqual(["owner", "admin", "member"]);
@@ -45,11 +45,11 @@ describe("createAuthSchema", () => {
 
   it("createResource method exists", () => {
     const auth = createAuthSchema({
+      globalPolicies: () => [],
+      principal: { status: principalAttribute<string>() },
+      relations: [],
       roles: ["admin"],
       systemAdminRoles: ["admin"],
-      relations: [],
-      principal: { status: principalAttribute<string>() },
-      globalPolicies: () => [],
     });
 
     expect(typeof auth.createResource).toBe("function");
@@ -58,11 +58,11 @@ describe("createAuthSchema", () => {
 
   it("global policies are stored", () => {
     const auth = createAuthSchema({
+      globalPolicies: (p) => [p.deny("*").to("*").where(principalNotActive())],
+      principal: { status: principalAttribute<string>() },
+      relations: [],
       roles: ["admin"],
       systemAdminRoles: ["admin"],
-      relations: [],
-      principal: { status: principalAttribute<string>() },
-      globalPolicies: (p) => [p.deny("*").to("*").where(principalNotActive())],
     });
 
     expect(auth.globalPolicies).toHaveLength(1);

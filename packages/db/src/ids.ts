@@ -1,22 +1,22 @@
 import { logger } from "@repo/shared/logger";
 
 export const ID_PREFIXES = {
-  user: "usr",
-  session: "ses",
   account: "acc",
-  verification: "ver",
-  role: "rol",
   auditLog: "aud",
+  invitation: "inv",
+  jwks: "jwks",
+  member: "mem",
   notification: "ntf",
+  organization: "org",
   pushToken: "ptk",
   relation: "rel",
-  jwks: "jwks",
-  twoFactor: "2fa",
-  organization: "org",
-  member: "mem",
-  invitation: "inv",
+  role: "rol",
+  session: "ses",
   team: "tm",
   teamMember: "tmm",
+  twoFactor: "2fa",
+  user: "usr",
+  verification: "ver",
 } as const;
 
 declare const __brand: unique symbol;

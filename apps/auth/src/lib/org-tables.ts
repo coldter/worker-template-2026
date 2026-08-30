@@ -8,7 +8,7 @@ export function isUndefinedTableError(err: unknown): boolean {
     return false;
   }
   // boundary: pg DatabaseError exposes `code` at runtime but not on the Error type.
-  const code = (err as Error & { code?: unknown }).code;
+  const { code } = err as Error & { code?: unknown };
   return typeof code === "string" && code === PG_UNDEFINED_TABLE;
 }
 
@@ -23,6 +23,5 @@ export async function tolerateMissingOrgTables<T>(
       throw err;
     }
     logger.warn(ctx.reason, ctx.meta);
-    return;
   }
 }

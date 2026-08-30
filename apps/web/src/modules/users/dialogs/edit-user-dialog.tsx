@@ -17,8 +17,8 @@ import { useUpdateUserMutation } from "../query";
 import type { User, UserDetail } from "../types";
 
 const editUserSchema = z.object({
-  name: z.string().min(1, "Name is required").max(100),
   email: z.string().email("Invalid email address"),
+  name: z.string().min(1, "Name is required").max(100),
 });
 
 type EditUserFormValues = z.infer<typeof editUserSchema>;
@@ -37,23 +37,23 @@ export function EditUserDialog({
   const updateMutation = useUpdateUserMutation();
 
   const form = useForm<EditUserFormValues>({
-    resolver: zodResolver(editUserSchema),
     defaultValues: {
-      name: user.name,
       email: user.email,
+      name: user.name,
     },
+    resolver: zodResolver(editUserSchema),
   });
 
   const { submit, isPending } = useMutationForm({
     form,
     mutation: updateMutation,
-    toVariables: (values) => ({ userId: user.id, data: values }),
     onClose: () => onOpenChange(false),
     resetWhen: {
-      open,
       key: user,
-      values: { name: user.name, email: user.email },
+      open,
+      values: { email: user.email, name: user.name },
     },
+    toVariables: (values) => ({ data: values, userId: user.id }),
   });
 
   return (

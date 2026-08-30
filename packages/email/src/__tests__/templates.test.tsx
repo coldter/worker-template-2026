@@ -63,21 +63,20 @@ describe("Email template snapshots", () => {
     expect(html).toMatchSnapshot();
   });
 
-  test.each([
-    "sign-in",
-    "email-verification",
-    "forget-password",
-  ] as const)("VerificationOtpEmail renders for type %s", async (type) => {
-    const html = await render(
-      <VerificationOtpEmail
-        expiresIn="10 minutes"
-        otp="123456"
-        type={type}
-        userName="Ada"
-      />
-    );
-    expect(html).toMatchSnapshot();
-  });
+  test.each(["sign-in", "email-verification", "forget-password"] as const)(
+    "VerificationOtpEmail renders for type %s",
+    async (type) => {
+      const html = await render(
+        <VerificationOtpEmail
+          expiresIn="10 minutes"
+          otp="123456"
+          type={type}
+          userName="Ada"
+        />
+      );
+      expect(html).toMatchSnapshot();
+    }
+  );
 
   test("WelcomeEmail renders", async () => {
     const html = await render(

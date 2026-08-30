@@ -16,18 +16,14 @@ import { generatePrefixedCuid, ID_PREFIXES } from "../ids";
 export const users = pgTable(
   "users",
   {
+    email: text("email").notNull().unique(),
+    emailVerified: boolean("email_verified").default(false).notNull(),
     id: varchar("id", { length: 255 })
       .primaryKey()
       .$defaultFn(() => generatePrefixedCuid(ID_PREFIXES.user)),
-    name: text("name").notNull(),
-    email: text("email").notNull().unique(),
-    emailVerified: boolean("email_verified").default(false).notNull(),
     image: text("image"),
+    name: text("name").notNull(),
     ...timestamps(),
-    status: text("status")
-      .$type<"active" | "inactive" | "locked" | "deleted">()
-      .default("active")
-      .notNull(),
     deactivatedAt: timestamp("deactivated_at", { withTimezone: true }),
     // AnyPgColumn cast breaks the circular self-FK type inference.
     deactivatedBy: varchar("deactivated_by", { length: 255 }).references(
@@ -37,10 +33,14 @@ export const users = pgTable(
     deactivatedReason: text("deactivated_reason"),
     failedLoginAttempts: integer("failed_login_attempts").default(0).notNull(),
     lockedUntil: timestamp("locked_until", { withTimezone: true }),
-    roleSlugs: text("role_slugs").array().default([]).notNull(),
     onboardingCompletedAt: timestamp("onboarding_completed_at", {
       withTimezone: true,
     }),
+    roleSlugs: text("role_slugs").array().default([]).notNull(),
+    status: text("status")
+      .$type<"active" | "inactive" | "locked" | "deleted">()
+      .default("active")
+      .notNull(),
     twoFactorEnabled: boolean("two_factor_enabled").default(false).notNull(),
   },
   (table) => [
@@ -57,20 +57,20 @@ export const users = pgTable(
 export const sessions = pgTable(
   "sessions",
   {
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
     id: varchar("id", { length: 255 })
       .primaryKey()
       .$defaultFn(() => generatePrefixedCuid(ID_PREFIXES.session)),
-    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
     token: text("token").notNull().unique(),
     ...timestamps(),
+    activeOrganizationId: text("active_organization_id"),
+    activeOrgRole: text("active_org_role"),
     ipAddress: text("ip_address"),
+    platform: text("platform", { enum: ["web", "mobile"] }).default("web"),
     userAgent: text("user_agent"),
     userId: varchar("user_id", { length: 255 })
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
-    platform: text("platform", { enum: ["web", "mobile"] }).default("web"),
-    activeOrganizationId: text("active_organization_id"),
-    activeOrgRole: text("active_org_role"),
   },
   (table) => [
     index("sessions_user_id_idx").on(table.userId),
@@ -84,25 +84,25 @@ export const sessions = pgTable(
 export const accounts = pgTable(
   "accounts",
   {
-    id: varchar("id", { length: 255 })
-      .primaryKey()
-      .$defaultFn(() => generatePrefixedCuid(ID_PREFIXES.account)),
-    accountId: text("account_id").notNull(),
-    providerId: text("provider_id").notNull(),
-    userId: varchar("user_id", { length: 255 })
-      .notNull()
-      .references(() => users.id, { onDelete: "cascade" }),
     accessToken: text("access_token"),
-    refreshToken: text("refresh_token"),
-    idToken: text("id_token"),
     accessTokenExpiresAt: timestamp("access_token_expires_at", {
       withTimezone: true,
     }),
+    accountId: text("account_id").notNull(),
+    id: varchar("id", { length: 255 })
+      .primaryKey()
+      .$defaultFn(() => generatePrefixedCuid(ID_PREFIXES.account)),
+    idToken: text("id_token"),
+    password: text("password"),
+    providerId: text("provider_id").notNull(),
+    refreshToken: text("refresh_token"),
     refreshTokenExpiresAt: timestamp("refresh_token_expires_at", {
       withTimezone: true,
     }),
     scope: text("scope"),
-    password: text("password"),
+    userId: varchar("user_id", { length: 255 })
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
     ...timestamps(),
   },
   (table) => [index("accounts_user_id_idx").on(table.userId)]
@@ -111,40 +111,40 @@ export const accounts = pgTable(
 export const verifications = pgTable(
   "verifications",
   {
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
     id: varchar("id", { length: 255 })
       .primaryKey()
       .$defaultFn(() => generatePrefixedCuid(ID_PREFIXES.verification)),
     identifier: text("identifier").notNull(),
     value: text("value").notNull(),
-    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
     ...timestamps(),
   },
   (table) => [index("verifications_identifier_idx").on(table.identifier)]
 );
 
 export const jwkss = pgTable("jwks", {
-  id: varchar("id", { length: 255 })
-    .primaryKey()
-    .$defaultFn(() => generatePrefixedCuid("jwk")),
-  publicKey: text("public_key").notNull(),
-  privateKey: text("private_key").notNull(),
   // Intentionally immutable, no updatedAt: rotation inserts new rows.
   createdAt: createdAt(),
   expiresAt: timestamp("expires_at", { withTimezone: true }),
+  id: varchar("id", { length: 255 })
+    .primaryKey()
+    .$defaultFn(() => generatePrefixedCuid("jwk")),
+  privateKey: text("private_key").notNull(),
+  publicKey: text("public_key").notNull(),
 });
 
 export const twoFactors = pgTable(
   "two_factors",
   {
+    backupCodes: text("backup_codes"),
     id: varchar("id", { length: 255 })
       .primaryKey()
       .$defaultFn(() => generatePrefixedCuid("2fa")),
+    // Required by better-auth twoFactor plugin schema; unused in our email-OTP-only flow.
+    secret: text("secret"),
     userId: varchar("user_id", { length: 255 })
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
-    // Required by better-auth twoFactor plugin schema; unused in our email-OTP-only flow.
-    secret: text("secret"),
-    backupCodes: text("backup_codes"),
     ...timestamps(),
   },
   (table) => [index("two_factors_user_id_idx").on(table.userId)]

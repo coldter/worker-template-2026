@@ -76,7 +76,7 @@ export function useMutationForm<
   });
 
   return {
-    submit,
     isPending: mutation.isPending,
+    submit,
   };
 }

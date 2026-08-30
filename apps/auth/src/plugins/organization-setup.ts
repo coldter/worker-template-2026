@@ -22,12 +22,12 @@ export function createOrganizationPlugin(
 ) {
   return organization({
     allowUserToCreateOrganization: false,
-    organizationLimit: 5,
+    cancelPendingInvitationsOnReInvite: true,
     creatorRole: "owner",
-    membershipLimit: 100,
 
     invitationExpiresIn: 172_800,
-    cancelPendingInvitationsOnReInvite: true,
+    membershipLimit: 100,
+    organizationLimit: 5,
 
     ...(sendInvitationEmailFn
       ? { sendInvitationEmail: sendInvitationEmailFn }
@@ -49,12 +49,12 @@ export function createOrganizationPlugin(
                 )
               ),
           {
+            meta: {
+              organizationId: member.organizationId,
+              userId: member.userId,
+            },
             reason:
               "Skipping session cleanup after member removal: org tables missing",
-            meta: {
-              userId: member.userId,
-              organizationId: member.organizationId,
-            },
           }
         );
       },
@@ -76,12 +76,12 @@ export function createOrganizationPlugin(
                 )
               ),
           {
+            meta: {
+              organizationId: member.organizationId,
+              userId: member.userId,
+            },
             reason:
               "Skipping session role sync after member role change: org tables missing",
-            meta: {
-              userId: member.userId,
-              organizationId: member.organizationId,
-            },
           }
         );
       },

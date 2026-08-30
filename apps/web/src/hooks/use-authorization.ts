@@ -14,13 +14,13 @@ export const authorizationKeys = {
 
 export const authorizationCapabilitiesQueryOptions = () =>
   queryOptions({
-    queryKey: authorizationKeys.capabilities(),
     queryFn: async ({ signal }) => {
       const response = await getAuthorizationCapabilities({ signal });
       return response.capabilities;
     },
-    staleTime: 5 * 60 * 1000,
+    queryKey: authorizationKeys.capabilities(),
     retry: 1,
+    staleTime: 5 * 60 * 1000,
   });
 
 export function useAuthorization() {

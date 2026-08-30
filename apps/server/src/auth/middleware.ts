@@ -45,6 +45,6 @@ function resolveDb(c: Context<AppEnv>) {
 export const authorize = createAuthorize<
   typeof authorization.resources,
   AppEnv
->(authorization, { resolvePrincipal, resolveDb });
+>(authorization, { resolveDb, resolvePrincipal });
 
 export { getAuthorizedResource };

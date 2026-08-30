@@ -1,12 +1,13 @@
 import { Cross2Icon } from "@radix-ui/react-icons";
-import type { Table } from "@tanstack/react-table";
+import type { ReactTable, RowData } from "@tanstack/react-table";
 import { Button } from "@/modules/ui/button";
 import { Input } from "@/modules/ui/input";
 import { DataTableFacetedFilter } from "./faceted-filter";
+import type { DataTableFeatures } from "./features";
 import { DataTableViewOptions } from "./view-options";
 
-type DataTableToolbarProps<TData> = {
-  table: Table<TData>;
+type DataTableToolbarProps<TData extends RowData> = {
+  table: ReactTable<DataTableFeatures, TData>;
   searchPlaceholder?: string;
   searchKey?: string;
   filters?: {
@@ -20,20 +21,21 @@ type DataTableToolbarProps<TData> = {
   }[];
 };
 
-export function DataTableToolbar<TData>({
+export function DataTableToolbar<TData extends RowData>({
   table,
   searchPlaceholder = "Filter...",
   searchKey,
   filters = [],
 }: DataTableToolbarProps<TData>) {
   const isFiltered =
-    table.getState().columnFilters.length > 0 || table.getState().globalFilter;
+    table.state.columnFilters.length > 0 || table.state.globalFilter;
 
   return (
     <div className="flex items-center justify-between">
       <div className="flex flex-1 flex-col-reverse items-start gap-y-2 sm:flex-row sm:items-center sm:space-x-2">
         {searchKey ? (
           <Input
+            aria-label={searchPlaceholder}
             className="h-8 w-[150px] lg:w-[250px]"
             onChange={(event) =>
               table.getColumn(searchKey)?.setFilterValue(event.target.value)
@@ -45,10 +47,11 @@ export function DataTableToolbar<TData>({
           />
         ) : (
           <Input
+            aria-label={searchPlaceholder}
             className="h-8 w-[150px] lg:w-[250px]"
             onChange={(event) => table.setGlobalFilter(event.target.value)}
             placeholder={searchPlaceholder}
-            value={table.getState().globalFilter ?? ""}
+            value={table.state.globalFilter ?? ""}
           />
         )}
         <div className="flex gap-x-2">

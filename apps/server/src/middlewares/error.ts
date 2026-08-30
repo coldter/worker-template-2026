@@ -48,9 +48,9 @@ export const errorHandler: ErrorHandler<AppEnv> = (err, c) => {
     if (err.status >= 500) {
       logger.error("HTTPException 500", {
         message: err.message,
-        status: err.status,
-        path: c.req.path,
         method: c.req.method,
+        path: c.req.path,
+        status: err.status,
         ...correlationContext(c),
       });
     }
@@ -98,8 +98,8 @@ export const errorHandler: ErrorHandler<AppEnv> = (err, c) => {
   }
 
   logger.error("unhandled exception", {
-    name: err?.name,
     message: err?.message,
+    name: err?.name,
     stack: err?.stack,
     ...correlationContext(c),
   });

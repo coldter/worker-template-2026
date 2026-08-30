@@ -33,8 +33,8 @@ export function buildAuthorizationPrincipal(
   if (roles.length !== allSlugs.length) {
     const droppedRoles = allSlugs.filter((role) => !isAuthorizationRole(role));
     logger.warn("Dropped unknown roles for user", {
-      userId: user.id,
       droppedRoles,
+      userId: user.id,
     });
   }
 
@@ -46,13 +46,13 @@ export function buildAuthorizationPrincipal(
     : "active";
 
   return {
-    id: user.id,
-    roles,
     attributes: {
-      status,
       email: user.email ?? "",
       emailVerified: user.emailVerified ?? false,
+      status,
     },
+    id: user.id,
+    roles,
     ...(session.activeOrganizationId &&
     session.activeOrgRole &&
     isAuthorizationOrgRole(session.activeOrgRole)
@@ -70,8 +70,8 @@ export function toBaseAuthorizationPrincipal(
   principal: AuthorizationPrincipal
 ): Principal {
   return {
+    attributes: principal.attributes,
     id: principal.id,
     roles: principal.roles,
-    attributes: principal.attributes,
   };
 }

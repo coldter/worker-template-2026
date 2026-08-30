@@ -26,19 +26,19 @@ app.use("*", async (c, next) => {
   const duration = Date.now() - start;
 
   try {
-    const pathname = c.req.path;
-    const cf = c.req.raw.cf;
+    const { path } = c.req;
+    const { cf } = c.req.raw;
     c.env.ANALYTICS?.writeDataPoint({
       blobs: [
         "auth",
         c.req.method,
-        pathname,
+        path,
         typeof cf?.country === "string" ? cf.country : null,
         typeof cf?.colo === "string" ? cf.colo : null,
         c.env.CF_VERSION_METADATA?.id ?? null,
       ],
       doubles: [c.res.status, duration],
-      indexes: [pathname],
+      indexes: [path],
     });
   } catch (err) {
     logger.debug("Analytics writeDataPoint failed", {

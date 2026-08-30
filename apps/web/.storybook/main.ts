@@ -3,25 +3,25 @@ import type { StorybookConfig } from "@storybook/react-vite";
 const NODE_MODULES_PATTERN = /node_modules/;
 
 const config = {
-  stories: ["../src/**/*.mdx", "../src/**/*.stories.@(js|jsx|mjs|ts|tsx)"],
   addons: [
     "@storybook/addon-a11y",
     "@storybook/addon-docs",
     "@storybook/addon-themes",
   ],
+  docs: { autodocs: "tag" },
   framework: {
     name: "@storybook/react-vite",
     options: {},
   },
   staticDirs: ["../public"],
-  docs: { autodocs: "tag" },
+  stories: ["../src/**/*.mdx", "../src/**/*.stories.@(js|jsx|mjs|ts|tsx)"],
   typescript: {
     reactDocgen: "react-docgen-typescript",
     reactDocgenTypescriptOptions: {
-      shouldExtractLiteralValuesFromEnum: true,
-      shouldRemoveUndefinedFromOptional: true,
       propFilter: (prop) =>
         prop.parent ? !NODE_MODULES_PATTERN.test(prop.parent.fileName) : true,
+      shouldExtractLiteralValuesFromEnum: true,
+      shouldRemoveUndefinedFromOptional: true,
     },
   },
 } satisfies StorybookConfig;

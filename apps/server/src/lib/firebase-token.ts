@@ -36,7 +36,7 @@ let cachedServiceAccount: ServiceAccount | null = null;
 
 const RE_PLUS = /\+/g;
 const RE_SLASH = /\//g;
-const RE_TRAILING_EQUALS = /=+$/;
+const RE_TRAILING_EQUALS = /[=]+$/;
 
 function base64UrlEncode(data: Uint8Array): string {
   const binary = Array.from(data, (b) => String.fromCharCode(b)).join("");
@@ -94,14 +94,14 @@ async function importPrivateKey(pem: string): Promise<CryptoKey> {
 
   const binaryString = atob(pemBody);
   const bytes = new Uint8Array(binaryString.length);
-  for (let i = 0; i < binaryString.length; i++) {
+  for (let i = 0; i < binaryString.length; i += 1) {
     bytes[i] = binaryString.charCodeAt(i);
   }
 
   cachedCryptoKey = await crypto.subtle.importKey(
     "pkcs8",
     bytes.buffer,
-    { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
+    { hash: "SHA-256", name: "RSASSA-PKCS1-v1_5" },
     false,
     ["sign"]
   );
@@ -117,11 +117,11 @@ async function createSignedJwt(
   const header = textToBase64Url(JSON.stringify({ alg: "RS256", typ: "JWT" }));
   const payload = textToBase64Url(
     JSON.stringify({
+      aud: TOKEN_URL,
+      exp: now + 3600,
+      iat: now,
       iss: serviceAccount.client_email,
       scope: FCM_SCOPE,
-      aud: TOKEN_URL,
-      iat: now,
-      exp: now + 3600,
     })
   );
 
@@ -142,9 +142,9 @@ async function fetchAccessToken(
   const jwt = await createSignedJwt(serviceAccount);
 
   const response = await fetch(TOKEN_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: `grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer&assertion=${jwt}`,
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    method: "POST",
   });
 
   if (!response.ok) {

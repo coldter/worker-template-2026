@@ -10,7 +10,7 @@ export async function setUserLocked(
 ): Promise<void> {
   await executor
     .update(users)
-    .set({ status: "locked", lockedUntil, failedLoginAttempts })
+    .set({ failedLoginAttempts, lockedUntil, status: "locked" })
     .where(eq(users.id, userId));
 }
 
@@ -48,7 +48,7 @@ export async function clearUserLockout(
 ): Promise<boolean> {
   const result = await executor
     .update(users)
-    .set({ status: "active", lockedUntil: null, failedLoginAttempts: 0 })
+    .set({ failedLoginAttempts: 0, lockedUntil: null, status: "active" })
     .where(eq(users.id, userId))
     .returning({ id: users.id });
   return result.length > 0;
@@ -63,10 +63,10 @@ export async function deactivateUser(
   const result = await executor
     .update(users)
     .set({
-      status: "inactive",
       deactivatedAt: new Date(),
       deactivatedBy: actorId,
       deactivatedReason: reason,
+      status: "inactive",
     })
     .where(eq(users.id, userId))
     .returning({ id: users.id });
@@ -80,10 +80,10 @@ export async function activateUser(
   const result = await executor
     .update(users)
     .set({
-      status: "active",
       deactivatedAt: null,
       deactivatedBy: null,
       deactivatedReason: null,
+      status: "active",
     })
     .where(eq(users.id, userId))
     .returning({ id: users.id });

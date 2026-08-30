@@ -35,22 +35,22 @@ export function RoleAssignmentDialog({
   const updateMutation = useUpdateUserRolesMutation();
 
   const form = useForm<RolesFormValues>({
-    resolver: zodResolver(rolesSchema),
     defaultValues: {
       roleSlugs: user.roleSlugs,
     },
+    resolver: zodResolver(rolesSchema),
   });
 
   const { submit, isPending } = useMutationForm({
     form,
     mutation: updateMutation,
-    toVariables: (values) => ({ userId: user.id, data: values }),
     onClose: () => onOpenChange(false),
     resetWhen: {
-      open,
       key: user,
+      open,
       values: { roleSlugs: user.roleSlugs },
     },
+    toVariables: (values) => ({ data: values, userId: user.id }),
   });
 
   return (

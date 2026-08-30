@@ -17,8 +17,8 @@ process.env.SKIP_DB = "true";
     setupDocs(app);
 
     const spec = app.getOpenAPI31Document({
-      openapi: "3.1.0",
       info: { title: "Server API", version: "v1" },
+      openapi: "3.1.0",
     });
     const outPath = resolve(
       import.meta.dirname ?? ".",

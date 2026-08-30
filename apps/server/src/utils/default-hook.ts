@@ -5,7 +5,7 @@ import type { Env } from "@/lib/context";
 
 export const defaultHook: Hook<unknown, Env, "", unknown> = (result) => {
   if (!result.success && result.error instanceof ZodError) {
-    const issue = result.error.issues[0];
+    const [issue] = result.error.issues;
     if (!issue) {
       return;
     }

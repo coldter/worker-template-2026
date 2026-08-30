@@ -1,12 +1,16 @@
 import {
   type ColumnDef,
-  getCoreRowModel,
-  type Table,
-  useReactTable,
+  type ReactTable,
+  type RowData,
+  useTable,
 } from "@tanstack/react-table";
 import { useEffect } from "react";
 
 import { type NavigateFn, useTableUrlState } from "@/hooks/use-table-url-state";
+import {
+  type DataTableFeatures,
+  dataTableFeatures,
+} from "@/modules/data-table/features";
 
 type SearchRecord = Record<string, unknown>;
 
@@ -40,9 +44,13 @@ type BuildQueryParamsArgs<TSearch> = {
   search: TSearch;
 };
 
-type UseServerTableParams<TRow, TSearch extends SearchRecord, TQueryParams> = {
+type UseServerTableParams<
+  TRow extends RowData,
+  TSearch extends SearchRecord,
+  TQueryParams,
+> = {
   route: ServerTableRoute<TSearch>;
-  columns: ColumnDef<TRow>[];
+  columns: ColumnDef<DataTableFeatures, TRow>[];
   buildQueryParams: (args: BuildQueryParamsArgs<TSearch>) => TQueryParams;
   useData: (params: TQueryParams) => QueryResultLike<TRow>;
   defaultPage?: number;
@@ -51,8 +59,11 @@ type UseServerTableParams<TRow, TSearch extends SearchRecord, TQueryParams> = {
   defaultOrder?: "asc" | "desc";
 };
 
-type UseServerTableResult<TRow, TSearch extends SearchRecord> = {
-  table: Table<TRow>;
+type UseServerTableResult<
+  TRow extends RowData,
+  TSearch extends SearchRecord,
+> = {
+  table: ReactTable<DataTableFeatures, TRow>;
   navigate: NavigateFn;
   search: TSearch;
   rows: TRow[];
@@ -63,7 +74,7 @@ type UseServerTableResult<TRow, TSearch extends SearchRecord> = {
 };
 
 export function useServerTable<
-  TRow,
+  TRow extends RowData,
   TSearch extends SearchRecord,
   TQueryParams,
 >(
@@ -86,18 +97,18 @@ export function useServerTable<
   const navigate: NavigateFn = ({ search: searchUpdate, replace }) => {
     if (typeof searchUpdate === "function") {
       routeNavigate({
-        search: (prev: TSearch) => ({ ...prev, ...searchUpdate(prev) }),
         replace,
+        search: (prev: TSearch) => ({ ...prev, ...searchUpdate(prev) }),
       });
       return;
     }
     if (searchUpdate === true) {
-      routeNavigate({ search: true, replace });
+      routeNavigate({ replace, search: true });
       return;
     }
     routeNavigate({
-      search: (prev: TSearch) => ({ ...prev, ...searchUpdate }),
       replace,
+      search: (prev: TSearch) => ({ ...prev, ...searchUpdate }),
     });
   };
 
@@ -108,20 +119,20 @@ export function useServerTable<
     onSortingChange,
     ensurePageInRange,
   } = useTableUrlState({
-    search,
     navigate,
     pagination: { defaultPage, defaultPageSize },
-    sorting: { defaultSort, defaultOrder },
+    search,
+    sorting: { defaultOrder, defaultSort },
   });
 
   const queryParams = buildQueryParams({
     page: pagination.pageIndex + 1,
     perPage: pagination.pageSize,
-    sort: {
-      id: sorting[0]?.id,
-      desc: sorting[0]?.desc,
-    },
     search,
+    sort: {
+      desc: sorting[0]?.desc,
+      id: sorting[0]?.id,
+    },
   });
 
   const { data, isLoading, isError } = useData(queryParams);
@@ -134,26 +145,27 @@ export function useServerTable<
     ensurePageInRange(pageCount);
   }, [pageCount]);
 
-  const table = useReactTable({
-    data: rows,
+  const table = useTable({
     columns,
-    pageCount,
-    state: { pagination, sorting },
-    onPaginationChange,
-    onSortingChange,
-    getCoreRowModel: getCoreRowModel(),
+    data: rows,
+    features: dataTableFeatures,
+    manualFiltering: true,
     manualPagination: true,
     manualSorting: true,
+    onPaginationChange,
+    onSortingChange,
+    pageCount,
+    state: { pagination, sorting },
   });
 
   return {
-    table,
-    navigate,
-    search,
-    rows,
-    isLoading,
     isError,
+    isLoading,
+    navigate,
     pageCount,
+    rows,
+    search,
+    table,
     total: data?.meta.total,
   };
 }

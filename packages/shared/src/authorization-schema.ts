@@ -8,16 +8,16 @@ import { SYSTEM_ROLE_SLUG_VALUES } from "./roles";
 import { USER_STATUS_VALUES, type UserStatus } from "./users";
 
 export const auth = createAuthSchema({
-  roles: ["admin", "user"],
-  systemAdminRoles: ["admin"],
-  relations: ["owner", "member"],
+  globalPolicies: (p) => [p.deny("*").to("*").where(principalNotActive())],
   organizationRoles: ["owner", "admin", "member"],
   principal: {
-    status: principalAttribute<UserStatus>(),
     email: principalAttribute<string>(),
     emailVerified: principalAttribute<boolean>(),
+    status: principalAttribute<UserStatus>(),
   },
-  globalPolicies: (p) => [p.deny("*").to("*").where(principalNotActive())],
+  relations: ["owner", "member"],
+  roles: ["admin", "user"],
+  systemAdminRoles: ["admin"],
 });
 
 export type AuthorizationRole = (typeof auth)["roleValues"][number];
@@ -114,8 +114,8 @@ export const notificationsAuthorization = auth.createResource<
 });
 
 export const authorization = auth.buildRegistry({
-  user: usersAuthorization,
-  role: rolesAuthorization,
   "audit-log": auditLogsAuthorization,
   notification: notificationsAuthorization,
+  role: rolesAuthorization,
+  user: usersAuthorization,
 });

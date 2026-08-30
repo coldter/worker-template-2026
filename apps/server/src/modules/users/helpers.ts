@@ -21,5 +21,5 @@ export function createChangeMetadata<T extends Record<string, unknown>>(
     }
   }
 
-  return { changes, changedFields };
+  return { changedFields, changes };
 }

@@ -5,13 +5,13 @@ export const platformSchema = z.enum(["web", "mobile"]);
 export type Platform = "web" | "mobile";
 
 export const SESSION_CONFIG = {
-  web: {
-    expiresIn: 3600,
-    updateAge: 1800,
-  },
   mobile: {
     expiresIn: 604_800,
     updateAge: 86_400,
+  },
+  web: {
+    expiresIn: 3600,
+    updateAge: 1800,
   },
 } as const;
 

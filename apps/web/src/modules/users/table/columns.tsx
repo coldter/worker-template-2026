@@ -3,18 +3,16 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns";
 
 import { DataTableColumnHeader } from "@/modules/data-table/column-header";
+import type { DataTableFeatures } from "@/modules/data-table/features";
 import { Avatar, AvatarFallback, AvatarImage } from "@/modules/ui/avatar";
 
 import { UserRoleBadges } from "../components/user-role-badges";
 import { UserStatusBadge } from "../components/user-status-badge";
 import type { User } from "../types";
 
-export const usersColumns: ColumnDef<User>[] = [
+export const usersColumns: ColumnDef<DataTableFeatures, User>[] = [
   {
     accessorKey: "name",
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="User" />
-    ),
     cell: ({ row }) => {
       const user = row.original;
       const initials = user.name
@@ -42,26 +40,26 @@ export const usersColumns: ColumnDef<User>[] = [
       );
     },
     enableSorting: true,
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="User" />
+    ),
   },
   {
     accessorKey: "status",
+    cell: ({ row }) => <UserStatusBadge status={row.original.status} />,
+    enableSorting: true,
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Status" />
     ),
-    cell: ({ row }) => <UserStatusBadge status={row.original.status} />,
-    enableSorting: true,
   },
   {
     accessorKey: "roleSlugs",
-    header: "Roles",
     cell: ({ row }) => <UserRoleBadges roles={row.original.roleSlugs} />,
     enableSorting: false,
+    header: "Roles",
   },
   {
     accessorKey: "createdAt",
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Created" />
-    ),
     cell: ({ row }) => {
       const date = row.getValue<string>("createdAt");
       return (
@@ -71,5 +69,8 @@ export const usersColumns: ColumnDef<User>[] = [
       );
     },
     enableSorting: true,
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Created" />
+    ),
   },
 ];

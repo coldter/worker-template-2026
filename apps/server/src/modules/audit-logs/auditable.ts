@@ -49,14 +49,14 @@ export async function auditTransaction<T>(
 
     await auditLogService.createMany(
       entries.map((entry) => ({
-        event: entry.event,
         actorId: entry.actorId,
         actorType: entry.actorType ?? "user",
+        event: entry.event,
+        ipAddress: auditContext.ipAddress,
+        metadata: entry.metadata,
         targetId: entry.targetId,
         targetType: entry.targetType,
-        ipAddress: auditContext.ipAddress,
         userAgent: auditContext.userAgent,
-        metadata: entry.metadata,
       })),
       tx
     );

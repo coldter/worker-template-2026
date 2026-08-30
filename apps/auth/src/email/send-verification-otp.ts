@@ -27,22 +27,22 @@ export function createSendVerificationOTP(
     type: EmailOTPType;
   }) => {
     const user = await db.query.users.findFirst({
-      where: { email: { eq: email } },
       columns: { name: true },
+      where: { email: { eq: email } },
     });
 
     const typeLabels: Record<EmailOTPType, string> = {
-      "sign-in": "sign-in",
+      "change-email": "email change",
       "email-verification": "email verification",
       "forget-password": "password reset",
-      "change-email": "email change",
+      "sign-in": "sign-in",
     };
 
     const subjectByType: Record<EmailOTPType, string> = {
-      "forget-password": "Reset Your Password",
-      "email-verification": "Verify Your Email",
-      "sign-in": "Sign In Verification",
       "change-email": "Confirm Email Change",
+      "email-verification": "Verify Your Email",
+      "forget-password": "Reset Your Password",
+      "sign-in": "Sign In Verification",
     };
 
     logger.info(`Sending ${typeLabels[type]} OTP to ${email}`);
@@ -54,20 +54,20 @@ export function createSendVerificationOTP(
       sendEmail({
         apiKey: env.RESEND_API_KEY,
         from: `${brand.appName} <${env.EMAIL_FROM}>`,
-        to: email,
-        subject: subjectByType[type],
-        template: VerificationOtpEmail,
         props: {
-          userName: user?.name ?? "User",
+          expiresIn: `${Math.floor(TWO_FACTOR_CONFIG.emailOtpExpiresIn / 60)} minutes`,
           otp,
           type: templateType,
-          expiresIn: `${Math.floor(TWO_FACTOR_CONFIG.emailOtpExpiresIn / 60)} minutes`,
+          userName: user?.name ?? "User",
         },
+        subject: subjectByType[type],
+        template: VerificationOtpEmail,
+        to: email,
       }).catch((error) => {
         logger.error("Failed to send verification OTP email", {
           email,
-          type,
           error,
+          type,
         });
       })
     );

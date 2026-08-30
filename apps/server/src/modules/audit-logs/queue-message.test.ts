@@ -5,9 +5,9 @@ describe("parseAuditLogMessage", () => {
   it("accepts a well-formed bufferable message and defaults actorType", () => {
     const data = parseAuditLogMessage({
       event: "user.viewed",
+      occurredAt: "2026-06-09T00:00:00.000Z",
       targetId: "usr_1",
       targetType: "user",
-      occurredAt: "2026-06-09T00:00:00.000Z",
     });
 
     expect(data).not.toBeNull();
@@ -17,9 +17,9 @@ describe("parseAuditLogMessage", () => {
 
   it("preserves provided fields", () => {
     const data = parseAuditLogMessage({
-      event: "user.listed",
       actorId: "usr_123",
       actorType: "api",
+      event: "user.listed",
       ipAddress: "1.2.3.4",
       metadata: { count: 25 },
       occurredAt: "2026-06-09T00:00:00.000Z",

@@ -18,7 +18,7 @@ app.get("/ready", async (c) => {
   const checks = await checkReadiness(c.var.db, c.env.CACHE);
   const ready = checks.database && checks.cache;
   return c.json(
-    { status: ready ? "ok" : "unavailable", checks },
+    { checks, status: ready ? "ok" : "unavailable" },
     ready ? 200 : 503
   );
 });

@@ -35,8 +35,8 @@ const fcmErrorSchema = z.object({
   error: z
     .object({
       code: z.number().optional(),
-      message: z.string().optional(),
       details: z.array(fcmErrorDetailSchema).optional(),
+      message: z.string().optional(),
     })
     .optional(),
 });
@@ -44,12 +44,12 @@ const fcmErrorSchema = z.object({
 class ConsolePushProvider implements PushProvider {
   async send(message: PushMessage): Promise<PushSendResult> {
     logger.info("Console push provider: would send push notification", {
+      body: message.data.body,
+      title: message.data.title,
       token: `${message.token.slice(0, 12)}...`,
       type: message.data.type,
-      title: message.data.title,
-      body: message.data.body,
     });
-    return { success: true, messageId: `console_${Date.now()}` };
+    return { messageId: `console_${Date.now()}`, success: true };
   }
 }
 
@@ -71,17 +71,17 @@ class FcmHttpProvider implements PushProvider {
     const url = `https://fcm.googleapis.com/v1/projects/${this.serviceAccount.project_id}/messages:send`;
 
     const response = await fetch(url, {
-      method: "POST",
+      body: JSON.stringify({
+        message: {
+          data: message.data,
+          token: message.token,
+        },
+      }),
       headers: {
         Authorization: `Bearer ${accessToken}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        message: {
-          token: message.token,
-          data: message.data,
-        },
-      }),
+      method: "POST",
     });
 
     if (response.ok) {
@@ -91,7 +91,7 @@ class FcmHttpProvider implements PushProvider {
       if (!parsedResult.success) {
         throw new Error("FCM success response did not match expected shape");
       }
-      return { success: true, messageId: parsedResult.data.name };
+      return { messageId: parsedResult.data.name, success: true };
     }
 
     // boundary: external FCM error response validated by fcmErrorSchema
@@ -112,10 +112,10 @@ class FcmHttpProvider implements PushProvider {
       : false;
 
     return {
-      success: false,
       error:
         errorBody.error?.message ?? `FCM request failed (${response.status})`,
       invalidToken: isInvalidToken,
+      success: false,
     };
   }
 }

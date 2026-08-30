@@ -43,13 +43,13 @@ export function LayoutProvider({ children }: LayoutProviderProps) {
   };
 
   const contextValue: LayoutContextType = {
-    resetLayout,
-    defaultCollapsible: DEFAULT_COLLAPSIBLE,
     collapsible,
-    setCollapsible,
+    defaultCollapsible: DEFAULT_COLLAPSIBLE,
     defaultVariant: DEFAULT_VARIANT,
-    variant,
+    resetLayout,
+    setCollapsible,
     setVariant,
+    variant,
   };
 
   return <LayoutContext value={contextValue}>{children}</LayoutContext>;

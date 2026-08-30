@@ -33,9 +33,9 @@ describe("PolicyDecision", () => {
 describe("Principal", () => {
   it("single-tenant principal has no organization", () => {
     const principal: Principal<"admin" | "user", { status: string }> = {
+      attributes: { status: "active" },
       id: "usr_1",
       roles: ["user"],
-      attributes: { status: "active" },
     };
     expect(principal.organization).toBeUndefined();
   });
@@ -46,10 +46,10 @@ describe("Principal", () => {
       { status: string },
       "owner" | "member"
     > = {
-      id: "usr_1",
-      roles: ["user"],
       attributes: { status: "active" },
+      id: "usr_1",
       organization: { id: "org_1", role: "member" },
+      roles: ["user"],
     };
     expect(principal.organization?.role).toBe("member");
   });
@@ -58,11 +58,11 @@ describe("Principal", () => {
 describe("PolicyRule", () => {
   it("has effect, roles, actions, conditions, label", () => {
     const rule: PolicyRule = {
-      effect: "allow",
-      roles: ["admin"],
       actions: ["view"],
       conditions: [],
+      effect: "allow",
       label: "allow:admin:view",
+      roles: ["admin"],
     };
     expect(rule.effect).toBe("allow");
   });

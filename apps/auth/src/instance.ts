@@ -82,52 +82,170 @@ export function createAuth(
   const brand = getMemoizedBrandConfig(env);
 
   const authConfig = {
+    advanced: {
+      cookies: {
+        session_token: {
+          attributes: {
+            httpOnly: true,
+          },
+          name: "session_token_v1",
+        },
+      },
+      database: {
+        generateId: (options) => generateIdForModel(options.model),
+      },
+      defaultCookieAttributes: {
+        httpOnly: true,
+        sameSite: "lax",
+      },
+    },
     appName: brand.appName,
-    secret: env.BETTER_AUTH_SECRET,
     baseURL: env.APP_URL,
     database: drizzleAdapter(db, {
       provider: "pg",
-      usePlural: true,
       schema,
+      usePlural: true,
     }),
-    secondaryStorage: {
-      get: async (key) => kvGetJson(env.CACHE, key),
-      set: async (key, value, ttl) => {
-        await kvSetJson(env.CACHE, key, value, ttl);
+    databaseHooks: {
+      session: {
+        create: {
+          before: createSessionCreateBeforeHook(db, env, ctx),
+        },
+        update: {
+          before: createSessionUpdateBeforeHook(db),
+        },
       },
-      delete: async (key) => {
-        await kvDelete(env.CACHE, key);
-      },
-    },
-    trustedOrigins: corsOrigins,
-
-    // Global limit set above lockout threshold so custom lockout triggers first.
-    rateLimit: {
-      enabled: true,
-      window: RATE_LIMIT_CONFIG.global.window,
-      max: RATE_LIMIT_CONFIG.global.max,
-      storage: "secondary-storage" as const,
-      customRules: {
-        "/sign-in/email": {
-          window: RATE_LIMIT_CONFIG.signIn.window,
-          max: RATE_LIMIT_CONFIG.signIn.max,
+      user: {
+        create: {
+          after: createUserCreateAfterHook(env, ctx),
+          before: createUserCreateBeforeHook(),
         },
       },
     },
 
     emailAndPassword: {
-      enabled: true,
       // No signup UI exists in the web app, so registration stays closed unless
       // explicitly enabled. Dev defaults ENABLE_SIGNUP to "true" in wrangler.jsonc;
       // production deploys override it via --var (Wrangler vars are strings).
       disableSignUp: env.ENABLE_SIGNUP !== "true",
+      enabled: true,
       requireEmailVerification: true,
     },
 
+    plugins: [
+      enhancedUserPlugin(),
+      loginSecurityPlugin(db),
+      adminPlugin(env.API),
+      emailOTP({
+        expiresIn: TWO_FACTOR_CONFIG.emailOtpExpiresIn,
+        otpLength: TWO_FACTOR_CONFIG.otpLength,
+        sendVerificationOnSignUp: true,
+        sendVerificationOTP: createSendVerificationOTP(db, env, ctx, brand),
+      }),
+      twoFactor({
+        otpOptions: {
+          period: TWO_FACTOR_CONFIG.twoFactorOtpPeriodMinutes,
+          sendOTP: createSendTwoFactorOTP(env, ctx, brand),
+        },
+        // Email OTP only; no TOTP enrollment flow to verify against.
+        skipVerificationOnEnable: true,
+        // usePlural: true on the Drizzle adapter requires the singular model name to resolve to "twoFactors".
+        twoFactorTable: "twoFactor",
+      }),
+      openAPI({
+        disableDefaultReference: true,
+      }),
+      createOrganizationPlugin(db),
+      bearer({ requireSignature: true }),
+      jwt({
+        jwks: {
+          rotationInterval: 30 * 24 * 60 * 60,
+        },
+        jwt: {
+          audience: env.APP_URL,
+          definePayload: ({ user, session }) => {
+            // boundary: better-auth additionalFields generic variance -- user-status plugin fields not visible to this callback's generic.
+            const typedUser = user as typeof user & UserWithStatusFields;
+            return {
+              email: user.email,
+              platform: session.platform,
+              roleSlugs: typedUser.roleSlugs,
+              sub: user.id,
+            };
+          },
+          expirationTime: "15m",
+          issuer: env.APP_URL,
+        },
+      }),
+      {
+        $Infer: {} as {
+          Session: {
+            user: User & UserWithStatusFields;
+            session: Session & SessionWithAdditionalFields;
+          };
+        },
+        id: "override-type",
+      },
+    ],
+
+    // Global limit set above lockout threshold so custom lockout triggers first.
+    rateLimit: {
+      customRules: {
+        "/sign-in/email": {
+          max: RATE_LIMIT_CONFIG.signIn.max,
+          window: RATE_LIMIT_CONFIG.signIn.window,
+        },
+      },
+      enabled: true,
+      max: RATE_LIMIT_CONFIG.global.max,
+      storage: "secondary-storage" as const,
+      window: RATE_LIMIT_CONFIG.global.window,
+    },
+    secondaryStorage: {
+      delete: async (key) => {
+        await kvDelete(env.CACHE, key);
+      },
+      get: async (key) => kvGetJson(env.CACHE, key),
+      // KV has no atomic get-and-delete; the previous adapter's get+delete
+      // pair had the same single-use window, so behavior is unchanged.
+      getAndDelete: async (key) => {
+        const value = await kvGetJson(env.CACHE, key);
+        if (value !== null) {
+          await kvDelete(env.CACHE, key);
+        }
+        return value;
+      },
+      // KV has no counter primitive; read-modify-write matches the pre-1.7
+      // adapter behavior (read-your-writes within a colo). TTL is applied
+      // only on creation so the window never extends, per the 1.7 contract.
+      increment: async (key, ttl) => {
+        const current = await kvGetJson<number>(env.CACHE, key);
+        const next = (typeof current === "number" ? current : 0) + 1;
+        if (typeof current === "number") {
+          await env.CACHE.put(key, JSON.stringify(next));
+        } else {
+          await kvSetJson(env.CACHE, key, next, ttl);
+        }
+        return next;
+      },
+      set: async (key, value, ttl) => {
+        await kvSetJson(env.CACHE, key, value, ttl);
+      },
+    },
+    secret: env.BETTER_AUTH_SECRET,
+
     session: {
-      // Mobile defaults so cookie Max-Age matches 7-day mobile sessions; web is shortened in hooks.
-      expiresIn: 604_800,
-      updateAge: 86_400,
+      additionalFields: {
+        activeOrgRole: {
+          required: false,
+          type: "string",
+        },
+        platform: {
+          defaultValue: "web",
+          required: false,
+          type: [...platformSchema.options],
+        },
+      },
       // Cache a signed session snapshot in the cookie for up to 60s to avoid a
       // secondary-storage / DB hit on every getSession. Deliberate trade-off:
       // while the cached snapshot is valid, session/role/status/lockout
@@ -143,108 +261,11 @@ export function createAuth(
         enabled: true,
         maxAge: 60,
       },
-      additionalFields: {
-        platform: {
-          type: [...platformSchema.options],
-          required: false,
-          defaultValue: "web",
-        },
-        activeOrgRole: {
-          type: "string",
-          required: false,
-        },
-      },
+      // Mobile defaults so cookie Max-Age matches 7-day mobile sessions; web is shortened in hooks.
+      expiresIn: 604_800,
+      updateAge: 86_400,
     },
-
-    advanced: {
-      defaultCookieAttributes: {
-        sameSite: "lax",
-        httpOnly: true,
-      },
-      cookies: {
-        session_token: {
-          name: "session_token_v1",
-          attributes: {
-            httpOnly: true,
-          },
-        },
-      },
-      database: {
-        generateId: (options) => generateIdForModel(options.model),
-      },
-    },
-    databaseHooks: {
-      user: {
-        create: {
-          before: createUserCreateBeforeHook(),
-          after: createUserCreateAfterHook(env, ctx),
-        },
-      },
-      session: {
-        create: {
-          before: createSessionCreateBeforeHook(db, env, ctx),
-        },
-        update: {
-          before: createSessionUpdateBeforeHook(db),
-        },
-      },
-    },
-
-    plugins: [
-      enhancedUserPlugin(),
-      loginSecurityPlugin(db),
-      adminPlugin(env.API),
-      emailOTP({
-        otpLength: TWO_FACTOR_CONFIG.otpLength,
-        expiresIn: TWO_FACTOR_CONFIG.emailOtpExpiresIn,
-        sendVerificationOnSignUp: true,
-        sendVerificationOTP: createSendVerificationOTP(db, env, ctx, brand),
-      }),
-      twoFactor({
-        // usePlural: true on the Drizzle adapter requires the singular model name to resolve to "twoFactors".
-        twoFactorTable: "twoFactor",
-        // Email OTP only; no TOTP enrollment flow to verify against.
-        skipVerificationOnEnable: true,
-        otpOptions: {
-          period: TWO_FACTOR_CONFIG.twoFactorOtpPeriodMinutes,
-          sendOTP: createSendTwoFactorOTP(env, ctx, brand),
-        },
-      }),
-      openAPI({
-        disableDefaultReference: true,
-      }),
-      createOrganizationPlugin(db),
-      bearer({ requireSignature: true }),
-      jwt({
-        jwt: {
-          issuer: env.APP_URL,
-          audience: env.APP_URL,
-          expirationTime: "15m",
-          definePayload: ({ user, session }) => {
-            // boundary: better-auth additionalFields generic variance -- user-status plugin fields not visible to this callback's generic.
-            const typedUser = user as typeof user & UserWithStatusFields;
-            return {
-              sub: user.id,
-              email: user.email,
-              roleSlugs: typedUser.roleSlugs,
-              platform: session.platform,
-            };
-          },
-        },
-        jwks: {
-          rotationInterval: 30 * 24 * 60 * 60,
-        },
-      }),
-      {
-        id: "override-type",
-        $Infer: {} as {
-          Session: {
-            user: User & UserWithStatusFields;
-            session: Session & SessionWithAdditionalFields;
-          };
-        },
-      },
-    ],
+    trustedOrigins: corsOrigins,
   } satisfies BetterAuthOptions;
 
   return betterAuth(authConfig);

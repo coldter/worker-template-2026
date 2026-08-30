@@ -52,15 +52,131 @@ async function safeNotifyStatusChange(
     await onUserStatusChange(userId, newStatus, previousStatus, reason);
   } catch (error) {
     logger.error("onUserStatusChange hook failed", {
-      userId,
+      error,
       newStatus,
       previousStatus,
-      error,
+      userId,
     });
   }
 }
 
 export const userService = {
+  async activate(
+    db: DrizzleClient,
+    id: string,
+    actorId: string,
+    auditContext: AuditContext
+  ): Promise<void> {
+    const existingUser = await this.findById(db, id);
+    if (!existingUser) {
+      throw new UserNotFoundError(id);
+    }
+
+    await auditTransaction(db, auditContext, async (tx, audit) => {
+      const updated = await activateUser(tx, id);
+      if (!updated) {
+        throw new UserNotFoundError(id);
+      }
+
+      audit.record({
+        actorId,
+        event: AUDIT_EVENTS.USER.ACTIVATED.event,
+        targetId: id,
+        targetType: TARGET_TYPES.USER,
+      });
+    });
+
+    await safeNotifyStatusChange(
+      id,
+      USER_STATUS.ACTIVE,
+      existingUser.status,
+      null
+    );
+  },
+
+  async create(
+    db: DrizzleClient,
+    input: CreateUserInput,
+    actorId: string,
+    auditContext: AuditContext
+  ): Promise<UserRecord> {
+    const hashedPassword = await hashPassword(input.password);
+
+    return auditTransaction(db, auditContext, async (tx, audit) => {
+      const user = await firstOrThrow(
+        tx
+          .insert(users)
+          .values({
+            email: input.email,
+            emailVerified: false,
+            failedLoginAttempts: 0,
+            name: input.name,
+            roleSlugs: input.roleSlugs,
+            status: USER_STATUS.ACTIVE,
+          })
+          .returning(),
+        "Failed to create user"
+      );
+
+      await tx.insert(accounts).values({
+        accountId: user.id,
+        password: hashedPassword,
+        providerId: "credential",
+        userId: user.id,
+      });
+
+      audit.record({
+        actorId,
+        event: AUDIT_EVENTS.USER.CREATED.event,
+        metadata: {
+          email: input.email,
+          name: input.name,
+          roleSlugs: input.roleSlugs,
+        },
+        targetId: user.id,
+        targetType: TARGET_TYPES.USER,
+      });
+
+      return user;
+    });
+  },
+
+  async deactivate(
+    db: DrizzleClient,
+    id: string,
+    reason: string | null,
+    actorId: string,
+    auditContext: AuditContext
+  ): Promise<void> {
+    const existingUser = await this.findById(db, id);
+    if (!existingUser) {
+      throw new UserNotFoundError(id);
+    }
+
+    await auditTransaction(db, auditContext, async (tx, audit) => {
+      const updated = await deactivateUser(tx, id, actorId, reason);
+      if (!updated) {
+        throw new UserNotFoundError(id);
+      }
+
+      await deleteUserSessions(tx, id);
+
+      audit.record({
+        actorId,
+        event: AUDIT_EVENTS.USER.DEACTIVATED.event,
+        metadata: { reason },
+        targetId: id,
+        targetType: TARGET_TYPES.USER,
+      });
+    });
+
+    await safeNotifyStatusChange(
+      id,
+      USER_STATUS.INACTIVE,
+      existingUser.status,
+      reason
+    );
+  },
   async find(db: DrizzleClient, query: ListUsersQuery) {
     const { search, status, role } = query;
     const { perPage, offset, sort, order } = getPaginationParams(query);
@@ -98,14 +214,14 @@ export const userService = {
     const [data, [countResult]] = await Promise.all([
       db
         .select({
-          id: users.id,
-          name: users.name,
+          createdAt: users.createdAt,
           email: users.email,
           emailVerified: users.emailVerified,
+          id: users.id,
           image: users.image,
-          status: users.status,
+          name: users.name,
           roleSlugs: users.roleSlugs,
-          createdAt: users.createdAt,
+          status: users.status,
           updatedAt: users.updatedAt,
         })
         .from(users)
@@ -118,9 +234,28 @@ export const userService = {
 
     return createPaginatedResponse({
       data,
-      total: countResult?.total ?? 0,
       query,
+      total: countResult?.total ?? 0,
     });
+  },
+
+  async findAccountSummaryById(db: DrizzleClient, id: string) {
+    const [user] = await db
+      .select({
+        createdAt: users.createdAt,
+        email: users.email,
+        emailVerified: users.emailVerified,
+        id: users.id,
+        image: users.image,
+        name: users.name,
+        onboardingCompletedAt: users.onboardingCompletedAt,
+        updatedAt: users.updatedAt,
+      })
+      .from(users)
+      .where(eq(users.id, id))
+      .limit(1);
+
+    return user ?? null;
   },
 
   async findById(db: DrizzleClient, id: string): Promise<UserRecord | null> {
@@ -132,70 +267,37 @@ export const userService = {
     return user ?? null;
   },
 
-  async findAccountSummaryById(db: DrizzleClient, id: string) {
-    const [user] = await db
-      .select({
-        id: users.id,
-        name: users.name,
-        email: users.email,
-        emailVerified: users.emailVerified,
-        image: users.image,
-        onboardingCompletedAt: users.onboardingCompletedAt,
-        createdAt: users.createdAt,
-        updatedAt: users.updatedAt,
-      })
-      .from(users)
-      .where(eq(users.id, id))
-      .limit(1);
-
-    return user ?? null;
-  },
-
-  async create(
+  async unlock(
     db: DrizzleClient,
-    input: CreateUserInput,
+    id: string,
     actorId: string,
     auditContext: AuditContext
-  ): Promise<UserRecord> {
-    const hashedPassword = await hashPassword(input.password);
+  ): Promise<void> {
+    const existingUser = await this.findById(db, id);
+    if (!existingUser) {
+      throw new UserNotFoundError(id);
+    }
 
-    return auditTransaction(db, auditContext, async (tx, audit) => {
-      const user = await firstOrThrow(
-        tx
-          .insert(users)
-          .values({
-            name: input.name,
-            email: input.email,
-            emailVerified: false,
-            status: USER_STATUS.ACTIVE,
-            roleSlugs: input.roleSlugs,
-            failedLoginAttempts: 0,
-          })
-          .returning(),
-        "Failed to create user"
-      );
-
-      await tx.insert(accounts).values({
-        userId: user.id,
-        accountId: user.id,
-        providerId: "credential",
-        password: hashedPassword,
-      });
+    await auditTransaction(db, auditContext, async (tx, audit) => {
+      const updated = await clearUserLockout(tx, id);
+      if (!updated) {
+        throw new UserNotFoundError(id);
+      }
 
       audit.record({
-        event: AUDIT_EVENTS.USER.CREATED.event,
         actorId,
-        targetId: user.id,
+        event: AUDIT_EVENTS.USER.UNLOCKED.event,
+        targetId: id,
         targetType: TARGET_TYPES.USER,
-        metadata: {
-          name: input.name,
-          email: input.email,
-          roleSlugs: input.roleSlugs,
-        },
       });
-
-      return user;
     });
+
+    await safeNotifyStatusChange(
+      id,
+      USER_STATUS.ACTIVE,
+      existingUser.status,
+      null
+    );
   },
 
   async update(
@@ -224,18 +326,18 @@ export const userService = {
       );
 
       const metadata = createChangeMetadata(
-        { name: existingUser.name, email: existingUser.email },
+        { email: existingUser.email, name: existingUser.name },
         input,
         ["name", "email"]
       );
 
       if (metadata.changedFields && metadata.changedFields.length > 0) {
         audit.record({
-          event: AUDIT_EVENTS.USER.UPDATED.event,
           actorId,
+          event: AUDIT_EVENTS.USER.UPDATED.event,
+          metadata,
           targetId: id,
           targetType: TARGET_TYPES.USER,
-          metadata,
         });
       }
 
@@ -266,127 +368,24 @@ export const userService = {
       );
 
       const metadata: AuditLogMetadata = {
+        changedFields: ["roleSlugs"],
         changes: {
           roleSlugs: {
             from: existingUser.roleSlugs,
             to: input.roleSlugs,
           },
         },
-        changedFields: ["roleSlugs"],
       };
 
       audit.record({
-        event: AUDIT_EVENTS.ROLE.ASSIGNED.event,
         actorId,
+        event: AUDIT_EVENTS.ROLE.ASSIGNED.event,
+        metadata,
         targetId: id,
         targetType: TARGET_TYPES.USER,
-        metadata,
       });
 
       return updatedUser;
     });
-  },
-
-  async deactivate(
-    db: DrizzleClient,
-    id: string,
-    reason: string | null,
-    actorId: string,
-    auditContext: AuditContext
-  ): Promise<void> {
-    const existingUser = await this.findById(db, id);
-    if (!existingUser) {
-      throw new UserNotFoundError(id);
-    }
-
-    await auditTransaction(db, auditContext, async (tx, audit) => {
-      const updated = await deactivateUser(tx, id, actorId, reason);
-      if (!updated) {
-        throw new UserNotFoundError(id);
-      }
-
-      await deleteUserSessions(tx, id);
-
-      audit.record({
-        event: AUDIT_EVENTS.USER.DEACTIVATED.event,
-        actorId,
-        targetId: id,
-        targetType: TARGET_TYPES.USER,
-        metadata: { reason },
-      });
-    });
-
-    await safeNotifyStatusChange(
-      id,
-      USER_STATUS.INACTIVE,
-      existingUser.status,
-      reason
-    );
-  },
-
-  async activate(
-    db: DrizzleClient,
-    id: string,
-    actorId: string,
-    auditContext: AuditContext
-  ): Promise<void> {
-    const existingUser = await this.findById(db, id);
-    if (!existingUser) {
-      throw new UserNotFoundError(id);
-    }
-
-    await auditTransaction(db, auditContext, async (tx, audit) => {
-      const updated = await activateUser(tx, id);
-      if (!updated) {
-        throw new UserNotFoundError(id);
-      }
-
-      audit.record({
-        event: AUDIT_EVENTS.USER.ACTIVATED.event,
-        actorId,
-        targetId: id,
-        targetType: TARGET_TYPES.USER,
-      });
-    });
-
-    await safeNotifyStatusChange(
-      id,
-      USER_STATUS.ACTIVE,
-      existingUser.status,
-      null
-    );
-  },
-
-  async unlock(
-    db: DrizzleClient,
-    id: string,
-    actorId: string,
-    auditContext: AuditContext
-  ): Promise<void> {
-    const existingUser = await this.findById(db, id);
-    if (!existingUser) {
-      throw new UserNotFoundError(id);
-    }
-
-    await auditTransaction(db, auditContext, async (tx, audit) => {
-      const updated = await clearUserLockout(tx, id);
-      if (!updated) {
-        throw new UserNotFoundError(id);
-      }
-
-      audit.record({
-        event: AUDIT_EVENTS.USER.UNLOCKED.event,
-        actorId,
-        targetId: id,
-        targetType: TARGET_TYPES.USER,
-      });
-    });
-
-    await safeNotifyStatusChange(
-      id,
-      USER_STATUS.ACTIVE,
-      existingUser.status,
-      null
-    );
   },
 };

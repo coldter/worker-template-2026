@@ -8,6 +8,7 @@ export const sortOrderSchema = z
 export type SortOrder = z.infer<typeof sortOrderSchema>;
 
 export const paginationQuerySchema = z.object({
+  order: sortOrderSchema,
   page: z.coerce
     .number()
     .min(1)
@@ -20,16 +21,11 @@ export const paginationQuerySchema = z.object({
     .default(20)
     .openapi({ description: "Items per page (max 100)" }),
   sort: z.string().optional().openapi({ description: "Sort by column" }),
-  order: sortOrderSchema,
 });
 
 export type PaginationQuery = z.infer<typeof paginationQuerySchema>;
 
 export const paginationMetaSchema = z.object({
-  total: z.number().openapi({ description: "Total number of items" }),
-  page: z.number().openapi({ description: "Current page number" }),
-  perPage: z.number().openapi({ description: "Items per page" }),
-  pageCount: z.number().openapi({ description: "Total number of pages" }),
   hasNext: z.boolean().openapi({ description: "Whether there is a next page" }),
   hasPrev: z
     .boolean()
@@ -38,10 +34,14 @@ export const paginationMetaSchema = z.object({
     .number()
     .nullable()
     .openapi({ description: "Next page number or null" }),
+  page: z.number().openapi({ description: "Current page number" }),
+  pageCount: z.number().openapi({ description: "Total number of pages" }),
+  perPage: z.number().openapi({ description: "Items per page" }),
   prevPage: z
     .number()
     .nullable()
     .openapi({ description: "Previous page number or null" }),
+  total: z.number().openapi({ description: "Total number of items" }),
 });
 
 export type PaginationMeta = z.infer<typeof paginationMetaSchema>;
@@ -63,10 +63,10 @@ export interface PaginatedResponse<T> {
 }
 
 export const PAGINATION_DEFAULTS = {
-  PAGE: 1,
-  PER_PAGE: 20,
   MAX_PER_PAGE: 100,
   ORDER: "desc" as SortOrder,
+  PAGE: 1,
+  PER_PAGE: 20,
 } as const;
 
 export function getPaginationParams(query: Partial<PaginationQuery>) {
@@ -77,10 +77,9 @@ export function getPaginationParams(query: Partial<PaginationQuery>) {
     PAGINATION_DEFAULTS.MAX_PER_PAGE
   );
   const offset = (page - 1) * perPage;
-  const sort = query.sort;
-  const order = query.order ?? PAGINATION_DEFAULTS.ORDER;
+  const { sort, order = PAGINATION_DEFAULTS.ORDER } = query;
 
-  return { page, perPage, offset, sort, order } as const;
+  return { offset, order, page, perPage, sort } as const;
 }
 
 export function createPaginatedResponse<T>(options: {
@@ -107,14 +106,14 @@ export function createPaginatedResponse<T>(options: {
   return {
     data: formatter ? data.map(formatter) : data,
     meta: {
-      total,
-      page,
-      perPage,
-      pageCount,
       hasNext: page < pageCount,
       hasPrev: page > 1,
       nextPage: page < pageCount ? page + 1 : null,
+      page,
+      pageCount,
+      perPage,
       prevPage: page > 1 ? page - 1 : null,
+      total,
     },
   };
 }

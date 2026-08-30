@@ -21,10 +21,10 @@ type ThemeProviderState = {
 
 const initialState: ThemeProviderState = {
   defaultTheme: DEFAULT_THEME,
-  resolvedTheme: "light",
-  theme: DEFAULT_THEME,
-  setTheme: () => null,
   resetTheme: () => null,
+  resolvedTheme: "light",
+  setTheme: () => null,
+  theme: DEFAULT_THEME,
 };
 
 const ThemeContext = createContext<ThemeProviderState>(initialState);
@@ -79,10 +79,10 @@ export function ThemeProvider({
 
   const contextValue = {
     defaultTheme,
-    resolvedTheme,
     resetTheme,
-    theme,
+    resolvedTheme,
     setTheme,
+    theme,
   };
 
   return (

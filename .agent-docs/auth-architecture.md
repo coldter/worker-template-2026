@@ -42,7 +42,7 @@ This means the client always talks to a single origin (the server worker). The a
 The server worker calls the auth worker via RPC on every authenticated API request. In `apps/server/src/middlewares/auth-context.ts`:
 
 - `c.env.AUTH.getSession(c.req.raw.headers)` is called as an RPC method
-- The auth worker's `AuthEntrypoint` class (extends `WorkerEntrypoint`) exposes `getSession` and `getToken` as typed methods
+- The auth worker's `AuthEntrypoint` class (extends `WorkerEntrypoint`) exposes `getSession` as a typed method
 - Each RPC call opens its own `pg.Client` connection to the database (via Hyperdrive), calls `auth.api.getSession`, then closes the connection in `waitUntil`
 - The returned session object (user + session data) is stored in Hono context variables for downstream route handlers
 
@@ -72,7 +72,6 @@ Most auth lifecycle hooks are wrapped in `ctx.waitUntil(...)` so they do not blo
 - Mobile sessions expire after 7 days (604800 seconds); rolling window is 1 day
 - Platform detection uses the request `User-Agent` header (see Platform Detection below)
 - The `bearer` plugin validates the token signature on each request
-- The `getToken` RPC method on `AuthEntrypoint` is available for the server to retrieve a signed token for a session
 
 ### Organization Context (Multi-Tenancy)
 

@@ -84,10 +84,11 @@ export function buildRegistryInstance<
   );
 
   return {
-    resources,
-
-    getResource<K extends keyof TResources & string>(name: K): TResources[K] {
-      return resources[name];
+    async assertCan(principal, resource, action, opts) {
+      const decision = await this.can(principal, resource, action, opts);
+      if (!decision.allowed) {
+        throw new AuthorizationError(decision.reason, decision.matchedPolicy);
+      }
     },
 
     async can(principal, resourceName, action, opts) {
@@ -97,23 +98,16 @@ export function buildRegistryInstance<
       }
 
       return evaluate({
-        principal,
         action,
-        resourceName,
-        resource: opts?.resource,
         globalPolicies: options.globalPolicies,
-        resourcePolicies: resourceDef.policies,
-        systemAdminRoles: options.systemAdminRoles,
+        principal,
         resolveOrganization: resourceDef.resolveOrganization,
         resolveRelation: opts?.resolveRelation,
+        resource: opts?.resource,
+        resourceName,
+        resourcePolicies: resourceDef.policies,
+        systemAdminRoles: options.systemAdminRoles,
       });
-    },
-
-    async assertCan(principal, resource, action, opts) {
-      const decision = await this.can(principal, resource, action, opts);
-      if (!decision.allowed) {
-        throw new AuthorizationError(decision.reason, decision.matchedPolicy);
-      }
     },
 
     async evaluateCapabilities(principal) {
@@ -123,14 +117,14 @@ export function buildRegistryInstance<
         for (const action of resourceDef.actions) {
           tasks.push(
             evaluate({
-              principal,
               action,
-              resourceName: name,
-              resource: undefined,
               globalPolicies: options.globalPolicies,
+              ignoreResourceConditions: true,
+              principal,
+              resource: undefined,
+              resourceName: name,
               resourcePolicies: resourceDef.policies,
               systemAdminRoles: options.systemAdminRoles,
-              ignoreResourceConditions: true,
             }).then(
               (decision) => [`${name}:${action}`, decision.allowed] as const
             )
@@ -147,5 +141,10 @@ export function buildRegistryInstance<
       // boundary: runtime keys derived from registry actions match CapabilityMap by construction
       return capabilities as unknown as CapabilityMap<TResources>;
     },
+
+    getResource<K extends keyof TResources & string>(name: K): TResources[K] {
+      return resources[name];
+    },
+    resources,
   };
 }

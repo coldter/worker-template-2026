@@ -73,8 +73,8 @@ export function createSessionUpdateBeforeHook(db: DrizzleClient) {
             return { row };
           },
           {
-            reason: "Skipping activeOrgRole sync: org tables missing",
             meta: { userId },
+            reason: "Skipping activeOrgRole sync: org tables missing",
           }
         );
 

@@ -20,8 +20,8 @@ export function createSendTwoFactorOTP(
     // Never log the OTP value; only record that one was generated.
     if (env.NODE_ENV === "development") {
       logger.info("2FA OTP generated", {
-        userId: user.id,
         email: user.email,
+        userId: user.id,
       });
     }
     logger.info(`Sending 2FA OTP to ${user.email}`);
@@ -36,21 +36,21 @@ export function createSendTwoFactorOTP(
       sendEmail({
         apiKey: env.RESEND_API_KEY,
         from: `${brand.appName} <${env.EMAIL_FROM}>`,
-        to: user.email,
-        subject: "Your Two-Factor Authentication Code",
-        template: TwoFactorOtpEmail,
         props: {
-          userName: user.name,
-          otp,
           expiresIn: `${TWO_FACTOR_CONFIG.twoFactorOtpPeriodMinutes} minutes`,
           ipAddress,
+          otp,
           userAgent,
+          userName: user.name,
         },
+        subject: "Your Two-Factor Authentication Code",
+        template: TwoFactorOtpEmail,
+        to: user.email,
       }).catch((error) => {
         logger.error("Failed to send 2FA OTP email", {
-          userId: user.id,
           email: user.email,
           error,
+          userId: user.id,
         });
       })
     );

@@ -31,7 +31,7 @@ export class OnboardingWorkflow extends WorkflowEntrypoint<
   ): Promise<void> {
     await step.do(
       "send-welcome-email",
-      { retries: { limit: 3, delay: "5 seconds", backoff: "exponential" } },
+      { retries: { backoff: "exponential", delay: "5 seconds", limit: 3 } },
       async () => {
         const { sendEmail, WelcomeEmail } = await import("@repo/email");
         // boundary: workerd env bindings are typed via wrangler codegen; cast
@@ -42,13 +42,13 @@ export class OnboardingWorkflow extends WorkflowEntrypoint<
         await sendEmail({
           apiKey: this.env.RESEND_API_KEY,
           from: `${brand.appName} <${this.env.EMAIL_FROM}>`,
-          to: event.payload.email,
+          props: {
+            loginUrl: this.env.APP_URL,
+            userName: event.payload.name ?? "there",
+          },
           subject: "Welcome!",
           template: WelcomeEmail,
-          props: {
-            userName: event.payload.name ?? "there",
-            loginUrl: this.env.APP_URL,
-          },
+          to: event.payload.email,
         });
       }
     );

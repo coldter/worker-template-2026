@@ -67,93 +67,16 @@ export const AUTH_ERROR_CODES = {
 
 export const loginSecurityPlugin = (db: DrizzleClient) => {
   return {
-    id: "login-security",
-
     hooks: {
-      before: [
-        {
-          matcher: (context) => context.path === "/sign-up/email",
-          handler: createAuthMiddleware(async (ctx) => {
-            const email = readEmailFromBody(ctx.body);
-            if (!email) {
-              return;
-            }
-
-            const existingUser = await db.query.users.findFirst({
-              where: { email: { eq: email } },
-              columns: { id: true },
-            });
-
-            if (existingUser) {
-              throw new APIError("BAD_REQUEST", {
-                message: "Unable to create account with this email",
-              });
-            }
-          }),
-        },
-        {
-          matcher: (context) => context.path === "/sign-in/email",
-          handler: createAuthMiddleware(async (ctx) => {
-            const email = readEmailFromBody(ctx.body);
-            if (!email) {
-              return;
-            }
-
-            const user = await db.query.users.findFirst({
-              where: { email: { eq: email } },
-            });
-
-            if (!user) {
-              return;
-            }
-
-            const statusResult = userStatusSchema.safeParse(user.status);
-            const status = statusResult.success ? statusResult.data : "active";
-
-            if (status === "deleted") {
-              throw new APIError("FORBIDDEN", {
-                message: "This account has been deleted",
-                code: AUTH_ERROR_CODES.ACCOUNT_DELETED,
-              });
-            }
-
-            if (status === "inactive") {
-              throw new APIError("FORBIDDEN", {
-                message:
-                  "This account has been deactivated. Please contact support.",
-                code: AUTH_ERROR_CODES.ACCOUNT_INACTIVE,
-              });
-            }
-
-            if (status === "locked") {
-              if (!isLockoutExpired(user.lockedUntil)) {
-                const remainingMinutes = user.lockedUntil
-                  ? Math.ceil(
-                      (user.lockedUntil.getTime() - Date.now()) / 60_000
-                    )
-                  : LOCKOUT_CONFIG.lockoutDurationMinutes;
-
-                throw new APIError("TOO_MANY_REQUESTS", {
-                  message: `Account is locked. Please try again in ${remainingMinutes} minute(s) or reset your password.`,
-                  code: AUTH_ERROR_CODES.ACCOUNT_LOCKED,
-                });
-              }
-
-              await clearUserLockout(db, user.id);
-            }
-          }),
-        },
-      ],
       after: [
         {
-          matcher: (context) => context.path === "/sign-in/email",
           handler: createAuthMiddleware(async (ctx) => {
             const email = readEmailFromBody(ctx.body);
             if (!email) {
               return;
             }
 
-            const returned = ctx.context.returned;
+            const { returned } = ctx.context;
             const isFailure = returned instanceof APIError;
 
             if (isFailure) {
@@ -177,16 +100,16 @@ export const loginSecurityPlugin = (db: DrizzleClient) => {
                   newFailedAttempts
                 );
                 throw new APIError("TOO_MANY_REQUESTS", {
-                  message: `Account locked after ${LOCKOUT_CONFIG.maxFailedAttempts} failed attempts. Try again in ${LOCKOUT_CONFIG.lockoutDurationMinutes} minutes.`,
                   code: AUTH_ERROR_CODES.ACCOUNT_LOCKED,
+                  message: `Account locked after ${LOCKOUT_CONFIG.maxFailedAttempts} failed attempts. Try again in ${LOCKOUT_CONFIG.lockoutDurationMinutes} minutes.`,
                 });
               }
 
               await setUserFailedAttempts(db, user.id, newFailedAttempts);
 
               throw new APIError("UNAUTHORIZED", {
-                message: "Invalid credentials",
                 code: AUTH_ERROR_CODES.INVALID_CREDENTIALS,
+                message: "Invalid credentials",
               });
             }
 
@@ -197,11 +120,11 @@ export const loginSecurityPlugin = (db: DrizzleClient) => {
 
             await resetFailedLoginAttemptsByEmail(db, email);
           }),
+          matcher: (context) => context.path === "/sign-in/email",
         },
         {
-          matcher: (context) => context.path === "/two-factor/verify-otp",
           handler: createAuthMiddleware(async (ctx) => {
-            const returned = ctx.context.returned;
+            const { returned } = ctx.context;
             if (returned instanceof APIError) {
               return;
             }
@@ -213,8 +136,84 @@ export const loginSecurityPlugin = (db: DrizzleClient) => {
 
             await resetFailedLoginAttemptsByEmail(db, email);
           }),
+          matcher: (context) => context.path === "/two-factor/verify-otp",
+        },
+      ],
+      before: [
+        {
+          handler: createAuthMiddleware(async (ctx) => {
+            const email = readEmailFromBody(ctx.body);
+            if (!email) {
+              return;
+            }
+
+            const existingUser = await db.query.users.findFirst({
+              columns: { id: true },
+              where: { email: { eq: email } },
+            });
+
+            if (existingUser) {
+              throw new APIError("BAD_REQUEST", {
+                message: "Unable to create account with this email",
+              });
+            }
+          }),
+          matcher: (context) => context.path === "/sign-up/email",
+        },
+        {
+          handler: createAuthMiddleware(async (ctx) => {
+            const email = readEmailFromBody(ctx.body);
+            if (!email) {
+              return;
+            }
+
+            const user = await db.query.users.findFirst({
+              where: { email: { eq: email } },
+            });
+
+            if (!user) {
+              return;
+            }
+
+            const statusResult = userStatusSchema.safeParse(user.status);
+            const status = statusResult.success ? statusResult.data : "active";
+
+            if (status === "deleted") {
+              throw new APIError("FORBIDDEN", {
+                code: AUTH_ERROR_CODES.ACCOUNT_DELETED,
+                message: "This account has been deleted",
+              });
+            }
+
+            if (status === "inactive") {
+              throw new APIError("FORBIDDEN", {
+                code: AUTH_ERROR_CODES.ACCOUNT_INACTIVE,
+                message:
+                  "This account has been deactivated. Please contact support.",
+              });
+            }
+
+            if (status === "locked") {
+              if (!isLockoutExpired(user.lockedUntil)) {
+                const remainingMinutes = user.lockedUntil
+                  ? Math.ceil(
+                      (user.lockedUntil.getTime() - Date.now()) / 60_000
+                    )
+                  : LOCKOUT_CONFIG.lockoutDurationMinutes;
+
+                throw new APIError("TOO_MANY_REQUESTS", {
+                  code: AUTH_ERROR_CODES.ACCOUNT_LOCKED,
+                  message: `Account is locked. Please try again in ${remainingMinutes} minute(s) or reset your password.`,
+                });
+              }
+
+              await clearUserLockout(db, user.id);
+            }
+          }),
+          matcher: (context) => context.path === "/sign-in/email",
         },
       ],
     },
+    id: "login-security",
   } satisfies BetterAuthPlugin;
 };

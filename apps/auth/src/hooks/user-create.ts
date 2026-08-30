@@ -7,9 +7,9 @@ export function createUserCreateBeforeHook() {
   return async (user: User & Record<string, unknown>) => ({
     data: {
       ...user,
+      failedLoginAttempts: 0,
       roleSlugs: [SYSTEM_ROLES.USER.slug],
       status: "active" as const,
-      failedLoginAttempts: 0,
       twoFactorEnabled: false,
     },
   });
@@ -22,8 +22,8 @@ export function createUserCreateAfterHook(
   return async (user: User & Record<string, unknown>): Promise<void> => {
     ctx.waitUntil(
       env.API.onUserCreated({
-        id: user.id,
         email: user.email,
+        id: user.id,
         name: user.name,
       }).catch((err: unknown) => {
         console.error("Failed to trigger onboarding workflow:", err);

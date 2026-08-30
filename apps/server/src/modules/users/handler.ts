@@ -43,8 +43,8 @@ const usersHandler = app
     const result = await userService.find(c.var.db, query);
 
     recordBufferableAuditEvent(c, {
-      event: AUDIT_EVENTS.USER.LISTED.event,
       actorId: c.get("user")?.id,
+      event: AUDIT_EVENTS.USER.LISTED.event,
       metadata: { count: result.data.length },
     });
 
@@ -73,10 +73,10 @@ const usersHandler = app
 
     return c.json(
       {
-        profile: toMyAccountResponse(account),
         notifications: {
           unreadCount,
         },
+        profile: toMyAccountResponse(account),
       },
       200
     );
@@ -91,8 +91,8 @@ const usersHandler = app
     }
 
     recordBufferableAuditEvent(c, {
-      event: AUDIT_EVENTS.USER.VIEWED.event,
       actorId: c.get("user")?.id,
+      event: AUDIT_EVENTS.USER.VIEWED.event,
       targetId: userId,
       targetType: TARGET_TYPES.USER,
     });
@@ -120,8 +120,8 @@ const usersHandler = app
 
     dispatchEvent(
       {
+        payload: { email: user.email, name: user.name, userId: user.id },
         type: "user.created",
-        payload: { userId: user.id, email: user.email, name: user.name },
       },
       c.executionCtx
     );

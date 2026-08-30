@@ -8,10 +8,10 @@ export const USER_STATUS_VALUES = Object.values(USER_STATUS) as [
 ];
 
 export const USERS_SORT_COLUMNS = {
-  name: "name",
-  email: "email",
-  status: "status",
   createdAt: "createdAt",
+  email: "email",
+  name: "name",
+  status: "status",
   updatedAt: "updatedAt",
 } as const;
 

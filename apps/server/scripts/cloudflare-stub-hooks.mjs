@@ -19,8 +19,8 @@ const STUB_SOURCE = [
 export async function resolve(specifier, context, nextResolve) {
   if (specifier.startsWith("cloudflare:")) {
     return {
-      url: `data:text/javascript,${encodeURIComponent(STUB_SOURCE)}`,
       shortCircuit: true,
+      url: `data:text/javascript,${encodeURIComponent(STUB_SOURCE)}`,
     };
   }
   return nextResolve(specifier, context);

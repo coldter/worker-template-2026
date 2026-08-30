@@ -40,8 +40,8 @@ export function BaseLayout({
           fontStyle="normal"
           fontWeight={400}
           webFont={{
-            url: "https://fonts.gstatic.com/s/inter/v12/UcCOjFGCW979A7N7Vbr7v9mg.woff2",
             format: "woff2",
+            url: "https://fonts.gstatic.com/s/inter/v12/UcCOjFGCW979A7N7Vbr7v9mg.woff2",
           }}
         />
         <Font
@@ -50,8 +50,8 @@ export function BaseLayout({
           fontStyle="normal"
           fontWeight={600}
           webFont={{
-            url: "https://fonts.gstatic.com/s/inter/v12/UcC7jFGCW979A7N7Vbr7v9mg.woff2",
             format: "woff2",
+            url: "https://fonts.gstatic.com/s/inter/v12/UcC7jFGCW979A7N7Vbr7v9mg.woff2",
           }}
         />
       </Head>

@@ -55,10 +55,9 @@ export async function withDrizzleClient<T>(
       // Only tear down if a connection was actually established (or attempted).
       // end() rejects when the socket already died; left uncaught inside
       // waitUntil that becomes an unhandled rejection.
-      const endPromise = connectPromise.then(
-        () => client.end().catch(() => undefined),
-        () => undefined
-      );
+      const endPromise = connectPromise
+        .then(() => client.end())
+        .catch(() => undefined);
       if (options?.waitUntil) {
         options.waitUntil(endPromise);
       } else {

@@ -10,10 +10,10 @@ import { users } from "./auth";
 
 export const organizations = pgTable("organization", {
   id: text("id").primaryKey(),
-  name: text("name").notNull(),
-  slug: text("slug").unique(),
   logo: text("logo"),
   metadata: text("metadata"),
+  name: text("name").notNull(),
+  slug: text("slug").unique(),
   ...timestamps(),
 });
 
@@ -21,13 +21,13 @@ export const members = pgTable(
   "member",
   {
     id: text("id").primaryKey(),
-    userId: text("user_id")
-      .notNull()
-      .references(() => users.id, { onDelete: "cascade" }),
     organizationId: text("organization_id")
       .notNull()
       .references(() => organizations.id, { onDelete: "cascade" }),
     role: text("role").notNull(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
     ...timestamps(),
   },
   (table) => [
@@ -43,8 +43,11 @@ export const members = pgTable(
 export const invitations = pgTable(
   "invitation",
   {
-    id: text("id").primaryKey(),
+    // Intentionally immutable, no updatedAt: terminal-write only.
+    createdAt: createdAt(),
     email: text("email").notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    id: text("id").primaryKey(),
     inviterId: text("inviter_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
@@ -53,9 +56,6 @@ export const invitations = pgTable(
       .references(() => organizations.id, { onDelete: "cascade" }),
     role: text("role").notNull(),
     status: text("status").notNull(),
-    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
-    // Intentionally immutable, no updatedAt: terminal-write only.
-    createdAt: createdAt(),
   },
   (t) => [
     index("invitation_org_id_idx").on(t.organizationId),

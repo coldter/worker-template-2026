@@ -73,8 +73,8 @@ export async function routeQueueBatch(
 
   if (!consumer) {
     logger.warn("No consumer registered for queue; acking batch", {
-      queue: batch.queue,
       messageCount: batch.messages.length,
+      queue: batch.queue,
     });
     batch.ackAll();
     return;

@@ -11,17 +11,17 @@ import { z } from "zod";
  * own validated payload, never the raw queue body type.
  */
 export const auditLogQueueMessageSchema = z.object({
-  event: z.enum(BUFFERABLE_EVENTS),
   actorId: z.string().optional(),
   actorType: z.enum(["user", "system", "api"]).default("user"),
-  targetId: z.string().optional(),
-  targetType: z.enum(["user", "role", "session"]).optional(),
+  event: z.enum(BUFFERABLE_EVENTS),
   ipAddress: z.string().optional(),
-  userAgent: z.string().optional(),
   metadata: z.record(z.string(), z.unknown()).optional(),
   // ISO-8601 timestamp captured when the event occurred, so the persisted
   // createdAt reflects event time rather than the later batch-flush time.
   occurredAt: z.string(),
+  targetId: z.string().optional(),
+  targetType: z.enum(["user", "role", "session"]).optional(),
+  userAgent: z.string().optional(),
 });
 
 export type AuditLogQueueMessage = z.infer<typeof auditLogQueueMessageSchema>;

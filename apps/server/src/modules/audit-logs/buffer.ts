@@ -32,22 +32,22 @@ export function recordBufferableAuditEvent(
   input: BufferableAuditInput
 ): void {
   const message: AuditLogQueueMessage = {
-    event: input.event,
     actorId: input.actorId,
     actorType: input.actorType ?? "user",
-    targetId: input.targetId,
-    targetType: input.targetType,
+    event: input.event,
     ipAddress: c.var.auditContext.ipAddress,
-    userAgent: c.var.auditContext.userAgent,
     metadata: input.metadata,
     occurredAt: new Date().toISOString(),
+    targetId: input.targetId,
+    targetType: input.targetType,
+    userAgent: c.var.auditContext.userAgent,
   };
 
   c.executionCtx.waitUntil(
     auditLogService.enqueue(c.env.AUDIT_LOG_QUEUE, [message]).catch((error) => {
       logger.error("Failed to enqueue bufferable audit event", {
-        event: input.event,
         error,
+        event: input.event,
       });
     })
   );

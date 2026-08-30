@@ -19,19 +19,19 @@ export function UsersTable() {
     UsersSearch,
     UsersQueryParams
   >({
-    route: Route,
-    columns: usersColumns,
-    useData: useUsersQuery,
-    defaultSort: "createdAt",
     buildQueryParams: ({ page, perPage, sort, search }) => ({
+      order: sort.desc ? "desc" : "asc",
       page,
       perPage,
-      sort: sort.id,
-      order: sort.desc ? "desc" : "asc",
-      search: search.search,
-      status: search.status,
       role: search.role,
+      search: search.search,
+      sort: sort.id,
+      status: search.status,
     }),
+    columns: usersColumns,
+    defaultSort: "createdAt",
+    route: Route,
+    useData: useUsersQuery,
   });
 
   return (

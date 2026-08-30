@@ -62,7 +62,8 @@
       },
       "performance": {
         "noNamespaceImport": "off",
-        "noBarrelFile": "off"
+        "noBarrelFile": "off",
+        "noJsxPropsBind": "off"
       },
       "style": {
         "noMagicNumbers": "off",
@@ -70,6 +71,7 @@
         "noNonNullAssertion": "warn",
         "useConsistentTypeDefinitions": "off",
         "useAtIndex": "off",
+        "useConsistentMethodSignatures": "off",
         "useFilenamingConvention": {
           "level": "warn",
           "options": {

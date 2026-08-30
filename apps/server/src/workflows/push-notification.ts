@@ -41,7 +41,7 @@ export class PushNotificationWorkflow extends WorkflowEntrypoint<
     // Step 1: Load notification and push tokens
     const data = await step.do(
       "load-notification-and-tokens",
-      { retries: { limit: 3, delay: "2 seconds", backoff: "exponential" } },
+      { retries: { backoff: "exponential", delay: "2 seconds", limit: 3 } },
       async () =>
         withDrizzleClient(
           this.env.HYPERDRIVE.connectionString,
@@ -61,8 +61,8 @@ export class PushNotificationWorkflow extends WorkflowEntrypoint<
             });
 
             return {
-              subject: notification.subject,
               body: notification.body,
+              subject: notification.subject,
               tokens: tokens.map((t) => t.token),
             };
           },
@@ -80,40 +80,36 @@ export class PushNotificationWorkflow extends WorkflowEntrypoint<
     // Step 2: Send push notifications via FCM
     const sendResults = await step.do(
       "send-push",
-      { retries: { limit: 3, delay: "5 seconds", backoff: "exponential" } },
+      { retries: { backoff: "exponential", delay: "5 seconds", limit: 3 } },
       async () => {
         const provider = getPushProvider();
-        const results: Array<{
-          token: string;
-          success: boolean;
-          invalidToken?: boolean;
-        }> = [];
-
-        for (const token of data.tokens) {
-          const result = await provider.send({
-            token,
-            data: {
-              type: "notification",
-              notificationId: event.payload.notificationId,
-              title: data.subject ?? "",
-              body: data.body ?? "",
-            },
-          });
-
-          results.push({
-            token,
-            success: result.success,
-            invalidToken: result.invalidToken,
-          });
-
-          if (!result.success) {
-            logger.warn("Push send failed for token", {
-              notificationId: event.payload.notificationId,
-              error: result.error,
-              invalidToken: result.invalidToken,
+        const results = await Promise.all(
+          data.tokens.map(async (token) => {
+            const result = await provider.send({
+              data: {
+                body: data.body ?? "",
+                notificationId: event.payload.notificationId,
+                title: data.subject ?? "",
+                type: "notification",
+              },
+              token,
             });
-          }
-        }
+
+            if (!result.success) {
+              logger.warn("Push send failed for token", {
+                error: result.error,
+                invalidToken: result.invalidToken,
+                notificationId: event.payload.notificationId,
+              });
+            }
+
+            return {
+              invalidToken: result.invalidToken,
+              success: result.success,
+              token,
+            };
+          })
+        );
 
         return results;
       }
@@ -122,7 +118,7 @@ export class PushNotificationWorkflow extends WorkflowEntrypoint<
     // Step 3: Update notification status and clean up invalid tokens
     await step.do(
       "update-status",
-      { retries: { limit: 3, delay: "2 seconds", backoff: "exponential" } },
+      { retries: { backoff: "exponential", delay: "2 seconds", limit: 3 } },
       async () => {
         await withDrizzleClient(
           this.env.HYPERDRIVE.connectionString,
@@ -133,8 +129,8 @@ export class PushNotificationWorkflow extends WorkflowEntrypoint<
             await db
               .update(schema.notifications)
               .set({
-                status: allFailed ? "failed" : "sent",
                 sentAt: anySuccess ? new Date() : undefined,
+                status: allFailed ? "failed" : "sent",
               })
               .where(eq(schema.notifications.id, event.payload.notificationId));
 

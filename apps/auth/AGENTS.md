@@ -95,7 +95,7 @@ src/
 
 ## RPC Interface
 
-`AuthEntrypoint` in `src/index.ts` exposes three RPC methods callable by the API worker via the `AUTH` service binding:
+`AuthEntrypoint` in `src/index.ts` exposes two RPC methods callable by the API worker via the `AUTH` service binding:
 
 ### `fetch(request: Request): Promise<Response>`
 
@@ -107,11 +107,9 @@ Opens a per-call Postgres connection via Hyperdrive, creates a temporary auth in
 
 ### `getToken(headers: Headers): Promise<TokenResult | null>`
 
-Same pattern as `getSession` but delegates to `auth.api.getToken({ headers })`. Used by internal server/auth integration paths that need a signed token derived from the current auth session context.
+Removed in the Better Auth 1.7 upgrade: `auth.api.getToken` no longer exists in the API surface, and nothing in the repo consumed this RPC.
 
-Both `getSession` and `getToken` close the Postgres client with `ctx.waitUntil(client.end())` after the call, regardless of success or failure.
-
-## Event Hooks
+`getSession` closes the Postgres client with `ctx.waitUntil(client.end())` after the call, regardless of success or failure.
 
 `databaseHooks` in `src/instance.ts` call `env.API.*` methods via `ctx.waitUntil()` to trigger domain-side effects without blocking the auth response.
 

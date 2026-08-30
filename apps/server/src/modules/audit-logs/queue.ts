@@ -25,14 +25,14 @@ export function handleAuditLogDlq(
   for (const message of batch.messages) {
     const data = parseAuditLogMessage(message.body);
     logger.error("Audit log message dead-lettered", {
-      messageId: message.id,
+      actorId: data?.actorId,
       attempts: message.attempts,
       enqueuedAt: message.timestamp.toISOString(),
       event: data?.event,
-      actorId: data?.actorId,
+      messageId: message.id,
+      occurredAt: data?.occurredAt,
       targetId: data?.targetId,
       targetType: data?.targetType,
-      occurredAt: data?.occurredAt,
     });
   }
   batch.ackAll();
@@ -48,17 +48,17 @@ function toInsertRow(
   message: AuditLogQueueMessage
 ): typeof auditLogs.$inferInsert {
   return {
-    event: message.event,
     actorId: message.actorId,
     actorType: message.actorType,
-    targetId: message.targetId,
-    targetType: message.targetType,
+    createdAt: new Date(message.occurredAt),
+    event: message.event,
     ipAddress: message.ipAddress,
-    userAgent: message.userAgent,
     // boundary: validated by auditLogQueueMessageSchema on dequeue; the jsonb
     // column is typed as AuditLogMetadata which the record satisfies.
     metadata: message.metadata as AuditLogMetadata | undefined,
-    createdAt: new Date(message.occurredAt),
+    targetId: message.targetId,
+    targetType: message.targetType,
+    userAgent: message.userAgent,
   };
 }
 
@@ -81,18 +81,20 @@ async function flushAuditRows(
       count: pending.length,
       error: batchError,
     });
-    for (const { message, row } of pending) {
-      try {
-        await db.insert(auditLogs).values(row);
-        message.ack();
-      } catch (rowError) {
-        logger.error("Audit log row insert failed; will retry", {
-          event: row.event,
-          error: rowError,
-        });
-        message.retry();
-      }
-    }
+    await Promise.all(
+      pending.map(async ({ message, row }) => {
+        try {
+          await db.insert(auditLogs).values(row);
+          message.ack();
+        } catch (rowError) {
+          logger.error("Audit log row insert failed; will retry", {
+            error: rowError,
+            event: row.event,
+          });
+          message.retry();
+        }
+      })
+    );
   }
 }
 
@@ -118,7 +120,7 @@ export async function handleAuditLogQueue(
     } else {
       // A message that fails validation will never parse on retry: drop it.
       message.ack();
-      malformed++;
+      malformed += 1;
     }
   }
 

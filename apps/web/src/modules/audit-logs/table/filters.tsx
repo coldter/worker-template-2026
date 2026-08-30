@@ -29,16 +29,16 @@ type AuditLogsFiltersProps = {
 // Group events by category for the dropdown
 const eventCategories = [
   {
-    label: "Authentication",
     events: ALL_EVENT_TYPES.filter((e) => e.startsWith("auth.")),
+    label: "Authentication",
   },
   {
-    label: "Users",
     events: ALL_EVENT_TYPES.filter((e) => e.startsWith("user.")),
+    label: "Users",
   },
   {
-    label: "Roles",
     events: ALL_EVENT_TYPES.filter((e) => e.startsWith("role.")),
+    label: "Roles",
   },
 ];
 
@@ -47,21 +47,21 @@ export function AuditLogsFilters({ search, navigate }: AuditLogsFiltersProps) {
 
   function updateFilter(updates: Partial<AuditLogsSearch>) {
     navigate({
-      search: (prev) => ({ ...prev, ...updates, page: 1 }),
       replace: true,
+      search: (prev) => ({ ...prev, ...updates, page: 1 }),
     });
   }
 
   function clearFilters() {
     navigate({
+      replace: true,
       search: (prev) => ({
         ...prev,
-        event: undefined,
-        targetType: undefined,
         actorId: undefined,
+        event: undefined,
         page: 1,
+        targetType: undefined,
       }),
-      replace: true,
     });
   }
 
