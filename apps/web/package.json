@@ -6,8 +6,7 @@
   "scripts": {
     "build": "vite build",
     "build-storybook": "storybook build",
-    "check-types": "tsgo --noEmit",
-    "check-types:backup": "tsc --noEmit",
+    "check-types": "tsc --noEmit",
     "deploy": "bun run build && wrangler deploy",
     "dev": "bun run generate-client && vite --port=3001",
     "generate-client": "openapi-ts",
@@ -66,7 +65,7 @@
     "zustand": "^5.0.15"
   },
   "devDependencies": {
-    "@hey-api/openapi-ts": "^0.99.0",
+    "@hey-api/openapi-ts": "next",
     "@storybook/addon-a11y": "^10.5.10",
     "@storybook/addon-docs": "^10.5.10",
     "@storybook/addon-themes": "^10.5.10",
@@ -79,11 +78,11 @@
     "@types/node": "^26.4.0",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.5",
-    "@typescript/native-preview": "beta",
     "@vitejs/plugin-react": "^6.1.1",
     "@vitest/coverage-v8": "^4.1.11",
     "jsdom": "^30.0.1",
     "postcss": "^8.5.26",
+    "react-grab": "^0.2.0",
     "storybook": "^10.5.10",
     "tailwindcss": "^4.3.3",
     "typescript": "^7.0.2",

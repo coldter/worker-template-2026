@@ -10,7 +10,6 @@
     "build:storybook": "turbo -F web build-storybook",
     "check": "ultracite check",
     "check-types": "turbo check-types",
-    "check-types:backup": "turbo check-types:backup",
     "clean": "rm -rf .turbo && git clean -xdf node_modules apps/*/node_modules && rm bun.lock",
     "db:generate": "turbo -F @repo/db db:generate",
     "db:migrate": "turbo -F @repo/db db:migrate",
@@ -41,7 +40,6 @@
   "devDependencies": {
     "@biomejs/biome": "^2.5.11",
     "@types/node": "^26.4.0",
-    "@typescript/native-preview": "beta",
     "knip": "^6.33.0",
     "tsx": "^4.23.13",
     "turbo": "^2.10.12",

@@ -4,6 +4,6 @@ import type { GetUserResponse, ListUsersResponse } from "@/api.gen/types.gen";
 export type User = ListUsersResponse["data"][number];
 export type UserDetail = GetUserResponse["user"];
 
-export type UserStatus = "active" | "inactive" | "locked";
+export type UserStatus = keyof typeof SHARED_USER_STATUS_CONFIG;
 
 export const USER_STATUS_CONFIG = SHARED_USER_STATUS_CONFIG;

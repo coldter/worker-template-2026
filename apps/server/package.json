@@ -4,8 +4,7 @@
   "main": "src/index.ts",
   "scripts": {
     "cf-typegen": "wrangler types --env-interface CloudflareBindings",
-    "check-types": "tsgo --noEmit",
-    "check-types:backup": "tsc --noEmit",
+    "check-types": "tsc --noEmit",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:mm:up": "drizzle-kit up",
@@ -44,7 +43,6 @@
     "@faker-js/faker": "^10.6.0",
     "@inquirer/prompts": "^8.7.0",
     "@types/pg": "^8.23.1",
-    "@typescript/native-preview": "beta",
     "chalk": "^6.0.0",
     "cli-highlight": "^2.1.11",
     "drizzle-kit": "^1.0.0-rc.5-ab785fc",

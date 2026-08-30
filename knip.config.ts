@@ -3,7 +3,6 @@ import type { KnipConfig } from "knip";
 const config: KnipConfig = {
   ignore: [".agents/skills/**/templates/**", ".claude/skills/**/templates/**"],
   ignoreDependencies: [
-    "@typescript/native-preview",
     "cloudflare",
     "postcss",
     "tailwindcss",

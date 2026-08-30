@@ -1,3 +1,7 @@
+if (import.meta.env.DEV) {
+  import("react-grab");
+}
+
 import "@fontsource-variable/inter/index.css";
 import "@fontsource-variable/inter/wght-italic.css";
 import { QueryClientProvider } from "@tanstack/react-query";

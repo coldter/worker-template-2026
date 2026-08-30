@@ -8,9 +8,8 @@
     "./templates/*": "./src/templates/*"
   },
   "scripts": {
-    "build": "tsup src/index.ts --format esm --dts",
-    "check-types": "tsgo --noEmit",
-    "check-types:backup": "tsc --noEmit",
+    "build": "tsup src/index.ts --format esm && tsc -p tsconfig.build.json --emitDeclarationOnly --declaration",
+    "check-types": "tsc --noEmit",
     "dev": "email dev --dir ./src/templates --port 3003",
     "test": "vitest run"
   },
@@ -27,7 +26,6 @@
     "@react-email/ui": "^6.9.3",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.5",
-    "@typescript/native-preview": "beta",
     "tsup": "^8.5.1",
     "typescript": "^7.0.2",
     "vitest": "^4.1.11"

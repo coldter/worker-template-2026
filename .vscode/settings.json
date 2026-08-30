@@ -53,6 +53,5 @@
   "vitest.disableWorkspaceWarning": true,
   "chat.tools.terminal.autoApprove": {
     "bun": true
-  },
-  // "typescript.experimental.useTsgo": true
+  }
 }

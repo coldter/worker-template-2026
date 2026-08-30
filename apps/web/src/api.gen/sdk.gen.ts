@@ -5,17 +5,17 @@ import { client } from './client.gen';
 import type { ActivateUserData, ActivateUserErrors, ActivateUserResponses, CreateUserData, CreateUserErrors, CreateUserResponses, DeactivateUserData, DeactivateUserErrors, DeactivateUserResponses, DeletePushTokenData, DeletePushTokenErrors, DeletePushTokenResponses, GetAuthorizationCapabilitiesData, GetAuthorizationCapabilitiesErrors, GetAuthorizationCapabilitiesResponses, GetMyAccountData, GetMyAccountErrors, GetMyAccountResponses, GetNotificationData, GetNotificationErrors, GetNotificationPreferencesData, GetNotificationPreferencesErrors, GetNotificationPreferencesResponses, GetNotificationResponses, GetUnreadNotificationCountData, GetUnreadNotificationCountErrors, GetUnreadNotificationCountResponses, GetUserData, GetUserErrors, GetUserResponses, ListAuditLogsData, ListAuditLogsErrors, ListAuditLogsResponses, ListNotificationsData, ListNotificationsErrors, ListNotificationsResponses, ListPushTokensData, ListPushTokensErrors, ListPushTokensResponses, ListRolesData, ListRolesErrors, ListRolesResponses, ListUsersData, ListUsersErrors, ListUsersResponses, MarkAllNotificationsAsReadData, MarkAllNotificationsAsReadErrors, MarkAllNotificationsAsReadResponses, MarkNotificationAsReadData, MarkNotificationAsReadErrors, MarkNotificationAsReadResponses, RegisterPushTokenData, RegisterPushTokenErrors, RegisterPushTokenResponses, UnlockUserData, UnlockUserErrors, UnlockUserResponses, UpdateNotificationPreferencesData, UpdateNotificationPreferencesErrors, UpdateNotificationPreferencesResponses, UpdateUserData, UpdateUserErrors, UpdateUserResponses, UpdateUserRolesData, UpdateUserRolesErrors, UpdateUserRolesResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
-    /**
-     * You can provide a client instance returned by `createClient()` instead of
-     * individual options. This might be also useful if you want to implement a
-     * custom client.
-     */
-    client?: Client;
-    /**
-     * You can pass arbitrary values through the `meta` object. This can be
-     * used to access values that aren't defined as part of the SDK function.
-     */
-    meta?: keyof ClientMeta extends never ? Record<string, unknown> : ClientMeta;
+  /**
+   * You can provide a client instance returned by `createClient()` instead of
+   * individual options. This might be also useful if you want to implement a
+   * custom client.
+   */
+  client?: Client;
+  /**
+   * You can pass arbitrary values through the `meta` object. This can be
+   * used to access values that aren't defined as part of the SDK function.
+   */
+  meta?: keyof ClientMeta extends never ? Record<string, unknown> : ClientMeta;
 };
 
 /**
@@ -24,9 +24,9 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
  * Returns a list of all system roles
  */
 export const listRoles = <ThrowOnError extends boolean = true>(options?: Options<ListRolesData, ThrowOnError>): RequestResult<ListRolesResponses, ListRolesErrors, ThrowOnError, 'data'> => (options?.client ?? client).get<ListRolesResponses, ListRolesErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    url: '/api/roles',
-    ...options
+  responseStyle: 'data',
+  url: '/api/roles',
+  ...options
 });
 
 /**
@@ -35,9 +35,9 @@ export const listRoles = <ThrowOnError extends boolean = true>(options?: Options
  * Returns a paginated list of users with optional filters
  */
 export const listUsers = <ThrowOnError extends boolean = true>(options?: Options<ListUsersData, ThrowOnError>): RequestResult<ListUsersResponses, ListUsersErrors, ThrowOnError, 'data'> => (options?.client ?? client).get<ListUsersResponses, ListUsersErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    url: '/api/users',
-    ...options
+  responseStyle: 'data',
+  url: '/api/users',
+  ...options
 });
 
 /**
@@ -46,13 +46,13 @@ export const listUsers = <ThrowOnError extends boolean = true>(options?: Options
  * Creates a new user with the specified details
  */
 export const createUser = <ThrowOnError extends boolean = true>(options?: Options<CreateUserData, ThrowOnError>): RequestResult<CreateUserResponses, CreateUserErrors, ThrowOnError, 'data'> => (options?.client ?? client).post<CreateUserResponses, CreateUserErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    url: '/api/users',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options?.headers
-    }
+  responseStyle: 'data',
+  url: '/api/users',
+  ...options,
+  headers: {
+    'Content-Type': 'application/json',
+    ...options?.headers
+  }
 });
 
 /**
@@ -61,9 +61,9 @@ export const createUser = <ThrowOnError extends boolean = true>(options?: Option
  * Returns user-facing profile info and notification summary
  */
 export const getMyAccount = <ThrowOnError extends boolean = true>(options?: Options<GetMyAccountData, ThrowOnError>): RequestResult<GetMyAccountResponses, GetMyAccountErrors, ThrowOnError, 'data'> => (options?.client ?? client).get<GetMyAccountResponses, GetMyAccountErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    url: '/api/users/me',
-    ...options
+  responseStyle: 'data',
+  url: '/api/users/me',
+  ...options
 });
 
 /**
@@ -72,9 +72,9 @@ export const getMyAccount = <ThrowOnError extends boolean = true>(options?: Opti
  * Returns detailed user information
  */
 export const getUser = <ThrowOnError extends boolean = true>(options: Options<GetUserData, ThrowOnError>): RequestResult<GetUserResponses, GetUserErrors, ThrowOnError, 'data'> => (options.client ?? client).get<GetUserResponses, GetUserErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    url: '/api/users/{userId}',
-    ...options
+  responseStyle: 'data',
+  url: '/api/users/{userId}',
+  ...options
 });
 
 /**
@@ -83,13 +83,13 @@ export const getUser = <ThrowOnError extends boolean = true>(options: Options<Ge
  * Updates user profile information
  */
 export const updateUser = <ThrowOnError extends boolean = true>(options: Options<UpdateUserData, ThrowOnError>): RequestResult<UpdateUserResponses, UpdateUserErrors, ThrowOnError, 'data'> => (options.client ?? client).patch<UpdateUserResponses, UpdateUserErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    url: '/api/users/{userId}',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-    }
+  responseStyle: 'data',
+  url: '/api/users/{userId}',
+  ...options,
+  headers: {
+    'Content-Type': 'application/json',
+    ...options.headers
+  }
 });
 
 /**
@@ -98,13 +98,13 @@ export const updateUser = <ThrowOnError extends boolean = true>(options: Options
  * Updates user role assignments
  */
 export const updateUserRoles = <ThrowOnError extends boolean = true>(options: Options<UpdateUserRolesData, ThrowOnError>): RequestResult<UpdateUserRolesResponses, UpdateUserRolesErrors, ThrowOnError, 'data'> => (options.client ?? client).patch<UpdateUserRolesResponses, UpdateUserRolesErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    url: '/api/users/{userId}/roles',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-    }
+  responseStyle: 'data',
+  url: '/api/users/{userId}/roles',
+  ...options,
+  headers: {
+    'Content-Type': 'application/json',
+    ...options.headers
+  }
 });
 
 /**
@@ -113,13 +113,13 @@ export const updateUserRoles = <ThrowOnError extends boolean = true>(options: Op
  * Deactivates a user and revokes all sessions
  */
 export const deactivateUser = <ThrowOnError extends boolean = true>(options: Options<DeactivateUserData, ThrowOnError>): RequestResult<DeactivateUserResponses, DeactivateUserErrors, ThrowOnError, 'data'> => (options.client ?? client).post<DeactivateUserResponses, DeactivateUserErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    url: '/api/users/{userId}/deactivate',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-    }
+  responseStyle: 'data',
+  url: '/api/users/{userId}/deactivate',
+  ...options,
+  headers: {
+    'Content-Type': 'application/json',
+    ...options.headers
+  }
 });
 
 /**
@@ -128,9 +128,9 @@ export const deactivateUser = <ThrowOnError extends boolean = true>(options: Opt
  * Reactivates a deactivated user
  */
 export const activateUser = <ThrowOnError extends boolean = true>(options: Options<ActivateUserData, ThrowOnError>): RequestResult<ActivateUserResponses, ActivateUserErrors, ThrowOnError, 'data'> => (options.client ?? client).post<ActivateUserResponses, ActivateUserErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    url: '/api/users/{userId}/activate',
-    ...options
+  responseStyle: 'data',
+  url: '/api/users/{userId}/activate',
+  ...options
 });
 
 /**
@@ -139,9 +139,9 @@ export const activateUser = <ThrowOnError extends boolean = true>(options: Optio
  * Unlocks a locked user and resets failed login attempts
  */
 export const unlockUser = <ThrowOnError extends boolean = true>(options: Options<UnlockUserData, ThrowOnError>): RequestResult<UnlockUserResponses, UnlockUserErrors, ThrowOnError, 'data'> => (options.client ?? client).post<UnlockUserResponses, UnlockUserErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    url: '/api/users/{userId}/unlock',
-    ...options
+  responseStyle: 'data',
+  url: '/api/users/{userId}/unlock',
+  ...options
 });
 
 /**
@@ -150,9 +150,9 @@ export const unlockUser = <ThrowOnError extends boolean = true>(options: Options
  * Returns a paginated list of audit logs with optional filters
  */
 export const listAuditLogs = <ThrowOnError extends boolean = true>(options?: Options<ListAuditLogsData, ThrowOnError>): RequestResult<ListAuditLogsResponses, ListAuditLogsErrors, ThrowOnError, 'data'> => (options?.client ?? client).get<ListAuditLogsResponses, ListAuditLogsErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    url: '/api/audit-logs',
-    ...options
+  responseStyle: 'data',
+  url: '/api/audit-logs',
+  ...options
 });
 
 /**
@@ -161,9 +161,9 @@ export const listAuditLogs = <ThrowOnError extends boolean = true>(options?: Opt
  * Returns a paginated list of notifications for the authenticated user
  */
 export const listNotifications = <ThrowOnError extends boolean = true>(options?: Options<ListNotificationsData, ThrowOnError>): RequestResult<ListNotificationsResponses, ListNotificationsErrors, ThrowOnError, 'data'> => (options?.client ?? client).get<ListNotificationsResponses, ListNotificationsErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    url: '/api/notifications',
-    ...options
+  responseStyle: 'data',
+  url: '/api/notifications',
+  ...options
 });
 
 /**
@@ -172,9 +172,9 @@ export const listNotifications = <ThrowOnError extends boolean = true>(options?:
  * Returns notification preferences for the authenticated user
  */
 export const getNotificationPreferences = <ThrowOnError extends boolean = true>(options?: Options<GetNotificationPreferencesData, ThrowOnError>): RequestResult<GetNotificationPreferencesResponses, GetNotificationPreferencesErrors, ThrowOnError, 'data'> => (options?.client ?? client).get<GetNotificationPreferencesResponses, GetNotificationPreferencesErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    url: '/api/notifications/preferences',
-    ...options
+  responseStyle: 'data',
+  url: '/api/notifications/preferences',
+  ...options
 });
 
 /**
@@ -183,13 +183,13 @@ export const getNotificationPreferences = <ThrowOnError extends boolean = true>(
  * Updates notification preferences for the authenticated user
  */
 export const updateNotificationPreferences = <ThrowOnError extends boolean = true>(options?: Options<UpdateNotificationPreferencesData, ThrowOnError>): RequestResult<UpdateNotificationPreferencesResponses, UpdateNotificationPreferencesErrors, ThrowOnError, 'data'> => (options?.client ?? client).patch<UpdateNotificationPreferencesResponses, UpdateNotificationPreferencesErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    url: '/api/notifications/preferences',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options?.headers
-    }
+  responseStyle: 'data',
+  url: '/api/notifications/preferences',
+  ...options,
+  headers: {
+    'Content-Type': 'application/json',
+    ...options?.headers
+  }
 });
 
 /**
@@ -198,9 +198,9 @@ export const updateNotificationPreferences = <ThrowOnError extends boolean = tru
  * Returns details of a specific notification
  */
 export const getNotification = <ThrowOnError extends boolean = true>(options: Options<GetNotificationData, ThrowOnError>): RequestResult<GetNotificationResponses, GetNotificationErrors, ThrowOnError, 'data'> => (options.client ?? client).get<GetNotificationResponses, GetNotificationErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    url: '/api/notifications/{notificationId}',
-    ...options
+  responseStyle: 'data',
+  url: '/api/notifications/{notificationId}',
+  ...options
 });
 
 /**
@@ -209,9 +209,9 @@ export const getNotification = <ThrowOnError extends boolean = true>(options: Op
  * Returns the number of unread notifications for the user
  */
 export const getUnreadNotificationCount = <ThrowOnError extends boolean = true>(options?: Options<GetUnreadNotificationCountData, ThrowOnError>): RequestResult<GetUnreadNotificationCountResponses, GetUnreadNotificationCountErrors, ThrowOnError, 'data'> => (options?.client ?? client).get<GetUnreadNotificationCountResponses, GetUnreadNotificationCountErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    url: '/api/notifications/unread/count',
-    ...options
+  responseStyle: 'data',
+  url: '/api/notifications/unread/count',
+  ...options
 });
 
 /**
@@ -220,9 +220,9 @@ export const getUnreadNotificationCount = <ThrowOnError extends boolean = true>(
  * Marks a specific notification as read
  */
 export const markNotificationAsRead = <ThrowOnError extends boolean = true>(options: Options<MarkNotificationAsReadData, ThrowOnError>): RequestResult<MarkNotificationAsReadResponses, MarkNotificationAsReadErrors, ThrowOnError, 'data'> => (options.client ?? client).post<MarkNotificationAsReadResponses, MarkNotificationAsReadErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    url: '/api/notifications/{notificationId}/read',
-    ...options
+  responseStyle: 'data',
+  url: '/api/notifications/{notificationId}/read',
+  ...options
 });
 
 /**
@@ -231,9 +231,9 @@ export const markNotificationAsRead = <ThrowOnError extends boolean = true>(opti
  * Marks all notifications as read for the authenticated user
  */
 export const markAllNotificationsAsRead = <ThrowOnError extends boolean = true>(options?: Options<MarkAllNotificationsAsReadData, ThrowOnError>): RequestResult<MarkAllNotificationsAsReadResponses, MarkAllNotificationsAsReadErrors, ThrowOnError, 'data'> => (options?.client ?? client).post<MarkAllNotificationsAsReadResponses, MarkAllNotificationsAsReadErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    url: '/api/notifications/read-all',
-    ...options
+  responseStyle: 'data',
+  url: '/api/notifications/read-all',
+  ...options
 });
 
 /**
@@ -242,9 +242,9 @@ export const markAllNotificationsAsRead = <ThrowOnError extends boolean = true>(
  * Returns all registered push tokens for the authenticated user
  */
 export const listPushTokens = <ThrowOnError extends boolean = true>(options?: Options<ListPushTokensData, ThrowOnError>): RequestResult<ListPushTokensResponses, ListPushTokensErrors, ThrowOnError, 'data'> => (options?.client ?? client).get<ListPushTokensResponses, ListPushTokensErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    url: '/api/notifications/push-tokens',
-    ...options
+  responseStyle: 'data',
+  url: '/api/notifications/push-tokens',
+  ...options
 });
 
 /**
@@ -253,13 +253,13 @@ export const listPushTokens = <ThrowOnError extends boolean = true>(options?: Op
  * Registers a new push token for the authenticated user's device
  */
 export const registerPushToken = <ThrowOnError extends boolean = true>(options?: Options<RegisterPushTokenData, ThrowOnError>): RequestResult<RegisterPushTokenResponses, RegisterPushTokenErrors, ThrowOnError, 'data'> => (options?.client ?? client).post<RegisterPushTokenResponses, RegisterPushTokenErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    url: '/api/notifications/push-tokens',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options?.headers
-    }
+  responseStyle: 'data',
+  url: '/api/notifications/push-tokens',
+  ...options,
+  headers: {
+    'Content-Type': 'application/json',
+    ...options?.headers
+  }
 });
 
 /**
@@ -268,16 +268,16 @@ export const registerPushToken = <ThrowOnError extends boolean = true>(options?:
  * Deactivates a push token for the authenticated user
  */
 export const deletePushToken = <ThrowOnError extends boolean = true>(options: Options<DeletePushTokenData, ThrowOnError>): RequestResult<DeletePushTokenResponses, DeletePushTokenErrors, ThrowOnError, 'data'> => (options.client ?? client).delete<DeletePushTokenResponses, DeletePushTokenErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    url: '/api/notifications/push-tokens/{tokenId}',
-    ...options
+  responseStyle: 'data',
+  url: '/api/notifications/push-tokens/{tokenId}',
+  ...options
 });
 
 /**
  * Get current user authorization capabilities
  */
 export const getAuthorizationCapabilities = <ThrowOnError extends boolean = true>(options?: Options<GetAuthorizationCapabilitiesData, ThrowOnError>): RequestResult<GetAuthorizationCapabilitiesResponses, GetAuthorizationCapabilitiesErrors, ThrowOnError, 'data'> => (options?.client ?? client).get<GetAuthorizationCapabilitiesResponses, GetAuthorizationCapabilitiesErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    url: '/api/authorization/capabilities',
-    ...options
+  responseStyle: 'data',
+  url: '/api/authorization/capabilities',
+  ...options
 });
