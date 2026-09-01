@@ -111,7 +111,3 @@ bun run db:studio                    # Open Drizzle Studio
 - **Email**: React Email + Resend
 - **Web**: React, TanStack Router, TanStack Query, Zustand, Tailwind CSS
 - **Notifications**: FCM HTTP v1 (Workers-native, no firebase-admin)
-
-## Documentation
-
-See [CLAUDE.md](CLAUDE.md) for architecture details, coding conventions, and detailed guidelines.

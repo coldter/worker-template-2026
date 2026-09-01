@@ -1,5 +1,6 @@
 import { OpenAPIHono } from "@hono/zod-openapi";
 import { Hono } from "hono";
+import { methodNotAllowed } from "hono/method-not-allowed";
 import { secureHeaders } from "hono/secure-headers";
 import { trimTrailingSlash } from "hono/trailing-slash";
 import capabilitiesHandler from "@/auth/capabilities";
@@ -27,6 +28,20 @@ app.use("*", requestIdMiddleware);
 app.use("*", createCorsMiddleware());
 app.use("*", analyticsMiddleware);
 app.use("*", rateLimitMiddleware);
+app.use(
+  "*",
+  methodNotAllowed({
+    app,
+    onMethodNotAllowed: (c, methods) =>
+      c.json(
+        {
+          error: { code: "METHOD_NOT_ALLOWED", message: "Method not allowed" },
+        },
+        405,
+        { Allow: methods.join(", ") }
+      ),
+  })
+);
 
 const authProxy = new Hono<AppEnv>();
 authProxy.all("/*", async (c) => {
