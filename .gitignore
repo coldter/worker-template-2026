@@ -43,3 +43,5 @@ apps/auth/worker-configuration.d.ts
 
 # Storybook build output
 apps/web/storybook-static
+
+.local-docs
