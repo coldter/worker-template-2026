@@ -22,6 +22,7 @@ import type {
   UpdateUserData,
   UpdateUserRolesData,
 } from "@/api.gen/types.gen";
+import { authorizationKeys } from "@/hooks/use-authorization";
 
 function normaliseListParams(params: ListUsersData["query"]) {
   if (!params) {
@@ -141,6 +142,9 @@ export function useUpdateUserRolesMutation() {
     onSuccess: (_, { userId }) => {
       queryClient.invalidateQueries({ queryKey: usersKeys.lists() });
       queryClient.invalidateQueries({ queryKey: usersKeys.detail(userId) });
+      queryClient.invalidateQueries({
+        queryKey: authorizationKeys.capabilities(),
+      });
       toast.success("Roles updated successfully");
     },
   });
@@ -165,6 +169,9 @@ export function useDeactivateUserMutation() {
     onSuccess: (_, { userId }) => {
       queryClient.invalidateQueries({ queryKey: usersKeys.lists() });
       queryClient.invalidateQueries({ queryKey: usersKeys.detail(userId) });
+      queryClient.invalidateQueries({
+        queryKey: authorizationKeys.capabilities(),
+      });
       toast.success("User deactivated");
     },
   });
@@ -183,6 +190,9 @@ export function useActivateUserMutation() {
     onSuccess: (_, userId) => {
       queryClient.invalidateQueries({ queryKey: usersKeys.lists() });
       queryClient.invalidateQueries({ queryKey: usersKeys.detail(userId) });
+      queryClient.invalidateQueries({
+        queryKey: authorizationKeys.capabilities(),
+      });
       toast.success("User activated");
     },
   });
@@ -201,6 +211,9 @@ export function useUnlockUserMutation() {
     onSuccess: (_, userId) => {
       queryClient.invalidateQueries({ queryKey: usersKeys.lists() });
       queryClient.invalidateQueries({ queryKey: usersKeys.detail(userId) });
+      queryClient.invalidateQueries({
+        queryKey: authorizationKeys.capabilities(),
+      });
       toast.success("User unlocked");
     },
   });

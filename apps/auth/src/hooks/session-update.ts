@@ -4,7 +4,7 @@ import type { Session } from "better-auth";
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 import { tolerateMissingOrgTables } from "../lib/org-tables";
-import { detectPlatform, SESSION_CONFIG } from "../lib/platform";
+import { SESSION_CONFIG } from "../lib/platform";
 
 const sessionUpdatePayloadSchema = z
   .object({
@@ -95,10 +95,12 @@ export function createSessionUpdateBeforeHook(db: DrizzleClient) {
       return { data: session };
     }
 
-    const userAgent = context?.headers?.get("user-agent") ?? null;
-    const platform = detectPlatform(userAgent);
+    const persistedPlatform =
+      typeof session.platform === "string" && session.platform === "mobile"
+        ? ("mobile" as const)
+        : ("web" as const);
 
-    if (platform === "web") {
+    if (persistedPlatform === "web") {
       return {
         data: {
           ...session,

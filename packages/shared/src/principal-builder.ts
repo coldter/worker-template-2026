@@ -36,12 +36,12 @@ export function buildAuthorizationPrincipal(
     });
   }
 
-  const requestedStatus = user.status ?? "active";
+  const requestedStatus = user.status;
   const status = VALID_STATUSES.has(
     requestedStatus as AuthorizationAttributes["status"]
   )
     ? (requestedStatus as AuthorizationAttributes["status"])
-    : "active";
+    : "deleted";
 
   return {
     attributes: {
@@ -70,6 +70,7 @@ export function toBaseAuthorizationPrincipal(
   return {
     attributes: principal.attributes,
     id: principal.id,
+    organization: principal.organization,
     roles: principal.roles,
   };
 }

@@ -40,6 +40,8 @@ function errorResponse(
 }
 
 export const errorHandler: ErrorHandler<AppEnv> = (err, c) => {
+  const isProduction = String(c.env.NODE_ENV) === "production";
+
   if (err instanceof HTTPException) {
     if (err.status >= 500) {
       logger.error("HTTPException 500", {
@@ -69,9 +71,17 @@ export const errorHandler: ErrorHandler<AppEnv> = (err, c) => {
       defaultCodeByStatus[err.status] ??
       (err.status >= 500 ? "INTERNAL_SERVER_ERROR" : "REQUEST_FAILED");
 
-    return c.json(errorResponse(errorCode, err.message), {
-      status: err.status,
-    });
+    return c.json(
+      errorResponse(
+        errorCode,
+        isProduction && err.status === 500
+          ? "internal server error"
+          : err.message
+      ),
+      {
+        status: err.status,
+      }
+    );
   }
 
   if (err instanceof DrizzleQueryError) {
@@ -83,13 +93,21 @@ export const errorHandler: ErrorHandler<AppEnv> = (err, c) => {
       err.cause instanceof pg.DatabaseError &&
       err.cause?.code === PostgresError.UNIQUE_VIOLATION
     ) {
-      const message = "A record with this value already exists";
+      const message = isProduction
+        ? "Duplicate value exists"
+        : err.cause?.detail || "Duplicate value exists";
       return c.json(errorResponse("UNIQUE_VIOLATION", message), {
         status: 409,
       });
     }
     return c.json(errorResponse("DATABASE_ERROR", "database error occurred"), {
       status: 500,
+    });
+  }
+
+  if (err?.name === "UserNotFoundError") {
+    return c.json(errorResponse("NOT_FOUND", "User not found"), {
+      status: 404,
     });
   }
 
@@ -101,7 +119,12 @@ export const errorHandler: ErrorHandler<AppEnv> = (err, c) => {
   });
 
   return c.json(
-    errorResponse("INTERNAL_SERVER_ERROR", "something unexpected happened"),
+    errorResponse(
+      "INTERNAL_SERVER_ERROR",
+      isProduction
+        ? "internal server error"
+        : (err.message ?? "something unexpected happened")
+    ),
     { status: 500 }
   );
 };

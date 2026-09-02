@@ -93,6 +93,7 @@ export function createAuth(
         httpOnly: true,
         sameSite: "lax",
       },
+      disableOriginCheck: false,
     },
     appName: brand.appName,
     baseURL: env.APP_URL,
@@ -125,7 +126,7 @@ export function createAuth(
     },
 
     plugins: [
-      enhancedUserPlugin(),
+      enhancedUserPlugin(db),
       loginSecurityPlugin(db),
       adminPlugin(env.API),
       emailOTP({
@@ -224,18 +225,20 @@ export function createAuth(
     session: {
       additionalFields: {
         activeOrgRole: {
+          input: false,
           required: false,
           type: "string",
         },
         platform: {
           defaultValue: "web",
+          input: false,
           required: false,
           type: [...platformSchema.options],
         },
       },
 
       cookieCache: {
-        enabled: true,
+        enabled: false,
         maxAge: 60,
       },
 

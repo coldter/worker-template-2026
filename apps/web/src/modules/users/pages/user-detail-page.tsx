@@ -16,6 +16,7 @@ import {
 import { useState } from "react";
 import { Authorized } from "@/components/authorized";
 import { useCan } from "@/hooks/use-authorization";
+import { ApiError } from "@/lib/api";
 import { Avatar, AvatarFallback, AvatarImage } from "@/modules/ui/avatar";
 import { Badge } from "@/modules/ui/badge";
 import { Button } from "@/modules/ui/button";
@@ -42,7 +43,7 @@ import {
 
 export function UserDetailPage() {
   const { userId } = useParams({ strict: false });
-  const { data: user, isLoading, isError } = useUserQuery(userId ?? "");
+  const { data: user, error, isError, isLoading } = useUserQuery(userId ?? "");
   const { allowed: canUpdate } = useCan("user:update");
   const { allowed: canDeactivate } = useCan("user:deactivate");
   const currentUser = useUserStore((s) => s.user);
@@ -63,12 +64,17 @@ export function UserDetailPage() {
   }
 
   if (isError || !user) {
+    const isForbidden = ApiError.is(error) && error.status === 403;
     return (
       <div className="flex h-[50vh] items-center justify-center">
         <div className="text-center">
-          <h2 className="text-xl font-semibold">User not found</h2>
+          <h2 className="text-xl font-semibold">
+            {isForbidden ? "Access denied" : "User not found"}
+          </h2>
           <p className="text-muted-foreground mt-2">
-            The user you are looking for does not exist.
+            {isForbidden
+              ? "You do not have permission to view this user."
+              : "The user you are looking for does not exist."}
           </p>
           <Button asChild className="mt-4" variant="outline">
             <Link to="/users">Back to Users</Link>
@@ -108,7 +114,7 @@ export function UserDetailPage() {
                 <UserCog className="h-4 w-4" />
                 Edit Profile
               </Button>
-              {hasAdminRole && (
+              {hasAdminRole && !isOwnProfile && (
                 <Button
                   className="gap-2 font-medium transition-colors focus-visible:ring-2"
                   onClick={() => setShowRolesDialog(true)}

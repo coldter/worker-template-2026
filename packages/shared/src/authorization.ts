@@ -10,6 +10,7 @@ export {
   isAuthorizationRole,
   notificationsAuthorization,
   rolesAuthorization,
+  type UserAuthorizationResource,
   usersAuthorization,
 } from "./authorization-schema";
 export {

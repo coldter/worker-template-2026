@@ -53,7 +53,7 @@ export const VALID_STATUSES = new Set<AuthorizationAttributes["status"]>(
   USER_STATUS_VALUES
 );
 
-interface UserAuthorizationResource {
+export interface UserAuthorizationResource {
   id: string;
 }
 
@@ -64,7 +64,7 @@ export const usersAuthorization =
       "view",
       "create",
       "update",
-      "update-roles",
+      "assign-roles",
       "delete",
       "deactivate",
       "activate",
@@ -72,8 +72,8 @@ export const usersAuthorization =
     ],
     policies: (p) => [
       p.allow("admin").to("*"),
-      p.allow("user").to("list"),
       p.allow("user").to("view", "update").whereOwner(),
+      p.deny("*").to("assign-roles").whereTargetIsSelf(),
       p.deny("*").to("delete").whereTargetIsSelf(),
       p.deny("*").to("deactivate").whereTargetIsSelf(),
     ],

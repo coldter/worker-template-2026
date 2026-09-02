@@ -1,4 +1,9 @@
+import type { DrizzleClient } from "@repo/db";
+import * as schema from "@repo/db/schema";
+import { logger } from "@repo/shared/logger";
 import type { BetterAuthPlugin } from "better-auth";
+import { APIError, createAuthMiddleware } from "better-auth/api";
+import { eq } from "drizzle-orm";
 import { z } from "zod";
 
 export const USER_STATUS = {
@@ -27,8 +32,55 @@ export type UserWithStatusFields = {
   twoFactorEnabled: boolean;
 };
 
-export const enhancedUserPlugin = () =>
+async function setTwoFactorEnabled(
+  db: DrizzleClient,
+  userId: string,
+  enabled: boolean
+) {
+  try {
+    await db
+      .update(schema.users)
+      .set({ twoFactorEnabled: enabled })
+      .where(eq(schema.users.id, userId));
+  } catch (error) {
+    logger.warn("Failed to sync twoFactorEnabled", {
+      error: error instanceof Error ? error.message : String(error),
+      userId,
+    });
+  }
+}
+
+export const enhancedUserPlugin = (db: DrizzleClient) =>
   ({
+    hooks: {
+      after: [
+        {
+          handler: createAuthMiddleware(async (ctx) => {
+            const { returned } = ctx.context;
+            if (returned instanceof APIError) {
+              return;
+            }
+
+            const userId = ctx.context.session?.user.id;
+            if (!userId) {
+              return;
+            }
+
+            if (ctx.path === "/two-factor/enable") {
+              await setTwoFactorEnabled(db, userId, true);
+              return;
+            }
+
+            if (ctx.path === "/two-factor/disable") {
+              await setTwoFactorEnabled(db, userId, false);
+            }
+          }),
+          matcher: (context) =>
+            context.path === "/two-factor/enable" ||
+            context.path === "/two-factor/disable",
+        },
+      ],
+    },
     id: "user-status",
     schema: {
       user: {

@@ -1,0 +1,2 @@
+ALTER TABLE "push_tokens" ALTER COLUMN "session_id" DROP NOT NULL;--> statement-breakpoint
+ALTER TABLE "push_tokens" DROP CONSTRAINT "push_tokens_session_id_sessions_id_fkey", ADD CONSTRAINT "push_tokens_session_id_sessions_id_fkey" FOREIGN KEY ("session_id") REFERENCES "sessions"("id") ON DELETE SET NULL;

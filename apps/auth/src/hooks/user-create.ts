@@ -7,6 +7,10 @@ export function createUserCreateBeforeHook() {
   return async (user: User & Record<string, unknown>) => ({
     data: {
       ...user,
+      email:
+        typeof user.email === "string"
+          ? user.email.trim().toLowerCase()
+          : user.email,
       failedLoginAttempts: 0,
       roleSlugs: [SYSTEM_ROLES.USER.slug],
       status: "active" as const,
