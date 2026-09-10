@@ -83,7 +83,7 @@ describe("sendEmail", () => {
     const { sendEmail } = await import("../lib/send");
 
     await sendEmail<DummyProps>({
-      apiKey: "key-cached",
+      apiKey: "key-a",
       from: "noreply@example.com",
       props: { name: "Ada" },
       subject: "First",
@@ -91,25 +91,10 @@ describe("sendEmail", () => {
       to: "ada@example.com",
     });
     await sendEmail<DummyProps>({
-      apiKey: "key-cached",
-      from: "noreply@example.com",
-      props: { name: "Ada" },
-      subject: "Second",
-      template: DummyTemplate,
-      to: "ada@example.com",
-    });
-
-    expect(resendInstances).toHaveLength(1);
-  });
-
-  test("constructs a new Resend per distinct apiKey", async () => {
-    const { sendEmail } = await import("../lib/send");
-
-    await sendEmail<DummyProps>({
       apiKey: "key-a",
       from: "noreply@example.com",
       props: { name: "Ada" },
-      subject: "A",
+      subject: "Second",
       template: DummyTemplate,
       to: "ada@example.com",
     });
@@ -117,14 +102,12 @@ describe("sendEmail", () => {
       apiKey: "key-b",
       from: "noreply@example.com",
       props: { name: "Ada" },
-      subject: "B",
+      subject: "Third",
       template: DummyTemplate,
       to: "ada@example.com",
     });
 
-    expect(resendInstances).toHaveLength(2);
-    expect(resendInstances[0]?.apiKey).toBe("key-a");
-    expect(resendInstances[1]?.apiKey).toBe("key-b");
+    expect(resendInstances).toEqual([{ apiKey: "key-a" }, { apiKey: "key-b" }]);
   });
 
   test("throws on a Resend API error", async () => {

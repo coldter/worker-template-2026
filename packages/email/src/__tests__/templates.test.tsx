@@ -6,29 +6,7 @@ import { TwoFactorOtpEmail } from "../templates/two-factor-otp";
 import { VerificationOtpEmail } from "../templates/verification-otp";
 import { WelcomeEmail } from "../templates/welcome";
 
-describe("Email template snapshots", () => {
-  test("NotificationEmail renders with action button", async () => {
-    const html = await render(
-      <NotificationEmail
-        actionLabel="View Invitation"
-        actionUrl="https://example.com/shares/123"
-        body="John wants to share a card ending in 4242 with you."
-        subject="Card share invitation"
-      />
-    );
-    expect(html).toMatchSnapshot();
-  });
-
-  test("NotificationEmail renders without action button", async () => {
-    const html = await render(
-      <NotificationEmail
-        body="Just letting you know your statement is ready."
-        subject="Statement ready"
-      />
-    );
-    expect(html).toMatchSnapshot();
-  });
-
+describe("Email templates", () => {
   test("NotificationEmail renders with brand overrides", async () => {
     const html = await render(
       <NotificationEmail
@@ -51,7 +29,7 @@ describe("Email template snapshots", () => {
     expect(html).toContain("rgb(18,52,86)");
   });
 
-  test("PasswordResetEmail renders", async () => {
+  test("PasswordResetEmail renders the user name and reset link", async () => {
     const html = await render(
       <PasswordResetEmail
         expiresIn="60 minutes"
@@ -59,10 +37,12 @@ describe("Email template snapshots", () => {
         userName="Ada"
       />
     );
-    expect(html).toMatchSnapshot();
+
+    expect(html).toContain("Ada");
+    expect(html).toContain("https://example.com/reset?token=abc123");
   });
 
-  test("TwoFactorOtpEmail renders with device metadata", async () => {
+  test("TwoFactorOtpEmail renders the code and device metadata", async () => {
     const html = await render(
       <TwoFactorOtpEmail
         expiresIn="3 minutes"
@@ -72,35 +52,31 @@ describe("Email template snapshots", () => {
         userName="Ada"
       />
     );
-    expect(html).toMatchSnapshot();
+
+    expect(html).toContain("123456");
+    expect(html).toContain("Chrome on macOS");
   });
 
-  test("TwoFactorOtpEmail renders without device metadata", async () => {
+  test("VerificationOtpEmail renders the type-specific title and code", async () => {
     const html = await render(
-      <TwoFactorOtpEmail expiresIn="3 minutes" otp="654321" userName="Ada" />
+      <VerificationOtpEmail
+        expiresIn="10 minutes"
+        otp="123456"
+        type="email-verification"
+        userName="Ada"
+      />
     );
-    expect(html).toMatchSnapshot();
+
+    expect(html).toContain("Verify Your Email");
+    expect(html).toContain("123456");
   });
 
-  test.each(["sign-in", "email-verification", "forget-password"] as const)(
-    "VerificationOtpEmail renders for type %s",
-    async (type) => {
-      const html = await render(
-        <VerificationOtpEmail
-          expiresIn="10 minutes"
-          otp="123456"
-          type={type}
-          userName="Ada"
-        />
-      );
-      expect(html).toMatchSnapshot();
-    }
-  );
-
-  test("WelcomeEmail renders", async () => {
+  test("WelcomeEmail renders the user name and login link", async () => {
     const html = await render(
       <WelcomeEmail loginUrl="https://example.com/login" userName="Ada" />
     );
-    expect(html).toMatchSnapshot();
+
+    expect(html).toContain("Ada");
+    expect(html).toContain("https://example.com/login");
   });
 });

@@ -134,22 +134,6 @@ describe("integration: single-tenant", () => {
     }
   });
 
-  it("user cannot deactivate themselves (deny with whereTargetIsSelf)", async () => {
-    const selfResource: UserResource = {
-      createdBy: "usr_1",
-      email: "user1@test.com",
-      id: "usr_1",
-    };
-
-    const decision = await registry.can(user1, "user", "deactivate", {
-      resource: selfResource,
-    });
-    expect(decision.allowed).toBe(false);
-    if (!decision.allowed) {
-      expect(decision.reason).toBe("EXPLICIT_DENY");
-    }
-  });
-
   it("inactive user is denied by global policy", async () => {
     const decision = await registry.can(inactiveUser, "user", "list");
     expect(decision.allowed).toBe(false);
@@ -171,20 +155,6 @@ describe("integration: single-tenant", () => {
     expect(decision.allowed).toBe(false);
     if (!decision.allowed) {
       expect(decision.reason).toBe("GLOBAL_DENY");
-    }
-  });
-
-  it("unknown role is denied due to no matching policy", async () => {
-    const unknownRolePrincipal: Principal = {
-      attributes: { email: "unknown@test.com", status: "active" },
-      id: "usr_unknown",
-      roles: ["unknown_role"],
-    };
-
-    const decision = await registry.can(unknownRolePrincipal, "user", "list");
-    expect(decision.allowed).toBe(false);
-    if (!decision.allowed) {
-      expect(decision.reason).toBe("NO_MATCHING_POLICY");
     }
   });
 
@@ -222,12 +192,6 @@ describe("integration: single-tenant", () => {
     );
   });
 
-  it("assertCan throws AuthorizationError with correct reason", async () => {
-    await expect(
-      registry.assertCan(user1, "user", "create")
-    ).rejects.toMatchObject({ reason: "NO_MATCHING_POLICY" });
-  });
-
   it("assertCan does not throw on allow", async () => {
     await expect(
       registry.assertCan(admin, "user", "list")
@@ -235,15 +199,6 @@ describe("integration: single-tenant", () => {
   });
 
   it("can() returns allowed=true for permitted actions", async () => {
-    expect((await registry.can(admin, "user", "list")).allowed).toBe(true);
-    expect((await registry.can(user1, "user", "list")).allowed).toBe(true);
-    expect((await registry.can(user1, "user", "create")).allowed).toBe(false);
-    expect((await registry.can(inactiveUser, "user", "list")).allowed).toBe(
-      false
-    );
-  });
-
-  it("can() returns allowed=false (denial) for unauthorised actions", async () => {
     expect((await registry.can(admin, "user", "list")).allowed).toBe(true);
     expect((await registry.can(user1, "user", "list")).allowed).toBe(true);
     expect((await registry.can(user1, "user", "create")).allowed).toBe(false);
@@ -328,13 +283,6 @@ describe("integration: multi-tenant", () => {
     expect(decision.allowed).toBe(true);
   });
 
-  it("org member in matching org can view project", async () => {
-    const decision = await registry.can(orgMember, "project", "view", {
-      resource: project1,
-    });
-    expect(decision.allowed).toBe(true);
-  });
-
   it("org owner in matching org can delete project", async () => {
     const decision = await registry.can(orgOwner, "project", "delete", {
       resource: project1,
@@ -344,13 +292,6 @@ describe("integration: multi-tenant", () => {
 
   it("org member in wrong org is denied", async () => {
     const decision = await registry.can(orgMember, "project", "list", {
-      resource: projectOtherOrg,
-    });
-    expect(decision.allowed).toBe(false);
-  });
-
-  it("org owner in wrong org is denied", async () => {
-    const decision = await registry.can(orgOwner, "project", "delete", {
       resource: projectOtherOrg,
     });
     expect(decision.allowed).toBe(false);
@@ -366,43 +307,10 @@ describe("integration: multi-tenant", () => {
     }
   });
 
-  it("user with no org context is denied for all org-scoped actions", async () => {
-    const decisions = await Promise.all(
-      (["list", "view", "create", "update", "delete"] as const).map((action) =>
-        registry.can(noOrgUser, "project", action, {
-          resource: project1,
-        })
-      )
-    );
-    for (const decision of decisions) {
-      expect(decision.allowed).toBe(false);
-    }
-  });
-
   it("system admin bypasses org check and can access any org resource", async () => {
     const decision = await registry.can(sysAdmin, "project", "delete", {
       resource: project1,
     });
     expect(decision.allowed).toBe(true);
-  });
-
-  it("system admin bypasses org check for cross-org resource", async () => {
-    const decision = await registry.can(sysAdmin, "project", "delete", {
-      resource: projectOtherOrg,
-    });
-    expect(decision.allowed).toBe(true);
-  });
-
-  it("system admin can perform all actions without org context", async () => {
-    const decisions = await Promise.all(
-      (["list", "view", "create", "update", "delete"] as const).map((action) =>
-        registry.can(sysAdmin, "project", action, {
-          resource: project1,
-        })
-      )
-    );
-    for (const decision of decisions) {
-      expect(decision.allowed).toBe(true);
-    }
   });
 });

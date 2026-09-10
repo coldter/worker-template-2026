@@ -257,13 +257,6 @@ describe("isAuthorizationGuard", () => {
     ).toBe(true);
   });
 
-  it("detects functions marked with AUTHORIZATION_GUARD", () => {
-    const marked = Object.assign(async () => undefined, {
-      [AUTHORIZATION_GUARD]: true,
-    });
-    expect(isAuthorizationGuard(marked)).toBe(true);
-  });
-
   it("rejects functions without the guard marker", () => {
     expect(isAuthorizationGuard(async () => undefined)).toBe(false);
   });

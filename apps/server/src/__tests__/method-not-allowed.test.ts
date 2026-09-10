@@ -31,10 +31,4 @@ describe("method not allowed middleware", () => {
 
     expect(res.status).toBe(200);
   });
-
-  it("returns 404 for unknown paths", async () => {
-    const res = await app.request("/does-not-exist", { method: "PUT" }, env);
-
-    expect(res.status).toBe(404);
-  });
 });

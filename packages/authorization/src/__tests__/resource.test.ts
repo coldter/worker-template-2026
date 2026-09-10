@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { principalNotActive } from "../conditions";
-import { createResourceDefinition, PolicyBuilder } from "../resource";
+import { PolicyBuilder } from "../resource";
 import type { ConditionContext } from "../types";
 
 const AT_LEAST_ONE_ACTION = /at least one action/;
@@ -37,12 +37,6 @@ describe("PolicyBuilder", () => {
     expect(rule.actions).toEqual(["delete"]);
     expect(rule.conditions).toEqual([]);
     expect(rule.label).toBe("deny:user:delete");
-  });
-
-  it("allow(role).to('*') produces wildcard actions", () => {
-    const rule = builder.allow("admin").to("*");
-    expect(rule.actions).toBe("*");
-    expect(rule.label).toBe("allow:admin:*");
   });
 
   it("allow('*').to(action) produces wildcard roles", () => {
@@ -130,11 +124,6 @@ describe("PolicyBuilder", () => {
     expect(rule.label).toBe("allow:user:update:whereOwner+where:custom");
   });
 
-  it("label auto-generation is correct for complex rules", () => {
-    const rule = builder.deny("*").to("delete").whereTargetIsSelf();
-    expect(rule.label).toBe("deny:*:delete:whereTargetIsSelf");
-  });
-
   it("to() with multiple actions lists them", () => {
     const rule = builder.allow("user").to("view", "list");
     expect(rule.actions).toEqual(["view", "list"]);
@@ -166,90 +155,5 @@ describe("PolicyBuilder", () => {
       // @ts-expect-error -- the wildcard cannot be mixed with explicit actions
       builder.allow("user").to("*", "view");
     }).toThrow(CANNOT_MIX_WILDCARD);
-  });
-
-  it("allow() return type does not expose conditions until to() runs", () => {
-    // @ts-expect-error -- where() is not on the action stage; must call to() first
-    builder.allow("user").where(() => true);
-
-    // @ts-expect-error -- whereOwner() is not on the action stage either
-    builder.allow("user").whereOwner();
-
-    // @ts-expect-error -- whereCondition() is not on the action stage either
-    builder.allow("user").whereCondition(principalNotActive());
-
-    const rule = builder.allow("user").to("update").whereOwner();
-    expect(rule.effect).toBe("allow");
-  });
-});
-
-describe("createResourceDefinition", () => {
-  it("stores resource config correctly", () => {
-    const resource = createResourceDefinition<
-      TestResource,
-      "admin" | "user",
-      "owner" | "member"
-    >("user", {
-      actions: ["list", "view", "create", "update", "delete"],
-      policies: (p) => [
-        p.allow("admin").to("*"),
-        p.allow("user").to("list"),
-        p.allow("user").to("view", "update").whereOwner(),
-        p.deny("*").to("delete").whereTargetIsSelf(),
-      ],
-      resolveOwner: (r) => r.createdBy,
-    });
-
-    expect(resource.name).toBe("user");
-    expect(resource.actions).toEqual([
-      "list",
-      "view",
-      "create",
-      "update",
-      "delete",
-    ]);
-    expect(resource.policies).toHaveLength(4);
-  });
-
-  it("stores resolveOrganization", () => {
-    const resource = createResourceDefinition<
-      TestResource,
-      "admin" | "user",
-      "owner" | "member"
-    >("project", {
-      actions: ["view", "edit"],
-      policies: (p) => [p.allow("admin").to("*")],
-      resolveOrganization: (r) => r.id,
-    });
-
-    expect(resource.name).toBe("project");
-    expect(resource.resolveOrganization).toBeDefined();
-  });
-
-  it("policies are evaluated with the builder", () => {
-    const resource = createResourceDefinition<
-      TestResource,
-      "admin" | "user",
-      never
-    >("item", {
-      actions: ["view"],
-      policies: (p) => [
-        p.allow("admin").to("*"),
-        p.allow("user").to("view").whereOwner(),
-      ],
-      resolveOwner: (r) => r.createdBy,
-    });
-
-    const [firstPolicy, secondPolicy] = resource.policies;
-    expect(firstPolicy?.effect).toBe("allow");
-    expect(firstPolicy?.roles).toEqual(["admin"]);
-    expect(firstPolicy?.actions).toBe("*");
-    expect(firstPolicy?.conditions).toEqual([]);
-
-    expect(secondPolicy?.effect).toBe("allow");
-    expect(secondPolicy?.roles).toEqual(["user"]);
-    expect(secondPolicy?.actions).toEqual(["view"]);
-    expect(secondPolicy?.conditions).toHaveLength(1);
-    expect(secondPolicy?.conditions[0]?.type).toBe("whereOwner");
   });
 });

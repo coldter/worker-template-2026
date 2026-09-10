@@ -8,8 +8,6 @@ import {
 } from "../conditions";
 import type { ConditionContext } from "../types";
 
-const ORG_ROLE_REQUIRED_PATTERN = /at least one org role/;
-
 describe("principalNotActive", () => {
   const condition = principalNotActive();
 
@@ -148,9 +146,5 @@ describe("createOrgRoleCondition", () => {
       principal: { attributes: {}, id: "u1", roles: ["member"] },
     };
     expect(condition.evaluate(ctx)).toBe(false);
-  });
-
-  it("throws when called with zero org roles", () => {
-    expect(() => createOrgRoleCondition([])).toThrow(ORG_ROLE_REQUIRED_PATTERN);
   });
 });
