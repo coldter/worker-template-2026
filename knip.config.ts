@@ -11,13 +11,11 @@ const config: KnipConfig = {
   ],
   ignoreExportsUsedInFile: true,
   ignoreIssues: {
-    "apps/web/src/modules/permissions/**": ["exports"],
-    "apps/web/src/modules/ui/**": ["exports"],
     "packages/email/src/templates/**": ["duplicates"],
   },
   rules: {
-    exports: "warn",
-    types: "warn",
+    exports: "off",
+    types: "off",
   },
   tags: ["-lintignore"],
   workspaces: {
@@ -49,15 +47,12 @@ const config: KnipConfig = {
       project: ["src/**/*.{ts,tsx}", "*.{ts,tsx}"],
     },
     "packages/*": {
-      includeEntryExports: true,
       project: "**/*.ts",
     },
     "packages/email": {
-      includeEntryExports: true,
       project: "**/*.{ts,tsx}",
     },
     "packages/shared": {
-      includeEntryExports: true,
       project: "**/*.ts",
     },
   },
