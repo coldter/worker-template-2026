@@ -7,9 +7,8 @@ import * as z from 'zod';
  */
 export const zListRolesResponse = z.object({
   roles: z.array(z.object({
-    slug: z.string(),
-    name: z.string(),
     description: z.string(),
+    name: z.string(),
     permissions: z.array(z.enum([
       'dashboard:access',
       'users:view',
@@ -22,23 +21,24 @@ export const zListRolesResponse = z.object({
       'roles:view',
       'roles:update',
       'audit-logs:view'
-    ]))
+    ])),
+    slug: z.string()
   }))
 });
 
 export const zListUsersQuery = z.object({
+  role: z.string().optional(),
   search: z.string().optional(),
+  sort: z.string().optional(),
   status: z.enum([
     'active',
+    'deleted',
     'inactive',
-    'locked',
-    'deleted'
+    'locked'
   ]).optional(),
-  role: z.string().optional(),
-  sort: z.string().optional(),
+  order: z.enum(['asc', 'desc']).optional().default('desc'),
   page: z.number().gte(1).optional().default(1),
-  perPage: z.number().gte(1).lte(100).optional().default(20),
-  order: z.enum(['asc', 'desc']).optional().default('desc')
+  perPage: z.number().gte(1).lte(100).optional().default(20)
 });
 
 /**
@@ -46,36 +46,36 @@ export const zListUsersQuery = z.object({
  */
 export const zListUsersResponse = z.object({
   data: z.array(z.object({
-    id: z.string(),
-    name: z.string(),
+    createdAt: z.iso.datetime(),
     email: z.email(),
     emailVerified: z.boolean(),
+    id: z.string(),
     image: z.string().nullable(),
+    name: z.string(),
+    roleSlugs: z.array(z.string()),
     status: z.enum([
       'active',
+      'deleted',
       'inactive',
-      'locked',
-      'deleted'
+      'locked'
     ]),
-    roleSlugs: z.array(z.string()),
-    createdAt: z.iso.datetime(),
     updatedAt: z.iso.datetime()
   })),
   meta: z.object({
-    total: z.number(),
-    page: z.number(),
-    perPage: z.number(),
-    pageCount: z.number(),
     hasNext: z.boolean(),
     hasPrev: z.boolean(),
     nextPage: z.number().nullable(),
-    prevPage: z.number().nullable()
+    page: z.number(),
+    pageCount: z.number(),
+    perPage: z.number(),
+    prevPage: z.number().nullable(),
+    total: z.number()
   })
 });
 
 export const zCreateUserBody = z.object({
+  email: z.string(),
   name: z.string().min(1).max(100),
-  email: z.email(),
   password: z.string().min(8).max(72),
   roleSlugs: z.array(z.string()).min(1)
 });
@@ -85,19 +85,19 @@ export const zCreateUserBody = z.object({
  */
 export const zCreateUserResponse = z.object({
   user: z.object({
-    id: z.string(),
-    name: z.string(),
+    createdAt: z.iso.datetime(),
     email: z.email(),
     emailVerified: z.boolean(),
+    id: z.string(),
     image: z.string().nullable(),
+    name: z.string(),
+    roleSlugs: z.array(z.string()),
     status: z.enum([
       'active',
+      'deleted',
       'inactive',
-      'locked',
-      'deleted'
+      'locked'
     ]),
-    roleSlugs: z.array(z.string()),
-    createdAt: z.iso.datetime(),
     updatedAt: z.iso.datetime()
   })
 });
@@ -106,18 +106,18 @@ export const zCreateUserResponse = z.object({
  * Current user account
  */
 export const zGetMyAccountResponse = z.object({
-  profile: z.object({
-    id: z.string(),
-    name: z.string(),
-    email: z.email(),
-    emailVerified: z.boolean(),
-    image: z.string().nullable(),
-    onboardingCompletedAt: z.iso.datetime().nullable(),
-    createdAt: z.iso.datetime(),
-    updatedAt: z.iso.datetime()
-  }),
   notifications: z.object({
     unreadCount: z.int()
+  }),
+  profile: z.object({
+    createdAt: z.iso.datetime(),
+    email: z.email(),
+    emailVerified: z.boolean(),
+    id: z.string(),
+    image: z.string().nullable(),
+    name: z.string(),
+    onboardingCompletedAt: z.iso.datetime().nullable(),
+    updatedAt: z.iso.datetime()
   })
 });
 
@@ -130,31 +130,30 @@ export const zGetUserPath = z.object({
  */
 export const zGetUserResponse = z.object({
   user: z.object({
-    id: z.string(),
-    name: z.string(),
+    createdAt: z.iso.datetime(),
     email: z.email(),
     emailVerified: z.boolean(),
+    id: z.string(),
     image: z.string().nullable(),
+    name: z.string(),
+    roleSlugs: z.array(z.string()),
     status: z.enum([
       'active',
+      'deleted',
       'inactive',
-      'locked',
-      'deleted'
+      'locked'
     ]),
-    roleSlugs: z.array(z.string()),
-    createdAt: z.iso.datetime(),
     updatedAt: z.iso.datetime(),
-    failedLoginAttempts: z.number(),
-    lockedUntil: z.iso.datetime().nullable(),
     deactivatedAt: z.iso.datetime().nullable(),
     deactivatedBy: z.string().nullable(),
-    deactivatedReason: z.string().nullable()
+    deactivatedReason: z.string().nullable(),
+    failedLoginAttempts: z.number(),
+    lockedUntil: z.iso.datetime().nullable()
   })
 });
 
-export const zUpdateUserBody = z.object({
-  name: z.string().min(1).max(100).optional(),
-  email: z.email().optional()
+export const zUpdateUserBody = z.strictObject({
+  name: z.string().min(1).max(100).optional()
 });
 
 export const zUpdateUserPath = z.object({
@@ -166,19 +165,19 @@ export const zUpdateUserPath = z.object({
  */
 export const zUpdateUserResponse = z.object({
   user: z.object({
-    id: z.string(),
-    name: z.string(),
+    createdAt: z.iso.datetime(),
     email: z.email(),
     emailVerified: z.boolean(),
+    id: z.string(),
     image: z.string().nullable(),
+    name: z.string(),
+    roleSlugs: z.array(z.string()),
     status: z.enum([
       'active',
+      'deleted',
       'inactive',
-      'locked',
-      'deleted'
+      'locked'
     ]),
-    roleSlugs: z.array(z.string()),
-    createdAt: z.iso.datetime(),
     updatedAt: z.iso.datetime()
   })
 });
@@ -196,19 +195,19 @@ export const zUpdateUserRolesPath = z.object({
  */
 export const zUpdateUserRolesResponse = z.object({
   user: z.object({
-    id: z.string(),
-    name: z.string(),
+    createdAt: z.iso.datetime(),
     email: z.email(),
     emailVerified: z.boolean(),
+    id: z.string(),
     image: z.string().nullable(),
+    name: z.string(),
+    roleSlugs: z.array(z.string()),
     status: z.enum([
       'active',
+      'deleted',
       'inactive',
-      'locked',
-      'deleted'
+      'locked'
     ]),
-    roleSlugs: z.array(z.string()),
-    createdAt: z.iso.datetime(),
     updatedAt: z.iso.datetime()
   })
 });
@@ -251,20 +250,20 @@ export const zUnlockUserResponse = z.object({
 });
 
 export const zListAuditLogsQuery = z.object({
-  event: z.string().optional(),
   actorId: z.string().optional(),
+  endDate: z.iso.datetime().optional(),
+  event: z.string().optional(),
+  startDate: z.iso.datetime().optional(),
   targetId: z.string().optional(),
   targetType: z.enum([
-    'user',
     'role',
-    'session'
+    'session',
+    'user'
   ]).optional(),
-  startDate: z.iso.datetime().optional(),
-  endDate: z.iso.datetime().optional(),
+  order: z.enum(['asc', 'desc']).optional().default('desc'),
   page: z.number().gte(1).optional().default(1),
   perPage: z.number().gte(1).lte(100).optional().default(20),
-  sort: z.string().optional(),
-  order: z.enum(['asc', 'desc']).optional().default('desc')
+  sort: z.string().optional()
 });
 
 /**
@@ -272,58 +271,67 @@ export const zListAuditLogsQuery = z.object({
  */
 export const zListAuditLogsResponse = z.object({
   data: z.array(z.object({
-    id: z.string(),
+    actorId: z.string().nullable(),
+    actorType: z.enum([
+      'api',
+      'system',
+      'user'
+    ]),
+    createdAt: z.iso.datetime(),
     event: z.enum([
-      'auth.login.success',
       'auth.login.failed',
+      'auth.login.success',
       'auth.logout',
       'auth.password.changed',
       'auth.session.revoked',
-      'user.created',
-      'user.updated',
-      'user.deleted',
-      'user.deactivated',
-      'user.activated',
-      'user.unlocked',
-      'user.viewed',
-      'user.listed',
-      'role.created',
-      'role.updated',
-      'role.deleted',
       'role.assigned',
-      'role.unassigned'
+      'role.created',
+      'role.deleted',
+      'role.unassigned',
+      'role.updated',
+      'user.activated',
+      'user.created',
+      'user.deactivated',
+      'user.deleted',
+      'user.listed',
+      'user.unlocked',
+      'user.updated',
+      'user.viewed'
     ]),
-    actorId: z.string().nullable(),
-    actorType: z.enum([
-      'user',
-      'system',
-      'api'
-    ]),
+    id: z.string(),
+    ipAddress: z.string().nullable(),
+    metadata: z.record(z.string(), z.unknown()).nullable(),
     targetId: z.string().nullable(),
     targetType: z.enum([
-      'user',
       'role',
-      'session'
+      'session',
+      'user'
     ]).nullable(),
-    ipAddress: z.string().nullable(),
-    userAgent: z.string().nullable(),
-    metadata: z.record(z.string(), z.unknown()).nullable(),
-    createdAt: z.iso.datetime()
+    userAgent: z.string().nullable()
   })),
   meta: z.object({
-    total: z.number(),
-    page: z.number(),
-    perPage: z.number(),
-    pageCount: z.number(),
     hasNext: z.boolean(),
     hasPrev: z.boolean(),
     nextPage: z.number().nullable(),
-    prevPage: z.number().nullable()
+    page: z.number(),
+    pageCount: z.number(),
+    perPage: z.number(),
+    prevPage: z.number().nullable(),
+    total: z.number()
   })
 });
 
 export const zListNotificationsQuery = z.object({
-  type: z.string().optional(),
+  channel: z.enum([
+    'email',
+    'sms',
+    'push'
+  ]).optional(),
+  sort: z.enum([
+    'createdAt',
+    'status',
+    'type'
+  ]).optional(),
   status: z.enum([
     'pending',
     'sent',
@@ -331,20 +339,11 @@ export const zListNotificationsQuery = z.object({
     'failed',
     'cancelled'
   ]).optional(),
-  channel: z.enum([
-    'email',
-    'sms',
-    'push'
-  ]).optional(),
+  type: z.string().optional(),
   unreadOnly: z.string().optional(),
-  sort: z.enum([
-    'createdAt',
-    'status',
-    'type'
-  ]).optional(),
+  order: z.enum(['asc', 'desc']).optional().default('desc'),
   page: z.number().gte(1).optional().default(1),
-  perPage: z.number().gte(1).lte(100).optional().default(20),
-  order: z.enum(['asc', 'desc']).optional().default('desc')
+  perPage: z.number().gte(1).lte(100).optional().default(20)
 });
 
 /**
@@ -352,13 +351,25 @@ export const zListNotificationsQuery = z.object({
  */
 export const zListNotificationsResponse = z.object({
   data: z.array(z.object({
-    id: z.string(),
-    type: z.string(),
+    body: z.string().nullable(),
     channel: z.enum([
       'email',
       'sms',
       'push'
     ]),
+    createdAt: z.iso.datetime(),
+    deliveredAt: z.iso.datetime().nullable(),
+    id: z.string(),
+    isRead: z.boolean().nullable(),
+    priority: z.enum([
+      'low',
+      'medium',
+      'high',
+      'critical'
+    ]),
+    props: z.record(z.string(), z.unknown()).nullable(),
+    readAt: z.iso.datetime().nullable(),
+    sentAt: z.iso.datetime().nullable(),
     status: z.enum([
       'pending',
       'sent',
@@ -366,30 +377,18 @@ export const zListNotificationsResponse = z.object({
       'failed',
       'cancelled'
     ]),
-    priority: z.enum([
-      'low',
-      'medium',
-      'high',
-      'critical'
-    ]),
     subject: z.string().nullable(),
-    body: z.string().nullable(),
-    props: z.record(z.string(), z.unknown()).nullable(),
-    isRead: z.boolean().nullable(),
-    readAt: z.iso.datetime().nullable(),
-    sentAt: z.iso.datetime().nullable(),
-    deliveredAt: z.iso.datetime().nullable(),
-    createdAt: z.iso.datetime()
+    type: z.string()
   })),
   meta: z.object({
-    total: z.number(),
-    page: z.number(),
-    perPage: z.number(),
-    pageCount: z.number(),
     hasNext: z.boolean(),
     hasPrev: z.boolean(),
     nextPage: z.number().nullable(),
-    prevPage: z.number().nullable()
+    page: z.number(),
+    pageCount: z.number(),
+    perPage: z.number(),
+    prevPage: z.number().nullable(),
+    total: z.number()
   })
 });
 
@@ -399,8 +398,8 @@ export const zListNotificationsResponse = z.object({
 export const zGetNotificationPreferencesResponse = z.object({
   preferences: z.object({
     emailEnabled: z.boolean(),
-    smsEnabled: z.boolean(),
     pushEnabled: z.boolean(),
+    smsEnabled: z.boolean(),
     typeOverrides: z.record(z.string(), z.object({
       channels: z.array(z.enum([
         'email',
@@ -414,8 +413,8 @@ export const zGetNotificationPreferencesResponse = z.object({
 
 export const zUpdateNotificationPreferencesBody = z.object({
   emailEnabled: z.boolean().optional(),
-  smsEnabled: z.boolean().optional(),
   pushEnabled: z.boolean().optional(),
+  smsEnabled: z.boolean().optional(),
   typeOverrides: z.record(z.string(), z.object({
     channels: z.array(z.enum([
       'email',
@@ -432,8 +431,8 @@ export const zUpdateNotificationPreferencesBody = z.object({
 export const zUpdateNotificationPreferencesResponse = z.object({
   preferences: z.object({
     emailEnabled: z.boolean(),
-    smsEnabled: z.boolean(),
     pushEnabled: z.boolean(),
+    smsEnabled: z.boolean(),
     typeOverrides: z.record(z.string(), z.object({
       channels: z.array(z.enum([
         'email',
@@ -454,13 +453,25 @@ export const zGetNotificationPath = z.object({
  */
 export const zGetNotificationResponse = z.object({
   notification: z.object({
-    id: z.string(),
-    type: z.string(),
+    body: z.string().nullable(),
     channel: z.enum([
       'email',
       'sms',
       'push'
     ]),
+    createdAt: z.iso.datetime(),
+    deliveredAt: z.iso.datetime().nullable(),
+    id: z.string(),
+    isRead: z.boolean().nullable(),
+    priority: z.enum([
+      'low',
+      'medium',
+      'high',
+      'critical'
+    ]),
+    props: z.record(z.string(), z.unknown()).nullable(),
+    readAt: z.iso.datetime().nullable(),
+    sentAt: z.iso.datetime().nullable(),
     status: z.enum([
       'pending',
       'sent',
@@ -468,20 +479,8 @@ export const zGetNotificationResponse = z.object({
       'failed',
       'cancelled'
     ]),
-    priority: z.enum([
-      'low',
-      'medium',
-      'high',
-      'critical'
-    ]),
     subject: z.string().nullable(),
-    body: z.string().nullable(),
-    props: z.record(z.string(), z.unknown()).nullable(),
-    isRead: z.boolean().nullable(),
-    readAt: z.iso.datetime().nullable(),
-    sentAt: z.iso.datetime().nullable(),
-    deliveredAt: z.iso.datetime().nullable(),
-    createdAt: z.iso.datetime()
+    type: z.string()
   })
 });
 
@@ -507,8 +506,8 @@ export const zMarkNotificationAsReadResponse = z.object({
  * All notifications marked as read
  */
 export const zMarkAllNotificationsAsReadResponse = z.object({
-  success: z.boolean(),
-  markedCount: z.int()
+  markedCount: z.int(),
+  success: z.boolean()
 });
 
 /**
@@ -516,30 +515,30 @@ export const zMarkAllNotificationsAsReadResponse = z.object({
  */
 export const zListPushTokensResponse = z.object({
   tokens: z.array(z.object({
+    createdAt: z.iso.datetime(),
+    deviceId: z.string().nullable(),
+    deviceName: z.string().nullable(),
     id: z.string(),
+    isActive: z.boolean(),
+    lastUsedAt: z.iso.datetime().nullable(),
     platform: z.enum([
       'ios',
       'android',
       'web'
     ]),
-    deviceId: z.string().nullable(),
-    deviceName: z.string().nullable(),
-    isActive: z.boolean(),
-    lastUsedAt: z.iso.datetime().nullable(),
-    createdAt: z.iso.datetime(),
-    sessionId: z.string()
+    sessionId: z.string().nullable()
   }))
 });
 
 export const zRegisterPushTokenBody = z.object({
-  token: z.string().min(1),
+  deviceId: z.string().optional(),
+  deviceName: z.string().max(100).optional(),
   platform: z.enum([
     'ios',
     'android',
     'web'
   ]),
-  deviceId: z.string().optional(),
-  deviceName: z.string().max(100).optional()
+  token: z.string().min(1)
 });
 
 /**
@@ -547,18 +546,18 @@ export const zRegisterPushTokenBody = z.object({
  */
 export const zRegisterPushTokenResponse = z.object({
   token: z.object({
+    createdAt: z.iso.datetime(),
+    deviceId: z.string().nullable(),
+    deviceName: z.string().nullable(),
     id: z.string(),
+    isActive: z.boolean(),
+    lastUsedAt: z.iso.datetime().nullable(),
     platform: z.enum([
       'ios',
       'android',
       'web'
     ]),
-    deviceId: z.string().nullable(),
-    deviceName: z.string().nullable(),
-    isActive: z.boolean(),
-    lastUsedAt: z.iso.datetime().nullable(),
-    createdAt: z.iso.datetime(),
-    sessionId: z.string()
+    sessionId: z.string().nullable()
   })
 });
 

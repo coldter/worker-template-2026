@@ -18,8 +18,8 @@ export type ListRolesErrors = {
   400: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -28,8 +28,8 @@ export type ListRolesErrors = {
   401: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -38,8 +38,8 @@ export type ListRolesErrors = {
   403: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -48,8 +48,8 @@ export type ListRolesErrors = {
   404: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -58,8 +58,8 @@ export type ListRolesErrors = {
   409: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -68,8 +68,8 @@ export type ListRolesErrors = {
   422: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -78,8 +78,8 @@ export type ListRolesErrors = {
   429: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -88,8 +88,8 @@ export type ListRolesErrors = {
   500: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -98,8 +98,8 @@ export type ListRolesErrors = {
   503: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
 };
@@ -112,10 +112,10 @@ export type ListRolesResponses = {
    */
   200: {
     roles: Array<{
-      slug: string;
-      name: string;
       description: string;
+      name: string;
       permissions: Array<'dashboard:access' | 'users:view' | 'users:create' | 'users:update' | 'users:delete' | 'users:deactivate' | 'users:activate' | 'users:unlock' | 'roles:view' | 'roles:update' | 'audit-logs:view'>;
+      slug: string;
     }>;
   };
 };
@@ -127,21 +127,25 @@ export type ListUsersData = {
   path?: never;
   query?: {
     /**
-     * Search by name or email
-     */
-    search?: string;
-    /**
-     * Filter by status
-     */
-    status?: 'active' | 'inactive' | 'locked' | 'deleted';
-    /**
      * Filter by role slug
      */
     role?: string;
     /**
+     * Search by name or email
+     */
+    search?: string;
+    /**
      * Sort by column
      */
     sort?: string;
+    /**
+     * Filter by status
+     */
+    status?: 'active' | 'deleted' | 'inactive' | 'locked';
+    /**
+     * Sort order
+     */
+    order?: 'asc' | 'desc';
     /**
      * Page number (1-indexed)
      */
@@ -150,10 +154,6 @@ export type ListUsersData = {
      * Items per page (max 100)
      */
     perPage?: number;
-    /**
-     * Sort order
-     */
-    order?: 'asc' | 'desc';
   };
   url: '/api/users';
 };
@@ -165,8 +165,8 @@ export type ListUsersErrors = {
   400: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -175,8 +175,8 @@ export type ListUsersErrors = {
   401: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -185,8 +185,8 @@ export type ListUsersErrors = {
   403: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -195,8 +195,8 @@ export type ListUsersErrors = {
   404: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -205,8 +205,8 @@ export type ListUsersErrors = {
   409: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -215,8 +215,8 @@ export type ListUsersErrors = {
   422: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -225,8 +225,8 @@ export type ListUsersErrors = {
   429: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -235,8 +235,8 @@ export type ListUsersErrors = {
   500: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -245,8 +245,8 @@ export type ListUsersErrors = {
   503: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
 };
@@ -259,33 +259,17 @@ export type ListUsersResponses = {
    */
   200: {
     data: Array<{
-      id: string;
-      name: string;
+      createdAt: string;
       email: string;
       emailVerified: boolean;
+      id: string;
       image: string | null;
-      status: 'active' | 'inactive' | 'locked' | 'deleted';
+      name: string;
       roleSlugs: Array<string>;
-      createdAt: string;
+      status: 'active' | 'deleted' | 'inactive' | 'locked';
       updatedAt: string;
     }>;
     meta: {
-      /**
-       * Total number of items
-       */
-      total: number;
-      /**
-       * Current page number
-       */
-      page: number;
-      /**
-       * Items per page
-       */
-      perPage: number;
-      /**
-       * Total number of pages
-       */
-      pageCount: number;
       /**
        * Whether there is a next page
        */
@@ -299,9 +283,25 @@ export type ListUsersResponses = {
        */
       nextPage: number | null;
       /**
+       * Current page number
+       */
+      page: number;
+      /**
+       * Total number of pages
+       */
+      pageCount: number;
+      /**
+       * Items per page
+       */
+      perPage: number;
+      /**
        * Previous page number or null
        */
       prevPage: number | null;
+      /**
+       * Total number of items
+       */
+      total: number;
     };
   };
 };
@@ -311,13 +311,13 @@ export type ListUsersResponse = ListUsersResponses[keyof ListUsersResponses];
 export type CreateUserData = {
   body?: {
     /**
-     * User full name
-     */
-    name: string;
-    /**
      * User email address
      */
     email: string;
+    /**
+     * User full name
+     */
+    name: string;
     /**
      * Initial password (min 8 characters)
      */
@@ -339,8 +339,8 @@ export type CreateUserErrors = {
   400: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -349,8 +349,8 @@ export type CreateUserErrors = {
   401: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -359,8 +359,8 @@ export type CreateUserErrors = {
   403: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -369,8 +369,8 @@ export type CreateUserErrors = {
   404: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -379,8 +379,8 @@ export type CreateUserErrors = {
   409: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -389,8 +389,8 @@ export type CreateUserErrors = {
   422: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -399,8 +399,8 @@ export type CreateUserErrors = {
   429: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -409,8 +409,8 @@ export type CreateUserErrors = {
   500: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -419,8 +419,8 @@ export type CreateUserErrors = {
   503: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
 };
@@ -433,14 +433,14 @@ export type CreateUserResponses = {
    */
   201: {
     user: {
-      id: string;
-      name: string;
+      createdAt: string;
       email: string;
       emailVerified: boolean;
+      id: string;
       image: string | null;
-      status: 'active' | 'inactive' | 'locked' | 'deleted';
+      name: string;
       roleSlugs: Array<string>;
-      createdAt: string;
+      status: 'active' | 'deleted' | 'inactive' | 'locked';
       updatedAt: string;
     };
   };
@@ -462,8 +462,8 @@ export type GetMyAccountErrors = {
   400: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -472,8 +472,8 @@ export type GetMyAccountErrors = {
   401: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -482,8 +482,8 @@ export type GetMyAccountErrors = {
   403: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -492,8 +492,8 @@ export type GetMyAccountErrors = {
   404: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -502,8 +502,8 @@ export type GetMyAccountErrors = {
   409: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -512,8 +512,8 @@ export type GetMyAccountErrors = {
   422: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -522,8 +522,8 @@ export type GetMyAccountErrors = {
   429: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -532,8 +532,8 @@ export type GetMyAccountErrors = {
   500: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -542,8 +542,8 @@ export type GetMyAccountErrors = {
   503: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
 };
@@ -555,18 +555,18 @@ export type GetMyAccountResponses = {
    * Current user account
    */
   200: {
-    profile: {
-      id: string;
-      name: string;
-      email: string;
-      emailVerified: boolean;
-      image: string | null;
-      onboardingCompletedAt: string | null;
-      createdAt: string;
-      updatedAt: string;
-    };
     notifications: {
       unreadCount: number;
+    };
+    profile: {
+      createdAt: string;
+      email: string;
+      emailVerified: boolean;
+      id: string;
+      image: string | null;
+      name: string;
+      onboardingCompletedAt: string | null;
+      updatedAt: string;
     };
   };
 };
@@ -592,8 +592,8 @@ export type GetUserErrors = {
   400: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -602,8 +602,8 @@ export type GetUserErrors = {
   401: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -612,8 +612,8 @@ export type GetUserErrors = {
   403: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -622,8 +622,8 @@ export type GetUserErrors = {
   404: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -632,8 +632,8 @@ export type GetUserErrors = {
   409: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -642,8 +642,8 @@ export type GetUserErrors = {
   422: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -652,8 +652,8 @@ export type GetUserErrors = {
   429: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -662,8 +662,8 @@ export type GetUserErrors = {
   500: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -672,8 +672,8 @@ export type GetUserErrors = {
   503: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
 };
@@ -686,20 +686,20 @@ export type GetUserResponses = {
    */
   200: {
     user: {
-      id: string;
-      name: string;
+      createdAt: string;
       email: string;
       emailVerified: boolean;
+      id: string;
       image: string | null;
-      status: 'active' | 'inactive' | 'locked' | 'deleted';
+      name: string;
       roleSlugs: Array<string>;
-      createdAt: string;
+      status: 'active' | 'deleted' | 'inactive' | 'locked';
       updatedAt: string;
-      failedLoginAttempts: number;
-      lockedUntil: string | null;
       deactivatedAt: string | null;
       deactivatedBy: string | null;
       deactivatedReason: string | null;
+      failedLoginAttempts: number;
+      lockedUntil: string | null;
     };
   };
 };
@@ -709,7 +709,6 @@ export type GetUserResponse = GetUserResponses[keyof GetUserResponses];
 export type UpdateUserData = {
   body?: {
     name?: string;
-    email?: string;
   };
   path: {
     /**
@@ -728,8 +727,8 @@ export type UpdateUserErrors = {
   400: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -738,8 +737,8 @@ export type UpdateUserErrors = {
   401: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -748,8 +747,8 @@ export type UpdateUserErrors = {
   403: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -758,8 +757,8 @@ export type UpdateUserErrors = {
   404: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -768,8 +767,8 @@ export type UpdateUserErrors = {
   409: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -778,8 +777,8 @@ export type UpdateUserErrors = {
   422: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -788,8 +787,8 @@ export type UpdateUserErrors = {
   429: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -798,8 +797,8 @@ export type UpdateUserErrors = {
   500: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -808,8 +807,8 @@ export type UpdateUserErrors = {
   503: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
 };
@@ -822,14 +821,14 @@ export type UpdateUserResponses = {
    */
   200: {
     user: {
-      id: string;
-      name: string;
+      createdAt: string;
       email: string;
       emailVerified: boolean;
+      id: string;
       image: string | null;
-      status: 'active' | 'inactive' | 'locked' | 'deleted';
+      name: string;
       roleSlugs: Array<string>;
-      createdAt: string;
+      status: 'active' | 'deleted' | 'inactive' | 'locked';
       updatedAt: string;
     };
   };
@@ -861,8 +860,8 @@ export type UpdateUserRolesErrors = {
   400: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -871,8 +870,8 @@ export type UpdateUserRolesErrors = {
   401: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -881,8 +880,8 @@ export type UpdateUserRolesErrors = {
   403: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -891,8 +890,8 @@ export type UpdateUserRolesErrors = {
   404: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -901,8 +900,8 @@ export type UpdateUserRolesErrors = {
   409: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -911,8 +910,8 @@ export type UpdateUserRolesErrors = {
   422: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -921,8 +920,8 @@ export type UpdateUserRolesErrors = {
   429: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -931,8 +930,8 @@ export type UpdateUserRolesErrors = {
   500: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -941,8 +940,8 @@ export type UpdateUserRolesErrors = {
   503: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
 };
@@ -955,14 +954,14 @@ export type UpdateUserRolesResponses = {
    */
   200: {
     user: {
-      id: string;
-      name: string;
+      createdAt: string;
       email: string;
       emailVerified: boolean;
+      id: string;
       image: string | null;
-      status: 'active' | 'inactive' | 'locked' | 'deleted';
+      name: string;
       roleSlugs: Array<string>;
-      createdAt: string;
+      status: 'active' | 'deleted' | 'inactive' | 'locked';
       updatedAt: string;
     };
   };
@@ -994,8 +993,8 @@ export type DeactivateUserErrors = {
   400: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -1004,8 +1003,8 @@ export type DeactivateUserErrors = {
   401: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -1014,8 +1013,8 @@ export type DeactivateUserErrors = {
   403: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -1024,8 +1023,8 @@ export type DeactivateUserErrors = {
   404: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -1034,8 +1033,8 @@ export type DeactivateUserErrors = {
   409: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -1044,8 +1043,8 @@ export type DeactivateUserErrors = {
   422: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -1054,8 +1053,8 @@ export type DeactivateUserErrors = {
   429: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -1064,8 +1063,8 @@ export type DeactivateUserErrors = {
   500: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -1074,8 +1073,8 @@ export type DeactivateUserErrors = {
   503: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
 };
@@ -1112,8 +1111,8 @@ export type ActivateUserErrors = {
   400: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -1122,8 +1121,8 @@ export type ActivateUserErrors = {
   401: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -1132,8 +1131,8 @@ export type ActivateUserErrors = {
   403: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -1142,8 +1141,8 @@ export type ActivateUserErrors = {
   404: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -1152,8 +1151,8 @@ export type ActivateUserErrors = {
   409: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -1162,8 +1161,8 @@ export type ActivateUserErrors = {
   422: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -1172,8 +1171,8 @@ export type ActivateUserErrors = {
   429: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -1182,8 +1181,8 @@ export type ActivateUserErrors = {
   500: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -1192,8 +1191,8 @@ export type ActivateUserErrors = {
   503: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
 };
@@ -1230,8 +1229,8 @@ export type UnlockUserErrors = {
   400: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -1240,8 +1239,8 @@ export type UnlockUserErrors = {
   401: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -1250,8 +1249,8 @@ export type UnlockUserErrors = {
   403: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -1260,8 +1259,8 @@ export type UnlockUserErrors = {
   404: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -1270,8 +1269,8 @@ export type UnlockUserErrors = {
   409: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -1280,8 +1279,8 @@ export type UnlockUserErrors = {
   422: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -1290,8 +1289,8 @@ export type UnlockUserErrors = {
   429: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -1300,8 +1299,8 @@ export type UnlockUserErrors = {
   500: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -1310,8 +1309,8 @@ export type UnlockUserErrors = {
   503: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
 };
@@ -1334,13 +1333,21 @@ export type ListAuditLogsData = {
   path?: never;
   query?: {
     /**
+     * Filter by actor ID
+     */
+    actorId?: string;
+    /**
+     * End date (ISO 8601)
+     */
+    endDate?: string;
+    /**
      * Filter by event (supports wildcard: auth.*)
      */
     event?: string;
     /**
-     * Filter by actor ID
+     * Start date (ISO 8601)
      */
-    actorId?: string;
+    startDate?: string;
     /**
      * Filter by target ID
      */
@@ -1348,15 +1355,11 @@ export type ListAuditLogsData = {
     /**
      * Filter by target type
      */
-    targetType?: 'user' | 'role' | 'session';
+    targetType?: 'role' | 'session' | 'user';
     /**
-     * Start date (ISO 8601)
+     * Sort order
      */
-    startDate?: string;
-    /**
-     * End date (ISO 8601)
-     */
-    endDate?: string;
+    order?: 'asc' | 'desc';
     /**
      * Page number (1-indexed)
      */
@@ -1369,10 +1372,6 @@ export type ListAuditLogsData = {
      * Sort by column
      */
     sort?: string;
-    /**
-     * Sort order
-     */
-    order?: 'asc' | 'desc';
   };
   url: '/api/audit-logs';
 };
@@ -1384,8 +1383,8 @@ export type ListAuditLogsErrors = {
   400: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -1394,8 +1393,8 @@ export type ListAuditLogsErrors = {
   401: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -1404,8 +1403,8 @@ export type ListAuditLogsErrors = {
   403: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -1414,8 +1413,8 @@ export type ListAuditLogsErrors = {
   404: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -1424,8 +1423,8 @@ export type ListAuditLogsErrors = {
   409: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -1434,8 +1433,8 @@ export type ListAuditLogsErrors = {
   422: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -1444,8 +1443,8 @@ export type ListAuditLogsErrors = {
   429: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -1454,8 +1453,8 @@ export type ListAuditLogsErrors = {
   500: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -1464,8 +1463,8 @@ export type ListAuditLogsErrors = {
   503: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
 };
@@ -1478,36 +1477,20 @@ export type ListAuditLogsResponses = {
    */
   200: {
     data: Array<{
-      id: string;
-      event: 'auth.login.success' | 'auth.login.failed' | 'auth.logout' | 'auth.password.changed' | 'auth.session.revoked' | 'user.created' | 'user.updated' | 'user.deleted' | 'user.deactivated' | 'user.activated' | 'user.unlocked' | 'user.viewed' | 'user.listed' | 'role.created' | 'role.updated' | 'role.deleted' | 'role.assigned' | 'role.unassigned';
       actorId: string | null;
-      actorType: 'user' | 'system' | 'api';
-      targetId: string | null;
-      targetType: 'user' | 'role' | 'session' | null;
+      actorType: 'api' | 'system' | 'user';
+      createdAt: string;
+      event: 'auth.login.failed' | 'auth.login.success' | 'auth.logout' | 'auth.password.changed' | 'auth.session.revoked' | 'role.assigned' | 'role.created' | 'role.deleted' | 'role.unassigned' | 'role.updated' | 'user.activated' | 'user.created' | 'user.deactivated' | 'user.deleted' | 'user.listed' | 'user.unlocked' | 'user.updated' | 'user.viewed';
+      id: string;
       ipAddress: string | null;
-      userAgent: string | null;
       metadata: {
         [key: string]: unknown;
       } | null;
-      createdAt: string;
+      targetId: string | null;
+      targetType: 'role' | 'session' | 'user' | null;
+      userAgent: string | null;
     }>;
     meta: {
-      /**
-       * Total number of items
-       */
-      total: number;
-      /**
-       * Current page number
-       */
-      page: number;
-      /**
-       * Items per page
-       */
-      perPage: number;
-      /**
-       * Total number of pages
-       */
-      pageCount: number;
       /**
        * Whether there is a next page
        */
@@ -1521,9 +1504,25 @@ export type ListAuditLogsResponses = {
        */
       nextPage: number | null;
       /**
+       * Current page number
+       */
+      page: number;
+      /**
+       * Total number of pages
+       */
+      pageCount: number;
+      /**
+       * Items per page
+       */
+      perPage: number;
+      /**
        * Previous page number or null
        */
       prevPage: number | null;
+      /**
+       * Total number of items
+       */
+      total: number;
     };
   };
 };
@@ -1535,25 +1534,29 @@ export type ListNotificationsData = {
   path?: never;
   query?: {
     /**
-     * Filter by notification type
+     * Filter by channel
      */
-    type?: string;
+    channel?: 'email' | 'sms' | 'push';
+    /**
+     * Sort by column
+     */
+    sort?: 'createdAt' | 'status' | 'type';
     /**
      * Filter by status
      */
     status?: 'pending' | 'sent' | 'delivered' | 'failed' | 'cancelled';
     /**
-     * Filter by channel
+     * Filter by notification type
      */
-    channel?: 'email' | 'sms' | 'push';
+    type?: string;
     /**
      * Only return unread notifications
      */
     unreadOnly?: string;
     /**
-     * Sort by column
+     * Sort order
      */
-    sort?: 'createdAt' | 'status' | 'type';
+    order?: 'asc' | 'desc';
     /**
      * Page number (1-indexed)
      */
@@ -1562,10 +1565,6 @@ export type ListNotificationsData = {
      * Items per page (max 100)
      */
     perPage?: number;
-    /**
-     * Sort order
-     */
-    order?: 'asc' | 'desc';
   };
   url: '/api/notifications';
 };
@@ -1577,8 +1576,8 @@ export type ListNotificationsErrors = {
   400: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -1587,8 +1586,8 @@ export type ListNotificationsErrors = {
   401: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -1597,8 +1596,8 @@ export type ListNotificationsErrors = {
   403: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -1607,8 +1606,8 @@ export type ListNotificationsErrors = {
   404: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -1617,8 +1616,8 @@ export type ListNotificationsErrors = {
   409: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -1627,8 +1626,8 @@ export type ListNotificationsErrors = {
   422: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -1637,8 +1636,8 @@ export type ListNotificationsErrors = {
   429: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -1647,8 +1646,8 @@ export type ListNotificationsErrors = {
   500: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -1657,8 +1656,8 @@ export type ListNotificationsErrors = {
   503: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
 };
@@ -1672,43 +1671,39 @@ export type ListNotificationsResponses = {
   200: {
     data: Array<{
       /**
-       * Notification ID
+       * Notification body text
        */
-      id: string;
-      /**
-       * Notification type
-       */
-      type: string;
+      body: string | null;
       /**
        * Delivery channel
        */
       channel: 'email' | 'sms' | 'push';
       /**
-       * Delivery status
+       * Created timestamp
        */
-      status: 'pending' | 'sent' | 'delivered' | 'failed' | 'cancelled';
+      createdAt: string;
+      /**
+       * When notification was delivered to device
+       */
+      deliveredAt: string | null;
+      /**
+       * Notification ID
+       */
+      id: string;
+      /**
+       * Whether the notification has been read. null for channels where read tracking is not available (e.g. email)
+       */
+      isRead: boolean | null;
       /**
        * Priority level
        */
       priority: 'low' | 'medium' | 'high' | 'critical';
-      /**
-       * Notification subject/title
-       */
-      subject: string | null;
-      /**
-       * Notification body text
-       */
-      body: string | null;
       /**
        * Additional props for templates
        */
       props: {
         [key: string]: unknown;
       } | null;
-      /**
-       * Whether the notification has been read. null for channels where read tracking is not available (e.g. email)
-       */
-      isRead: boolean | null;
       /**
        * When the notification was read by the user
        */
@@ -1718,31 +1713,19 @@ export type ListNotificationsResponses = {
        */
       sentAt: string | null;
       /**
-       * When notification was delivered to device
+       * Delivery status
        */
-      deliveredAt: string | null;
+      status: 'pending' | 'sent' | 'delivered' | 'failed' | 'cancelled';
       /**
-       * Created timestamp
+       * Notification subject/title
        */
-      createdAt: string;
+      subject: string | null;
+      /**
+       * Notification type
+       */
+      type: string;
     }>;
     meta: {
-      /**
-       * Total number of items
-       */
-      total: number;
-      /**
-       * Current page number
-       */
-      page: number;
-      /**
-       * Items per page
-       */
-      perPage: number;
-      /**
-       * Total number of pages
-       */
-      pageCount: number;
       /**
        * Whether there is a next page
        */
@@ -1756,9 +1739,25 @@ export type ListNotificationsResponses = {
        */
       nextPage: number | null;
       /**
+       * Current page number
+       */
+      page: number;
+      /**
+       * Total number of pages
+       */
+      pageCount: number;
+      /**
+       * Items per page
+       */
+      perPage: number;
+      /**
        * Previous page number or null
        */
       prevPage: number | null;
+      /**
+       * Total number of items
+       */
+      total: number;
     };
   };
 };
@@ -1779,8 +1778,8 @@ export type GetNotificationPreferencesErrors = {
   400: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -1789,8 +1788,8 @@ export type GetNotificationPreferencesErrors = {
   401: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -1799,8 +1798,8 @@ export type GetNotificationPreferencesErrors = {
   403: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -1809,8 +1808,8 @@ export type GetNotificationPreferencesErrors = {
   404: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -1819,8 +1818,8 @@ export type GetNotificationPreferencesErrors = {
   409: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -1829,8 +1828,8 @@ export type GetNotificationPreferencesErrors = {
   422: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -1839,8 +1838,8 @@ export type GetNotificationPreferencesErrors = {
   429: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -1849,8 +1848,8 @@ export type GetNotificationPreferencesErrors = {
   500: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -1859,8 +1858,8 @@ export type GetNotificationPreferencesErrors = {
   503: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
 };
@@ -1878,13 +1877,13 @@ export type GetNotificationPreferencesResponses = {
        */
       emailEnabled: boolean;
       /**
-       * SMS notifications enabled
-       */
-      smsEnabled: boolean;
-      /**
        * Push notifications enabled
        */
       pushEnabled: boolean;
+      /**
+       * SMS notifications enabled
+       */
+      smsEnabled: boolean;
       /**
        * Per-type notification preferences
        */
@@ -1907,13 +1906,13 @@ export type UpdateNotificationPreferencesData = {
      */
     emailEnabled?: boolean;
     /**
-     * Enable SMS notifications
-     */
-    smsEnabled?: boolean;
-    /**
      * Enable push notifications
      */
     pushEnabled?: boolean;
+    /**
+     * Enable SMS notifications
+     */
+    smsEnabled?: boolean;
     /**
      * Per-type notification preferences
      */
@@ -1936,8 +1935,8 @@ export type UpdateNotificationPreferencesErrors = {
   400: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -1946,8 +1945,8 @@ export type UpdateNotificationPreferencesErrors = {
   401: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -1956,8 +1955,8 @@ export type UpdateNotificationPreferencesErrors = {
   403: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -1966,8 +1965,8 @@ export type UpdateNotificationPreferencesErrors = {
   404: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -1976,8 +1975,8 @@ export type UpdateNotificationPreferencesErrors = {
   409: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -1986,8 +1985,8 @@ export type UpdateNotificationPreferencesErrors = {
   422: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -1996,8 +1995,8 @@ export type UpdateNotificationPreferencesErrors = {
   429: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -2006,8 +2005,8 @@ export type UpdateNotificationPreferencesErrors = {
   500: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -2016,8 +2015,8 @@ export type UpdateNotificationPreferencesErrors = {
   503: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
 };
@@ -2035,13 +2034,13 @@ export type UpdateNotificationPreferencesResponses = {
        */
       emailEnabled: boolean;
       /**
-       * SMS notifications enabled
-       */
-      smsEnabled: boolean;
-      /**
        * Push notifications enabled
        */
       pushEnabled: boolean;
+      /**
+       * SMS notifications enabled
+       */
+      smsEnabled: boolean;
       /**
        * Per-type notification preferences
        */
@@ -2076,8 +2075,8 @@ export type GetNotificationErrors = {
   400: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -2086,8 +2085,8 @@ export type GetNotificationErrors = {
   401: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -2096,8 +2095,8 @@ export type GetNotificationErrors = {
   403: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -2106,8 +2105,8 @@ export type GetNotificationErrors = {
   404: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -2116,8 +2115,8 @@ export type GetNotificationErrors = {
   409: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -2126,8 +2125,8 @@ export type GetNotificationErrors = {
   422: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -2136,8 +2135,8 @@ export type GetNotificationErrors = {
   429: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -2146,8 +2145,8 @@ export type GetNotificationErrors = {
   500: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -2156,8 +2155,8 @@ export type GetNotificationErrors = {
   503: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
 };
@@ -2171,43 +2170,39 @@ export type GetNotificationResponses = {
   200: {
     notification: {
       /**
-       * Notification ID
+       * Notification body text
        */
-      id: string;
-      /**
-       * Notification type
-       */
-      type: string;
+      body: string | null;
       /**
        * Delivery channel
        */
       channel: 'email' | 'sms' | 'push';
       /**
-       * Delivery status
+       * Created timestamp
        */
-      status: 'pending' | 'sent' | 'delivered' | 'failed' | 'cancelled';
+      createdAt: string;
+      /**
+       * When notification was delivered to device
+       */
+      deliveredAt: string | null;
+      /**
+       * Notification ID
+       */
+      id: string;
+      /**
+       * Whether the notification has been read. null for channels where read tracking is not available (e.g. email)
+       */
+      isRead: boolean | null;
       /**
        * Priority level
        */
       priority: 'low' | 'medium' | 'high' | 'critical';
-      /**
-       * Notification subject/title
-       */
-      subject: string | null;
-      /**
-       * Notification body text
-       */
-      body: string | null;
       /**
        * Additional props for templates
        */
       props: {
         [key: string]: unknown;
       } | null;
-      /**
-       * Whether the notification has been read. null for channels where read tracking is not available (e.g. email)
-       */
-      isRead: boolean | null;
       /**
        * When the notification was read by the user
        */
@@ -2217,13 +2212,17 @@ export type GetNotificationResponses = {
        */
       sentAt: string | null;
       /**
-       * When notification was delivered to device
+       * Delivery status
        */
-      deliveredAt: string | null;
+      status: 'pending' | 'sent' | 'delivered' | 'failed' | 'cancelled';
       /**
-       * Created timestamp
+       * Notification subject/title
        */
-      createdAt: string;
+      subject: string | null;
+      /**
+       * Notification type
+       */
+      type: string;
     };
   };
 };
@@ -2244,8 +2243,8 @@ export type GetUnreadNotificationCountErrors = {
   400: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -2254,8 +2253,8 @@ export type GetUnreadNotificationCountErrors = {
   401: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -2264,8 +2263,8 @@ export type GetUnreadNotificationCountErrors = {
   403: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -2274,8 +2273,8 @@ export type GetUnreadNotificationCountErrors = {
   404: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -2284,8 +2283,8 @@ export type GetUnreadNotificationCountErrors = {
   409: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -2294,8 +2293,8 @@ export type GetUnreadNotificationCountErrors = {
   422: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -2304,8 +2303,8 @@ export type GetUnreadNotificationCountErrors = {
   429: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -2314,8 +2313,8 @@ export type GetUnreadNotificationCountErrors = {
   500: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -2324,8 +2323,8 @@ export type GetUnreadNotificationCountErrors = {
   503: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
 };
@@ -2365,8 +2364,8 @@ export type MarkNotificationAsReadErrors = {
   400: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -2375,8 +2374,8 @@ export type MarkNotificationAsReadErrors = {
   401: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -2385,8 +2384,8 @@ export type MarkNotificationAsReadErrors = {
   403: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -2395,8 +2394,8 @@ export type MarkNotificationAsReadErrors = {
   404: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -2405,8 +2404,8 @@ export type MarkNotificationAsReadErrors = {
   409: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -2415,8 +2414,8 @@ export type MarkNotificationAsReadErrors = {
   422: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -2425,8 +2424,8 @@ export type MarkNotificationAsReadErrors = {
   429: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -2435,8 +2434,8 @@ export type MarkNotificationAsReadErrors = {
   500: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -2445,8 +2444,8 @@ export type MarkNotificationAsReadErrors = {
   503: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
 };
@@ -2481,8 +2480,8 @@ export type MarkAllNotificationsAsReadErrors = {
   400: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -2491,8 +2490,8 @@ export type MarkAllNotificationsAsReadErrors = {
   401: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -2501,8 +2500,8 @@ export type MarkAllNotificationsAsReadErrors = {
   403: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -2511,8 +2510,8 @@ export type MarkAllNotificationsAsReadErrors = {
   404: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -2521,8 +2520,8 @@ export type MarkAllNotificationsAsReadErrors = {
   409: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -2531,8 +2530,8 @@ export type MarkAllNotificationsAsReadErrors = {
   422: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -2541,8 +2540,8 @@ export type MarkAllNotificationsAsReadErrors = {
   429: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -2551,8 +2550,8 @@ export type MarkAllNotificationsAsReadErrors = {
   500: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -2561,8 +2560,8 @@ export type MarkAllNotificationsAsReadErrors = {
   503: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
 };
@@ -2575,13 +2574,13 @@ export type MarkAllNotificationsAsReadResponses = {
    */
   200: {
     /**
-     * Operation success status
-     */
-    success: boolean;
-    /**
      * Number of notifications marked as read
      */
     markedCount: number;
+    /**
+     * Operation success status
+     */
+    success: boolean;
   };
 };
 
@@ -2601,8 +2600,8 @@ export type ListPushTokensErrors = {
   400: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -2611,8 +2610,8 @@ export type ListPushTokensErrors = {
   401: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -2621,8 +2620,8 @@ export type ListPushTokensErrors = {
   403: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -2631,8 +2630,8 @@ export type ListPushTokensErrors = {
   404: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -2641,8 +2640,8 @@ export type ListPushTokensErrors = {
   409: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -2651,8 +2650,8 @@ export type ListPushTokensErrors = {
   422: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -2661,8 +2660,8 @@ export type ListPushTokensErrors = {
   429: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -2671,8 +2670,8 @@ export type ListPushTokensErrors = {
   500: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -2681,8 +2680,8 @@ export type ListPushTokensErrors = {
   503: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
 };
@@ -2696,13 +2695,9 @@ export type ListPushTokensResponses = {
   200: {
     tokens: Array<{
       /**
-       * Push token ID
+       * Created timestamp
        */
-      id: string;
-      /**
-       * Device platform
-       */
-      platform: 'ios' | 'android' | 'web';
+      createdAt: string;
       /**
        * Device identifier
        */
@@ -2712,6 +2707,10 @@ export type ListPushTokensResponses = {
        */
       deviceName: string | null;
       /**
+       * Push token ID
+       */
+      id: string;
+      /**
        * Whether token is active
        */
       isActive: boolean;
@@ -2720,13 +2719,13 @@ export type ListPushTokensResponses = {
        */
       lastUsedAt: string | null;
       /**
-       * Created timestamp
+       * Device platform
        */
-      createdAt: string;
+      platform: 'ios' | 'android' | 'web';
       /**
        * Associated session ID
        */
-      sessionId: string;
+      sessionId: string | null;
     }>;
   };
 };
@@ -2736,14 +2735,6 @@ export type ListPushTokensResponse = ListPushTokensResponses[keyof ListPushToken
 export type RegisterPushTokenData = {
   body?: {
     /**
-     * FCM/APNs push token
-     */
-    token: string;
-    /**
-     * Device platform
-     */
-    platform: 'ios' | 'android' | 'web';
-    /**
      * Unique device identifier
      */
     deviceId?: string;
@@ -2751,6 +2742,14 @@ export type RegisterPushTokenData = {
      * Human-readable device name
      */
     deviceName?: string;
+    /**
+     * Device platform
+     */
+    platform: 'ios' | 'android' | 'web';
+    /**
+     * FCM/APNs push token
+     */
+    token: string;
   };
   path?: never;
   query?: never;
@@ -2764,8 +2763,8 @@ export type RegisterPushTokenErrors = {
   400: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -2774,8 +2773,8 @@ export type RegisterPushTokenErrors = {
   401: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -2784,8 +2783,8 @@ export type RegisterPushTokenErrors = {
   403: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -2794,8 +2793,8 @@ export type RegisterPushTokenErrors = {
   404: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -2804,8 +2803,8 @@ export type RegisterPushTokenErrors = {
   409: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -2814,8 +2813,8 @@ export type RegisterPushTokenErrors = {
   422: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -2824,8 +2823,8 @@ export type RegisterPushTokenErrors = {
   429: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -2834,8 +2833,8 @@ export type RegisterPushTokenErrors = {
   500: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -2844,8 +2843,8 @@ export type RegisterPushTokenErrors = {
   503: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
 };
@@ -2859,13 +2858,9 @@ export type RegisterPushTokenResponses = {
   201: {
     token: {
       /**
-       * Push token ID
+       * Created timestamp
        */
-      id: string;
-      /**
-       * Device platform
-       */
-      platform: 'ios' | 'android' | 'web';
+      createdAt: string;
       /**
        * Device identifier
        */
@@ -2875,6 +2870,10 @@ export type RegisterPushTokenResponses = {
        */
       deviceName: string | null;
       /**
+       * Push token ID
+       */
+      id: string;
+      /**
        * Whether token is active
        */
       isActive: boolean;
@@ -2883,13 +2882,13 @@ export type RegisterPushTokenResponses = {
        */
       lastUsedAt: string | null;
       /**
-       * Created timestamp
+       * Device platform
        */
-      createdAt: string;
+      platform: 'ios' | 'android' | 'web';
       /**
        * Associated session ID
        */
-      sessionId: string;
+      sessionId: string | null;
     };
   };
 };
@@ -2915,8 +2914,8 @@ export type DeletePushTokenErrors = {
   400: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -2925,8 +2924,8 @@ export type DeletePushTokenErrors = {
   401: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -2935,8 +2934,8 @@ export type DeletePushTokenErrors = {
   403: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -2945,8 +2944,8 @@ export type DeletePushTokenErrors = {
   404: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -2955,8 +2954,8 @@ export type DeletePushTokenErrors = {
   409: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -2965,8 +2964,8 @@ export type DeletePushTokenErrors = {
   422: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -2975,8 +2974,8 @@ export type DeletePushTokenErrors = {
   429: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -2985,8 +2984,8 @@ export type DeletePushTokenErrors = {
   500: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
   /**
@@ -2995,8 +2994,8 @@ export type DeletePushTokenErrors = {
   503: {
     error: {
       code?: string;
-      message?: string;
       details?: string;
+      message?: string;
     };
   };
 };
