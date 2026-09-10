@@ -9,6 +9,7 @@
     "build": "turbo build",
     "build:storybook": "turbo -F web build-storybook",
     "cf-typegen": "turbo cf-typegen",
+    "cf-typegen:check": "turbo cf-typegen:check",
     "check": "ultracite check",
     "check-types": "turbo check-types",
     "clean": "rm -rf .turbo && git clean -xdf node_modules apps/*/node_modules packages/*/node_modules && rm bun.lock",
@@ -35,7 +36,8 @@
     "test": "turbo test",
     "test:coverage": "turbo test:coverage",
     "test:watch": "turbo test:watch",
-    "update:deps": "bunx taze major -w -r --ignore-other-workspaces --ignore-paths apps/mobile"
+    "update:deps": "bunx taze major -w -r --ignore-other-workspaces --ignore-paths apps/mobile",
+    "verify:generated": "bun run generate-client && bun run cf-typegen:check && git diff --exit-code -- apps/server/openapi.cache.json apps/web/src/api.gen"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.12",

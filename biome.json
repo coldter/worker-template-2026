@@ -30,7 +30,8 @@
       "!ref-project/**/*",
       "!tsconfig.json",
       "bun.lock",
-      "!openapi.cache.json",
+      "!**/openapi.cache.json",
+      "!**/worker-configuration.d.ts",
       "!apps/server/src/db/migrations/**/*",
       "!.agents/**/*",
       "!.claude/**/*"

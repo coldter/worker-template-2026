@@ -35,5 +35,6 @@ jobs:
           bun-version: 1.4.2
       - run: bun install --frozen-lockfile
       - run: bun run check
+      - run: bun run verify:generated
       - run: bun run check-types
       - run: bun run test

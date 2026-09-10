@@ -18,6 +18,9 @@
       "inputs": ["wrangler.jsonc"],
       "outputs": ["worker-configuration.d.ts"]
     },
+    "cf-typegen:check": {
+      "cache": false
+    },
     "check-types": {
       "dependsOn": ["^check-types", "cf-typegen"],
       "inputs": ["$TURBO_DEFAULT$", "tsconfig*.json", "../../tsconfig*.json"],

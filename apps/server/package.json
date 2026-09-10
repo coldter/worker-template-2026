@@ -4,6 +4,7 @@
   "main": "src/index.ts",
   "scripts": {
     "cf-typegen": "wrangler types --env-interface CloudflareBindings",
+    "cf-typegen:check": "wrangler types --check --env-interface CloudflareBindings",
     "check-types": "tsc --noEmit",
     "db:seed": "tsx scripts/seeds/index.ts",
     "deploy": "set -a && . ../../.env && set +a && wrangler deploy --var NODE_ENV:production --var \"APP_URL:${APP_URL:?APP_URL must be set in the root .env}\" --var \"CORS_ORIGINS:${CORS_ORIGINS:?CORS_ORIGINS must be set in the root .env}\"",
