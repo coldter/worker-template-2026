@@ -123,7 +123,9 @@ export const verifications = pgTable(
 );
 
 export const jwkss = pgTable("jwks", {
+  alg: text("alg"),
   createdAt: createdAt(),
+  crv: text("crv"),
   expiresAt: timestamp("expires_at", { withTimezone: true }),
   id: varchar("id", { length: 255 })
     .primaryKey()
@@ -136,14 +138,17 @@ export const twoFactors = pgTable(
   "two_factors",
   {
     backupCodes: text("backup_codes"),
+    failedVerificationCount: integer("failed_verification_count").default(0),
     id: varchar("id", { length: 255 })
       .primaryKey()
       .$defaultFn(() => generatePrefixedCuid("2fa")),
+    lockedUntil: timestamp("locked_until", { withTimezone: true }),
 
     secret: text("secret"),
     userId: varchar("user_id", { length: 255 })
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
+    verified: boolean("verified").default(true),
     ...timestamps(),
   },
   (table) => [index("two_factors_user_id_idx").on(table.userId)]
