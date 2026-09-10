@@ -52,9 +52,7 @@ function DemoForm({ defaultValues, disabled, forceErrors }: DemoFormProps) {
     <Form {...form}>
       <form
         className="grid w-80 gap-4"
-        onSubmit={form.handleSubmit(() => {
-          // story-only: no submission side effect
-        })}
+        onSubmit={form.handleSubmit(() => undefined)}
       >
         <FormField
           control={form.control}

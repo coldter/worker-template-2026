@@ -57,6 +57,8 @@ type UseServerTableParams<
   defaultPageSize?: number;
   defaultSort?: string;
   defaultOrder?: "asc" | "desc";
+  globalFilterKey?: string;
+  pageSizeKey?: string;
 };
 
 type UseServerTableResult<
@@ -89,6 +91,8 @@ export function useServerTable<
     defaultPageSize = 20,
     defaultSort,
     defaultOrder = "desc",
+    globalFilterKey,
+    pageSizeKey,
   } = params;
 
   const routeNavigate = route.useNavigate();
@@ -117,12 +121,15 @@ export function useServerTable<
     onPaginationChange,
     sorting,
     onSortingChange,
+    globalFilter,
+    onGlobalFilterChange,
     ensurePageInRange,
   } = useTableUrlState({
     navigate,
-    pagination: { defaultPage, defaultPageSize },
+    pagination: { defaultPage, defaultPageSize, pageSizeKey },
     search,
     sorting: { defaultOrder, defaultSort },
+    ...(globalFilterKey && { globalFilter: { key: globalFilterKey } }),
   });
 
   const queryParams = buildQueryParams({
@@ -154,8 +161,13 @@ export function useServerTable<
     manualSorting: true,
     onPaginationChange,
     onSortingChange,
+    ...(onGlobalFilterChange && { onGlobalFilterChange }),
     pageCount,
-    state: { pagination, sorting },
+    state: {
+      pagination,
+      sorting,
+      ...(globalFilter !== undefined && { globalFilter }),
+    },
   });
 
   return {

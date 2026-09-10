@@ -97,6 +97,7 @@ export function UserDetailPage() {
         <Button asChild size="icon" variant="ghost">
           <Link to="/users">
             <ArrowLeft className="h-4 w-4" />
+            <span className="sr-only">Back to Users</span>
           </Link>
         </Button>
         <div className="flex-1">

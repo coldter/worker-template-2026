@@ -20,7 +20,7 @@ function getErrorMessage(error: unknown): string {
 }
 
 export default function AppError({ error, reset }: ErrorComponentProps) {
-  const message = getErrorMessage(error);
+  const isDev = import.meta.env.DEV;
 
   useEffect(() => {
     reportError(error, { source: "router-error-boundary" });
@@ -37,13 +37,14 @@ export default function AppError({ error, reset }: ErrorComponentProps) {
           </p>
         </CardHeader>
         <CardContent>
-          <div className="rounded-md border bg-muted/30 p-3 text-sm">
-            <p className="font-medium">Message</p>
-            <p className="mt-1 text-muted-foreground">{message}</p>
-          </div>
-
-          {import.meta.env.DEV ? (
+          {isDev ? (
             <>
+              <div className="rounded-md border bg-muted/30 p-3 text-sm">
+                <p className="font-medium">Message</p>
+                <p className="mt-1 text-muted-foreground">
+                  {getErrorMessage(error)}
+                </p>
+              </div>
               <p className="mt-4 font-medium text-sm">Stack trace</p>
               <pre className="mt-2 max-h-60 overflow-auto rounded-md border bg-muted/30 p-3 text-xs">
                 {error instanceof Error ? error.stack : null}

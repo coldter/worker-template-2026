@@ -344,6 +344,30 @@ describe("evaluate", () => {
     expect(result).toEqual({ allowed: false, reason: "EVALUATION_ERROR" });
   });
 
+  it("fails closed when a global deny condition throws", async () => {
+    const result = await evaluate({
+      ...defaults,
+      globalPolicies: [
+        denyRule("*", "*", [throwingCondition()]),
+      ],
+      principal: activePrincipal,
+      resourcePolicies: [allowRule(["user"], ["read"])],
+    });
+    expect(result).toEqual({ allowed: false, reason: "EVALUATION_ERROR" });
+  });
+
+  it("fails closed when a resource deny condition throws", async () => {
+    const result = await evaluate({
+      ...defaults,
+      principal: activePrincipal,
+      resourcePolicies: [
+        denyRule(["user"], ["read"], [throwingCondition()]),
+        allowRule(["user"], ["read"]),
+      ],
+    });
+    expect(result).toEqual({ allowed: false, reason: "EVALUATION_ERROR" });
+  });
+
   describe("org scoping", () => {
     const orgPrincipal: Principal = {
       attributes: { status: "active" },

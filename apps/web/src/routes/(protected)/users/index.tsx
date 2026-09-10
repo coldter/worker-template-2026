@@ -9,13 +9,16 @@ import { UsersPage } from "@/modules/users/pages/users-page";
 import { usersListQueryOptions } from "@/modules/users/query";
 
 export const usersSearchSchema = z.object({
-  order: z.optional(z.enum(["asc", "desc"])),
+  order: z.catch(z.optional(z.enum(["asc", "desc"])), undefined),
   page: z.catch(z.optional(z.number()), 1),
   perPage: z.catch(z.optional(z.number()), 20),
   role: z.optional(z.string()),
   search: z.optional(z.string()),
   sort: z.optional(z.string()),
-  status: z.optional(z.enum(["active", "inactive", "locked"])),
+  status: z.catch(
+    z.optional(z.enum(["active", "inactive", "locked"])),
+    undefined
+  ),
 });
 
 export type UsersSearch = z.infer<typeof usersSearchSchema>;
@@ -24,8 +27,7 @@ function usersListParams(search: UsersSearch) {
   return {
     order: search.order ?? ("desc" as const),
     page: Math.max(1, search.page ?? 1),
-
-    perPage: 20,
+    perPage: search.perPage ?? 20,
     role: search.role,
     search: search.search,
     sort: search.sort ?? "createdAt",

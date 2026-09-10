@@ -4,12 +4,13 @@ import {
   useNavigate,
   useSearch,
 } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import * as z from "zod/mini";
 import { Logo } from "@/assets/logo";
 import {
   AuthStepTransition,
+  getSafeRedirectPath,
   resetSessionQuery,
   SignInForm,
   SignInPasswordStep,
@@ -27,7 +28,9 @@ export const Route = createFileRoute("/login")({
       .ensureQueryData(sessionQueryOptions)
       .catch(() => null);
     if (session) {
-      throw redirect({ to: search.redirect ?? "/dashboard" });
+      throw redirect({
+        to: getSafeRedirectPath(search.redirect) ?? "/dashboard",
+      });
     }
   },
   component: RouteComponent,
@@ -44,18 +47,14 @@ function RouteComponent() {
   const { redirect } = useSearch({ strict: false });
   const { clearLastUser, lastUser } = useLastUserStore();
 
-  const [step, setStep] = useState<LoginStep>("fresh");
+  const [step, setStep] = useState<LoginStep>(() =>
+    lastUser ? "welcome" : "fresh"
+  );
   const [twoFactorEmail, setTwoFactorEmail] = useState("");
-
-  useEffect(() => {
-    if (lastUser) {
-      setStep("welcome");
-    }
-  }, [lastUser]);
 
   const handleSuccess = () => {
     resetSessionQuery();
-    navigate({ to: redirect ?? "/dashboard" });
+    navigate({ to: getSafeRedirectPath(redirect) ?? "/dashboard" });
   };
 
   const handleTwoFactorRequired = (email: string) => {

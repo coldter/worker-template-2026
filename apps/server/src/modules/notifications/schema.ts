@@ -221,7 +221,7 @@ export const updatePreferencesBodySchema = z.object({
   }),
   typeOverrides: z
     .record(
-      z.string(),
+      z.string().max(120),
       z.object({
         channels: z.array(z.enum(NOTIFICATION_CHANNEL_VALUES)).optional(),
         enabled: z.boolean().optional(),

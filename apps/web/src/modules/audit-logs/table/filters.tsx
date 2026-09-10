@@ -153,6 +153,7 @@ export function AuditLogsFilters({ search, navigate }: AuditLogsFiltersProps) {
             >
               {getEventDisplayName(search.event)}
               <button
+                aria-label="Remove event filter"
                 className="hover:text-foreground ml-0.5 transition-colors"
                 onClick={() => updateFilter({ event: undefined })}
                 type="button"
@@ -165,6 +166,7 @@ export function AuditLogsFilters({ search, navigate }: AuditLogsFiltersProps) {
             <Badge className="text-[11px] gap-1" variant="secondary">
               Target: {getTargetTypeLabel(search.targetType)}
               <button
+                aria-label="Remove target type filter"
                 className="hover:text-foreground ml-0.5 transition-colors"
                 onClick={() => updateFilter({ targetType: undefined })}
                 type="button"

@@ -49,7 +49,6 @@ export function RoleMultiSelect({ value, onChange }: RoleMultiSelectProps) {
         <Button
           className="w-full justify-between"
           disabled={isLoading}
-          role="combobox"
           variant="outline"
         >
           {value.length > 0 ? (

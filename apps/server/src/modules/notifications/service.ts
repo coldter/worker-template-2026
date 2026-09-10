@@ -1,5 +1,6 @@
 import { type DrizzleClient, firstOrThrow } from "@repo/db";
 import {
+  NOTIFICATION_CHANNEL,
   notificationPreferences,
   notifications,
   pushTokens,
@@ -27,6 +28,8 @@ const SORT_COLUMNS = {
   [NOTIFICATIONS_SORT_COLUMNS.status]: notifications.status,
   [NOTIFICATIONS_SORT_COLUMNS.type]: notifications.type,
 } as const;
+
+const MAX_TYPE_OVERRIDES = 50;
 
 export const notificationService = {
   async deactivatePushToken(
@@ -281,10 +284,21 @@ export const notificationService = {
     input: UpdatePreferencesInput
   ): Promise<PreferencesRecord[]> {
     return db.transaction(async (tx) => {
+      const [existingGlobal] = await tx
+        .select()
+        .from(notificationPreferences)
+        .where(
+          and(
+            eq(notificationPreferences.userId, userId),
+            eq(notificationPreferences.typePattern, "*")
+          )
+        )
+        .limit(1);
+
       const globalValues = {
-        emailEnabled: input.emailEnabled ?? true,
-        pushEnabled: input.pushEnabled ?? true,
-        smsEnabled: input.smsEnabled ?? false,
+        emailEnabled: input.emailEnabled ?? existingGlobal?.emailEnabled ?? true,
+        pushEnabled: input.pushEnabled ?? existingGlobal?.pushEnabled ?? true,
+        smsEnabled: input.smsEnabled ?? existingGlobal?.smsEnabled ?? false,
         typePattern: "*",
         userId,
       };
@@ -305,34 +319,41 @@ export const notificationService = {
         });
 
       if (input.typeOverrides) {
-        await Promise.all(
-          Object.entries(input.typeOverrides).map(
-            async ([typePattern, override]) => {
-              const channels = override.channels ?? [];
-              const typeValues = {
-                emailEnabled: channels.includes("email"),
-                pushEnabled: channels.includes("push"),
-                smsEnabled: channels.includes("sms"),
-                typePattern,
-                userId,
-              };
+        const overrides = Object.entries(input.typeOverrides).slice(
+          0,
+          MAX_TYPE_OVERRIDES
+        );
 
-              await tx
-                .insert(notificationPreferences)
-                .values(typeValues)
-                .onConflictDoUpdate({
-                  set: {
-                    emailEnabled: sql`EXCLUDED.email_enabled`,
-                    pushEnabled: sql`EXCLUDED.push_enabled`,
-                    smsEnabled: sql`EXCLUDED.sms_enabled`,
-                  },
-                  target: [
-                    notificationPreferences.userId,
-                    notificationPreferences.typePattern,
-                  ],
-                });
-            }
-          )
+        await Promise.all(
+          overrides.map(async ([typePattern, override]) => {
+            const channels =
+              override.channels ??
+              (override.enabled ? [...NOTIFICATION_CHANNEL] : []);
+            const enabledChannels =
+              override.enabled === false ? [] : channels;
+            const typeValues = {
+              emailEnabled: enabledChannels.includes("email"),
+              pushEnabled: enabledChannels.includes("push"),
+              smsEnabled: enabledChannels.includes("sms"),
+              typePattern,
+              userId,
+            };
+
+            await tx
+              .insert(notificationPreferences)
+              .values(typeValues)
+              .onConflictDoUpdate({
+                set: {
+                  emailEnabled: sql`EXCLUDED.email_enabled`,
+                  pushEnabled: sql`EXCLUDED.push_enabled`,
+                  smsEnabled: sql`EXCLUDED.sms_enabled`,
+                },
+                target: [
+                  notificationPreferences.userId,
+                  notificationPreferences.typePattern,
+                ],
+              });
+          })
         );
       }
 

@@ -69,7 +69,6 @@ function RootComponent() {
         <Toaster richColors />
         <DownAlert />
       </ThemeProvider>
-      {/* Dev-only at build time: import.meta.env.DEV is statically tree-shaken in prod. */}
       {import.meta.env.DEV && (
         <>
           <ReactQueryDevtools initialIsOpen={false} />

@@ -1,6 +1,12 @@
 import type { CreateClientConfig } from "@/api.gen/client.gen";
 import { ApiError, clientConfig } from "@/lib/api";
 
+function getResponsePath(response: Response): string | undefined {
+  try {
+    return new URL(response.url).pathname;
+  } catch {}
+}
+
 export const createClientConfig: CreateClientConfig = (baseConfig) => ({
   ...baseConfig,
   baseUrl: import.meta.env.VITE_SERVER_URL || "http://localhost:8787",
@@ -11,8 +17,16 @@ export const createClientConfig: CreateClientConfig = (baseConfig) => ({
       return response;
     }
 
-    const json = await response.json();
-    throw new ApiError(json, response.status);
+    const body = await response.json().catch(() => null);
+    throw new ApiError(
+      body ?? {
+        error: {
+          message: response.statusText || `Request failed (${response.status})`,
+        },
+      },
+      response.status,
+      getResponsePath(response)
+    );
   },
   responseStyle: "data",
   throwOnError: true,

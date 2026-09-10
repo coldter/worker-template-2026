@@ -59,8 +59,7 @@ export async function evaluate(input: EvaluateInput): Promise<PolicyDecision> {
       resolveRelation
     );
     if (conditionError) {
-      sawEvaluationError = true;
-      continue;
+      return { allowed: false, reason: "EVALUATION_ERROR" };
     }
     if (matched) {
       return {
@@ -104,8 +103,7 @@ export async function evaluate(input: EvaluateInput): Promise<PolicyDecision> {
       resolveRelation
     );
     if (conditionError) {
-      sawEvaluationError = true;
-      continue;
+      return { allowed: false, reason: "EVALUATION_ERROR" };
     }
     if (matched) {
       return {

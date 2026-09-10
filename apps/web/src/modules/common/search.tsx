@@ -5,7 +5,6 @@ import { Button } from "@/modules/ui/button";
 
 type SearchProps = {
   className?: string;
-  type?: React.HTMLInputTypeAttribute;
   placeholder?: string;
 };
 

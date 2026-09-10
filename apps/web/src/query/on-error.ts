@@ -83,10 +83,7 @@ const isSessionCheckPath = (path?: string): boolean => {
   return sessionPaths.some((p) => path.includes(p));
 };
 
-const handleAuthError = async (): Promise<void> => {
-  if (!useUserStore.getState().user) {
-    return;
-  }
+const performAuthError = async (): Promise<void> => {
   useAlertStore.getState().setDownAlert("auth_expired");
 
   try {
@@ -110,6 +107,16 @@ const handleAuthError = async (): Promise<void> => {
   }
 };
 
+let authErrorInFlight: Promise<void> | null = null;
+
+const handleAuthError = (): Promise<void> => {
+  if (!useUserStore.getState().user) {
+    return Promise.resolve();
+  }
+  authErrorInFlight ??= performAuthError();
+  return authErrorInFlight;
+};
+
 export const handleGlobalError = async (error: unknown): Promise<void> => {
   console.error("Global query/mutation error:", error);
 
@@ -118,6 +125,13 @@ export const handleGlobalError = async (error: unknown): Promise<void> => {
   const isCasualSessionCheck = isSessionCheckPath(errorPath);
 
   switch (statusCode) {
+    case 0:
+      toast.error("Network error", {
+        description:
+          "Unable to reach the server. Check your connection and try again.",
+      });
+      return;
+
     case 502:
     case 503:
       useAlertStore.getState().setDownAlert("maintenance");
@@ -165,7 +179,9 @@ export const handleGlobalSuccess = (): void => {
 
   if (
     downAlert &&
-    ["maintenance", "offline", "auth_unavailable"].includes(downAlert)
+    ["maintenance", "offline", "auth_unavailable", "forbidden"].includes(
+      downAlert
+    )
   ) {
     clearDownAlert();
   }

@@ -123,7 +123,7 @@ export function resolveSortColumn<T extends Record<string, unknown>>(
   sort: string | undefined,
   fallback: T[keyof T]
 ): T[keyof T] {
-  if (sort !== undefined && sort in columns) {
+  if (sort !== undefined && Object.hasOwn(columns, sort)) {
     return columns[sort as keyof T];
   }
   return fallback;

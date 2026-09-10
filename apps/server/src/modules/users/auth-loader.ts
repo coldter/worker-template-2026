@@ -20,6 +20,13 @@ export async function loadUserResource(
   return row ?? null;
 }
 
+export async function loadCurrentUserResource(
+  c: Context<AppEnv>
+): Promise<UserAuthorizationResource | null> {
+  const currentUser = c.get("user");
+  return currentUser ? { id: currentUser.id } : null;
+}
+
 export function requireAuthorizedUserId(c: Context<AppEnv>): string {
   return getAuthorizedResource<UserAuthorizationResource>(c).id;
 }

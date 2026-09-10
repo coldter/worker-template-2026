@@ -11,11 +11,14 @@ import { PermissionDenied } from "@/modules/permissions";
 export const auditLogsSearchSchema = z.object({
   actorId: z.optional(z.string()),
   event: z.optional(z.string()),
-  order: z.optional(z.enum(["asc", "desc"])),
+  order: z.catch(z.optional(z.enum(["asc", "desc"])), undefined),
   page: z.catch(z.optional(z.number()), 1),
   perPage: z.catch(z.optional(z.number()), 20),
   sort: z.optional(z.string()),
-  targetType: z.optional(z.enum(["user", "role", "session"])),
+  targetType: z.catch(
+    z.optional(z.enum(["user", "role", "session"])),
+    undefined
+  ),
 });
 
 export type AuditLogsSearch = z.infer<typeof auditLogsSearchSchema>;
@@ -26,8 +29,7 @@ function auditLogsListParams(search: AuditLogsSearch) {
     event: search.event,
     order: search.order ?? ("desc" as const),
     page: Math.max(1, search.page ?? 1),
-
-    perPage: 20,
+    perPage: search.perPage ?? 20,
     sort: search.sort ?? "createdAt",
     targetType: search.targetType,
   };

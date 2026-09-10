@@ -196,12 +196,12 @@
       "name": "@repo/shared",
       "version": "0.0.0",
       "dependencies": {
+        "@hono/zod-openapi": "^1.6.3",
         "@repo/authorization": "workspace:*",
         "zod": "^4.6.1",
       },
       "devDependencies": {
         "@cloudflare/workers-types": "^5.20260910.1",
-        "@hono/zod-openapi": "^1.6.3",
         "@types/node": "^26.5.1",
         "typescript": "^7.0.2",
       },

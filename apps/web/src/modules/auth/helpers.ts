@@ -10,3 +10,12 @@ export const clearSession = () => {
 export const resetSessionQuery = () => {
   queryClient.removeQueries({ queryKey: sessionQueryOptions.queryKey });
 };
+
+export const getSafeRedirectPath = (
+  redirect: string | undefined
+): string | undefined => {
+  if (!redirect?.startsWith("/") || redirect.startsWith("//")) {
+    return;
+  }
+  return redirect;
+};

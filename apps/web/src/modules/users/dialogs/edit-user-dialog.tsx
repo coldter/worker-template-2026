@@ -47,7 +47,7 @@ export function EditUserDialog({
     mutation: updateMutation,
     onClose: () => onOpenChange(false),
     resetWhen: {
-      key: user,
+      key: user.id,
       open,
       values: { name: user.name },
     },

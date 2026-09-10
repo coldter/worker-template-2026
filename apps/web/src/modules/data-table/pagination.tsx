@@ -49,7 +49,7 @@ export function DataTablePagination<TData extends RowData>({
             }}
             value={`${table.state.pagination.pageSize}`}
           >
-            <SelectTrigger className="h-8 w-[70px]">
+            <SelectTrigger aria-label="Rows per page" className="h-8 w-[70px]">
               <SelectValue placeholder={table.state.pagination.pageSize} />
             </SelectTrigger>
             <SelectContent side="top">
@@ -94,6 +94,7 @@ export function DataTablePagination<TData extends RowData>({
                 <span className="text-muted-foreground px-1 text-sm">...</span>
               ) : (
                 <Button
+                  aria-current={currentPage === pageNumber ? "page" : undefined}
                   className="h-8 min-w-8 px-2"
                   onClick={() => table.setPageIndex((pageNumber as number) - 1)}
                   variant={currentPage === pageNumber ? "default" : "outline"}

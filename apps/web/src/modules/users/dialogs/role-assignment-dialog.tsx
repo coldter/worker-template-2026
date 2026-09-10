@@ -46,7 +46,7 @@ export function RoleAssignmentDialog({
     mutation: updateMutation,
     onClose: () => onOpenChange(false),
     resetWhen: {
-      key: user,
+      key: user.id,
       open,
       values: { roleSlugs: user.roleSlugs },
     },

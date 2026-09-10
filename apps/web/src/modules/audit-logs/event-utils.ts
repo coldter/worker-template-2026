@@ -1,29 +1,6 @@
-type EventCategory = "auth" | "user" | "role";
-
 type BadgeStyle = {
   variant: "default" | "secondary" | "destructive" | "outline";
   className: string;
-};
-
-const eventCategoryMap: Record<string, EventCategory> = {
-  "auth.login.failed": "auth",
-  "auth.login.success": "auth",
-  "auth.logout": "auth",
-  "auth.password.changed": "auth",
-  "auth.session.revoked": "auth",
-  "role.assigned": "role",
-  "role.created": "role",
-  "role.deleted": "role",
-  "role.unassigned": "role",
-  "role.updated": "role",
-  "user.activated": "user",
-  "user.created": "user",
-  "user.deactivated": "user",
-  "user.deleted": "user",
-  "user.listed": "user",
-  "user.unlocked": "user",
-  "user.updated": "user",
-  "user.viewed": "user",
 };
 
 const eventDisplayNames: Record<string, string> = {
@@ -180,11 +157,6 @@ const eventIconNames: Record<string, string> = {
   "user.updated": "UserCog",
   "user.viewed": "Eye",
 };
-
-/** @public ignore knip might be useful for future */
-export function getEventCategory(event: string): EventCategory {
-  return eventCategoryMap[event] ?? "auth";
-}
 
 export function getEventDisplayName(event: string): string {
   return eventDisplayNames[event] ?? event;

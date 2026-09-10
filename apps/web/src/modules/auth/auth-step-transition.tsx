@@ -1,4 +1,4 @@
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import type { ReactNode } from "react";
 
 interface AuthStepTransitionProps {
@@ -6,25 +6,27 @@ interface AuthStepTransitionProps {
   step: string;
 }
 
-const variants = {
-  animate: {
-    opacity: 1,
-    x: 0,
-  },
-  exit: (direction: number) => ({
-    opacity: 0,
-    x: direction > 0 ? -50 : 50,
-  }),
-  initial: (direction: number) => ({
-    opacity: 0,
-    x: direction > 0 ? 50 : -50,
-  }),
-};
-
 export function AuthStepTransition({
   children,
   step,
 }: AuthStepTransitionProps) {
+  const shouldReduceMotion = useReducedMotion();
+
+  const variants = {
+    animate: {
+      opacity: 1,
+      x: 0,
+    },
+    exit: {
+      opacity: 0,
+      x: shouldReduceMotion ? 0 : -50,
+    },
+    initial: {
+      opacity: 0,
+      x: shouldReduceMotion ? 0 : 50,
+    },
+  };
+
   return (
     <AnimatePresence initial={false} mode="wait">
       <motion.div

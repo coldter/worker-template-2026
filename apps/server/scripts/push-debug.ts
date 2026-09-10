@@ -40,8 +40,9 @@ function prettyJson(data: unknown): string {
 }
 
 function printHeader(): void {
+  const configured = String(process.env.FCM_PROVIDER).toLowerCase();
   const provider =
-    String(process.env.FCM_PROVIDER) === "fcm" ? "fcm" : "console";
+    configured === "fcm" || configured === "firebase" ? "fcm" : "console";
   console.log(
     chalk.bold("\nPush Debug Tool") + chalk.dim(" (development only)")
   );

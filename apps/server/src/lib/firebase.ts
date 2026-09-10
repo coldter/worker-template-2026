@@ -125,13 +125,19 @@ export function getPushProvider(): PushProvider {
     return pushProvider;
   }
 
-  if (String(env.FCM_PROVIDER) === "fcm") {
-    const serviceAccount = parseServiceAccount();
-    pushProvider = new FcmHttpProvider(serviceAccount);
+  const configuredProvider = String(env.FCM_PROVIDER).toLowerCase();
+  const wantsFcm =
+    configuredProvider === "fcm" || configuredProvider === "firebase";
+
+  if (wantsFcm && env.FIREBASE_SERVICE_ACCOUNT_KEY_BASE64) {
+    pushProvider = new FcmHttpProvider(parseServiceAccount());
     logger.info("FCM HTTP v1 push provider initialized");
   } else {
     pushProvider = new ConsolePushProvider();
-    logger.info("Console push provider initialized (FCM_PROVIDER!=fcm)");
+    logger.warn("Console push provider initialized", {
+      configuredProvider,
+      hasServiceAccount: Boolean(env.FIREBASE_SERVICE_ACCOUNT_KEY_BASE64),
+    });
   }
 
   return pushProvider;

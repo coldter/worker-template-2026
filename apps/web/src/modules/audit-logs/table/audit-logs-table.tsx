@@ -44,6 +44,7 @@ export function AuditLogsTable() {
       }),
       columns: auditLogsColumns,
       defaultSort: "createdAt",
+      pageSizeKey: "perPage",
       route: Route,
       useData: useAuditLogsQuery,
     });
@@ -91,20 +92,28 @@ export function AuditLogsTable() {
         className="cursor-pointer transition-colors"
         key={row.id}
         onClick={() => handleRowClick(row.original)}
-        onKeyDown={(event) => {
-          if (event.key === "Enter" || event.key === " ") {
-            event.preventDefault();
-            handleRowClick(row.original);
-          }
-        }}
-        role="button"
-        tabIndex={0}
       >
-        {row.getVisibleCells().map((cell) => (
-          <TableCell key={cell.id}>
-            {flexRender(cell.column.columnDef.cell, cell.getContext())}
-          </TableCell>
-        ))}
+        {row.getVisibleCells().map((cell, index) =>
+          index === 0 ? (
+            <TableCell key={cell.id}>
+              <button
+                aria-label="View audit log details"
+                className="cursor-pointer text-left"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  handleRowClick(row.original);
+                }}
+                type="button"
+              >
+                {flexRender(cell.column.columnDef.cell, cell.getContext())}
+              </button>
+            </TableCell>
+          ) : (
+            <TableCell key={cell.id}>
+              {flexRender(cell.column.columnDef.cell, cell.getContext())}
+            </TableCell>
+          )
+        )}
       </TableRow>
     ));
   };

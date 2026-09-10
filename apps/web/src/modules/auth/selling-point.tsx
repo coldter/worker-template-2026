@@ -1,4 +1,4 @@
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 
 interface SellingPointProps {
   bgGradient?: string;
@@ -13,6 +13,8 @@ export function SellingPoint({
   bgImage,
   bgGradient = "from-indigo-600 via-purple-600 to-pink-500",
 }: SellingPointProps) {
+  const shouldReduceMotion = useReducedMotion();
+
   return (
     <div className="relative flex h-full select-none flex-col justify-center p-8">
       {bgImage ? (
@@ -32,8 +34,8 @@ export function SellingPoint({
       <div className="relative z-10 flex flex-col items-center justify-center">
         <motion.div
           animate={{ opacity: 1, y: 0 }}
-          initial={{ opacity: 0, y: 20 }}
-          transition={{ duration: 0.6 }}
+          initial={shouldReduceMotion ? false : { opacity: 0, y: 20 }}
+          transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.6 }}
         >
           <h2 className="mb-2 text-center font-bold text-5xl text-white drop-shadow-2xl">
             {title}
@@ -41,8 +43,10 @@ export function SellingPoint({
         </motion.div>
         <motion.div
           animate={{ opacity: 1, y: 0 }}
-          initial={{ opacity: 0, y: 20 }}
-          transition={{ delay: 0.1, duration: 0.6 }}
+          initial={shouldReduceMotion ? false : { opacity: 0, y: 20 }}
+          transition={
+            shouldReduceMotion ? { duration: 0 } : { delay: 0.1, duration: 0.6 }
+          }
         >
           <p className="text-center text-lg text-white/80 leading-relaxed">
             {description}

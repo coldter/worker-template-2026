@@ -33,8 +33,8 @@ export function SidebarNav({ className, items, ...props }: SidebarNavProps) {
     <>
       <div className="p-1 md:hidden">
         <Select onValueChange={handleSelect} value={val}>
-          <SelectTrigger className="h-12 sm:w-48">
-            <SelectValue placeholder="Theme" />
+          <SelectTrigger aria-label="Settings section" className="h-12 sm:w-48">
+            <SelectValue placeholder="Select section" />
           </SelectTrigger>
           <SelectContent>
             {items.map((item) => (

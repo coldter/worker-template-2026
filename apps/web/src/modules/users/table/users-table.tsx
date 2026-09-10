@@ -30,6 +30,8 @@ export function UsersTable() {
     }),
     columns: usersColumns,
     defaultSort: "createdAt",
+    globalFilterKey: "search",
+    pageSizeKey: "perPage",
     route: Route,
     useData: useUsersQuery,
   });

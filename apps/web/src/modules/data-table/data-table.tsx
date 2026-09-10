@@ -13,27 +13,21 @@ import { TableError } from "./table-error";
 import { TableSkeleton } from "./table-skeleton";
 import type { DataTableProps } from "./types";
 
-export function DataTable<TData extends RowData>({
+type DataTableViewProps<TData extends RowData> = {
+  columns: DataTableProps<TData>["columns"];
+  emptyMessage?: string;
+  isError?: boolean;
+  isLoading?: boolean;
+  table: NonNullable<DataTableProps<TData>["table"]>;
+};
+
+function DataTableView<TData extends RowData>({
   columns,
-  data,
-  isLoading,
-  isError,
   emptyMessage,
-  table: tableFromProps,
-  ...tableProps
-}: DataTableProps<TData>) {
-  const internalTable = useTable({
-    columns,
-    data,
-    features: dataTableFeatures,
-    manualFiltering: true,
-    manualPagination: true,
-    manualSorting: true,
-    ...tableProps,
-  });
-
-  const table = tableFromProps ?? internalTable;
-
+  isError,
+  isLoading,
+  table,
+}: DataTableViewProps<TData>) {
   const renderContent = () => {
     if (isError) {
       return <TableError colSpan={columns.length} />;
@@ -81,5 +75,65 @@ export function DataTable<TData extends RowData>({
         <TableBody>{renderContent()}</TableBody>
       </Table>
     </div>
+  );
+}
+
+function InternalDataTable<TData extends RowData>({
+  columns,
+  data,
+  emptyMessage,
+  isError,
+  isLoading,
+  ...tableProps
+}: Omit<DataTableProps<TData>, "table">) {
+  const table = useTable({
+    columns,
+    data,
+    features: dataTableFeatures,
+    manualFiltering: true,
+    manualPagination: true,
+    manualSorting: true,
+    ...tableProps,
+  });
+
+  return (
+    <DataTableView
+      columns={columns}
+      emptyMessage={emptyMessage}
+      isError={isError}
+      isLoading={isLoading}
+      table={table}
+    />
+  );
+}
+
+export function DataTable<TData extends RowData>({
+  columns,
+  emptyMessage,
+  isError,
+  isLoading,
+  table,
+  ...tableProps
+}: DataTableProps<TData>) {
+  if (table) {
+    return (
+      <DataTableView
+        columns={columns}
+        emptyMessage={emptyMessage}
+        isError={isError}
+        isLoading={isLoading}
+        table={table}
+      />
+    );
+  }
+
+  return (
+    <InternalDataTable
+      columns={columns}
+      emptyMessage={emptyMessage}
+      isError={isError}
+      isLoading={isLoading}
+      {...tableProps}
+    />
   );
 }

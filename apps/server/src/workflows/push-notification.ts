@@ -56,7 +56,10 @@ export class PushNotificationWorkflow extends WorkflowEntrypoint<
             }
 
             const tokens = await db.query.pushTokens.findMany({
-              where: { userId: { eq: notification.userId } },
+              where: {
+                isActive: true,
+                userId: { eq: notification.userId },
+              },
             });
 
             return {

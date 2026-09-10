@@ -4,7 +4,7 @@ import type {
   PaginationState,
   SortingState,
 } from "@tanstack/react-table";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 
 type SearchRecord = Record<string, unknown>;
 
@@ -95,7 +95,7 @@ export function useTableUrlState(
   const globalFilterEnabled = globalFilterCfg?.enabled ?? true;
   const trimGlobal = globalFilterCfg?.trim ?? true;
 
-  const initialColumnFilters: ColumnFiltersState = useMemo(() => {
+  const columnFilters: ColumnFiltersState = useMemo(() => {
     const collected: ColumnFiltersState = [];
     for (const cfg of columnFiltersCfg) {
       const raw = search[cfg.searchKey];
@@ -114,9 +114,6 @@ export function useTableUrlState(
     }
     return collected;
   }, [columnFiltersCfg, search]);
-
-  const [columnFilters, setColumnFilters] =
-    useState<ColumnFiltersState>(initialColumnFilters);
 
   const pagination: PaginationState = useMemo(() => {
     const rawPage = search[pageKey];
@@ -172,23 +169,20 @@ export function useTableUrlState(
     });
   };
 
-  const [globalFilter, setGlobalFilter] = useState<string | undefined>(() => {
-    if (!globalFilterEnabled) {
-      return;
-    }
-    const raw = search[globalFilterKey];
-    return typeof raw === "string" ? raw : "";
-  });
+  const globalFilter = globalFilterEnabled
+    ? (() => {
+        const raw = search[globalFilterKey];
+        return typeof raw === "string" ? raw : "";
+      })()
+    : undefined;
 
   const onGlobalFilterChange: OnChangeFn<string> | undefined =
     globalFilterEnabled
       ? (updater) => {
+          const current = typeof globalFilter === "string" ? globalFilter : "";
           const next =
-            typeof updater === "function"
-              ? updater(globalFilter ?? "")
-              : updater;
+            typeof updater === "function" ? updater(current) : updater;
           const value = trimGlobal ? next.trim() : next;
-          setGlobalFilter(value);
           navigate({
             search: (prev) => ({
               ...prev,
@@ -202,7 +196,6 @@ export function useTableUrlState(
   const onColumnFiltersChange: OnChangeFn<ColumnFiltersState> = (updater) => {
     const next =
       typeof updater === "function" ? updater(columnFilters) : updater;
-    setColumnFilters(next);
 
     const patch: Record<string, unknown> = {};
 

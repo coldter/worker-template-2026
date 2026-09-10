@@ -1,20 +1,5 @@
-import {
-  MutationCache,
-  onlineManager,
-  QueryCache,
-  QueryClient,
-} from "@tanstack/react-query";
+import { MutationCache, QueryCache, QueryClient } from "@tanstack/react-query";
 import { handleGlobalError, handleGlobalSuccess } from "./on-error";
-
-function syncOnlineStatus() {
-  onlineManager.setOnline(navigator.onLine);
-}
-
-if (typeof window !== "undefined") {
-  window.addEventListener("online", syncOnlineStatus);
-  window.addEventListener("offline", syncOnlineStatus);
-  syncOnlineStatus();
-}
 
 export const queryClient = new QueryClient({
   defaultOptions: {

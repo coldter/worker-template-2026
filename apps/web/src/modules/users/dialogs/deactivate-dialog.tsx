@@ -51,12 +51,14 @@ export function DeactivateDialog({
   });
 
   const onSubmit = async (values: DeactivateFormValues) => {
-    await deactivateMutation.mutateAsync({
-      reason: values.reason,
-      userId: user.id,
-    });
-    form.reset();
-    onOpenChange(false);
+    try {
+      await deactivateMutation.mutateAsync({
+        reason: values.reason,
+        userId: user.id,
+      });
+      form.reset();
+      onOpenChange(false);
+    } catch {}
   };
 
   return (

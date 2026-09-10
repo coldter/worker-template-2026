@@ -1,4 +1,4 @@
-import { and, eq, gt, isNotNull, or } from "drizzle-orm";
+import { and, eq, gt, isNotNull, or, sql } from "drizzle-orm";
 import type { Executor } from "./client";
 import { sessions, users } from "./schema";
 
@@ -46,7 +46,11 @@ export async function clearUserLockout(
 ): Promise<boolean> {
   const result = await executor
     .update(users)
-    .set({ failedLoginAttempts: 0, lockedUntil: null, status: "active" })
+    .set({
+      failedLoginAttempts: 0,
+      lockedUntil: null,
+      status: sql`case when ${users.status} = 'locked' then 'active' else ${users.status} end`,
+    })
     .where(eq(users.id, userId))
     .returning({ id: users.id });
   return result.length > 0;

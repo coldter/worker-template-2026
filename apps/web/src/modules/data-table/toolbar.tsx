@@ -1,10 +1,50 @@
 import { Cross2Icon } from "@radix-ui/react-icons";
 import type { ReactTable, RowData } from "@tanstack/react-table";
+import { useEffect, useEffectEvent, useState } from "react";
 import { Button } from "@/modules/ui/button";
 import { Input } from "@/modules/ui/input";
 import { DataTableFacetedFilter } from "./faceted-filter";
 import type { DataTableFeatures } from "./features";
 import { DataTableViewOptions } from "./view-options";
+
+const SEARCH_DEBOUNCE_MS = 300;
+
+type DebouncedInputProps = {
+  "aria-label": string;
+  className?: string;
+  onValueChange: (value: string) => void;
+  placeholder: string;
+  value: string;
+};
+
+function DebouncedInput({
+  onValueChange,
+  value,
+  ...props
+}: DebouncedInputProps) {
+  const [localValue, setLocalValue] = useState(value);
+  const commit = useEffectEvent((next: string) => onValueChange(next));
+
+  useEffect(() => {
+    setLocalValue(value);
+  }, [value]);
+
+  useEffect(() => {
+    if (localValue === value) {
+      return;
+    }
+    const timer = setTimeout(() => commit(localValue), SEARCH_DEBOUNCE_MS);
+    return () => clearTimeout(timer);
+  }, [localValue, value]);
+
+  return (
+    <Input
+      {...props}
+      onChange={(event) => setLocalValue(event.target.value)}
+      value={localValue}
+    />
+  );
+}
 
 type DataTableToolbarProps<TData extends RowData> = {
   table: ReactTable<DataTableFeatures, TData>;
@@ -34,11 +74,11 @@ export function DataTableToolbar<TData extends RowData>({
     <div className="flex items-center justify-between">
       <div className="flex flex-1 flex-col-reverse items-start gap-y-2 sm:flex-row sm:items-center sm:space-x-2">
         {searchKey ? (
-          <Input
+          <DebouncedInput
             aria-label={searchPlaceholder}
             className="h-8 w-[150px] lg:w-[250px]"
-            onChange={(event) =>
-              table.getColumn(searchKey)?.setFilterValue(event.target.value)
+            onValueChange={(value) =>
+              table.getColumn(searchKey)?.setFilterValue(value)
             }
             placeholder={searchPlaceholder}
             value={
@@ -46,10 +86,10 @@ export function DataTableToolbar<TData extends RowData>({
             }
           />
         ) : (
-          <Input
+          <DebouncedInput
             aria-label={searchPlaceholder}
             className="h-8 w-[150px] lg:w-[250px]"
-            onChange={(event) => table.setGlobalFilter(event.target.value)}
+            onValueChange={(value) => table.setGlobalFilter(value)}
             placeholder={searchPlaceholder}
             value={table.state.globalFilter ?? ""}
           />
