@@ -2,7 +2,6 @@ import type { ReactElement } from "react";
 import { Resend } from "resend";
 
 export interface SendEmailResult {
-  error?: Error;
   messageId?: string;
   success: boolean;
 }
@@ -31,23 +30,17 @@ function getResendClient(apiKey: string): Resend {
 export async function sendEmail<T>(
   params: SendEmailParams<T>
 ): Promise<SendEmailResult> {
-  try {
-    const resend = getResendClient(params.apiKey);
-    const { error } = await resend.emails.send({
-      from: params.from,
-      react: params.template(params.props),
-      subject: params.subject,
-      to: params.to,
-    });
+  const resend = getResendClient(params.apiKey);
+  const { data, error } = await resend.emails.send({
+    from: params.from,
+    react: params.template(params.props),
+    subject: params.subject,
+    to: params.to,
+  });
 
-    if (error) {
-      return { error: new Error(error.message), success: false };
-    }
-    return { success: true };
-  } catch (error) {
-    return {
-      error: error instanceof Error ? error : new Error(String(error)),
-      success: false,
-    };
+  if (error) {
+    throw new Error(error.message, { cause: error });
   }
+
+  return { messageId: data?.id, success: true };
 }

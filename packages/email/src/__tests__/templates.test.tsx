@@ -29,6 +29,28 @@ describe("Email template snapshots", () => {
     expect(html).toMatchSnapshot();
   });
 
+  test("NotificationEmail renders with brand overrides", async () => {
+    const html = await render(
+      <NotificationEmail
+        actionLabel="View"
+        actionUrl="https://example.com/x"
+        body="Branded body"
+        brand={{
+          appName: "Acme",
+          companyName: "Acme Corp",
+          primaryColor: "#123456",
+          supportEmail: "help@acme.test",
+        }}
+        subject="Branded subject"
+      />
+    );
+
+    expect(html).toContain("ACME");
+    expect(html).toContain("Acme Corp");
+    expect(html).toContain("help@acme.test");
+    expect(html).toContain("rgb(18,52,86)");
+  });
+
   test("PasswordResetEmail renders", async () => {
     const html = await render(
       <PasswordResetEmail

@@ -1,11 +1,12 @@
 import React from "react";
 import { Button, Heading, Section, Text } from "react-email";
-import { BaseLayout } from "../components/base-layout";
+import { BaseLayout, type EmailBrandProps } from "../components/base-layout";
 
 interface NotificationEmailProps {
   actionLabel?: string;
   actionUrl?: string;
   body: string;
+  brand?: EmailBrandProps;
   subject: string;
 }
 
@@ -14,9 +15,10 @@ export function NotificationEmail({
   body,
   actionUrl,
   actionLabel,
+  brand,
 }: NotificationEmailProps) {
   return (
-    <BaseLayout previewText={body.slice(0, 140)}>
+    <BaseLayout previewText={body.slice(0, 140)} {...brand}>
       <Section>
         <Heading className="text-[24px] font-bold text-slate-900 m-0 mb-4 leading-tight">
           {subject}

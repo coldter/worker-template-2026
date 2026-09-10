@@ -18,6 +18,10 @@ const endpointContextWithSessionSchema = z
       .object({
         session: z
           .object({
+            session: z
+              .object({ platform: z.string().optional() })
+              .passthrough()
+              .optional(),
             user: z
               .object({ id: z.string().optional() })
               .passthrough()
@@ -42,6 +46,11 @@ export function createSessionUpdateBeforeHook(db: DrizzleClient) {
         ? updateParse.data.activeOrganizationId
         : undefined;
 
+    const endpointParse = endpointContextWithSessionSchema.safeParse(context);
+    const endpointSession = endpointParse.success
+      ? endpointParse.data.context?.session
+      : undefined;
+
     if (activeOrganizationIdUpdate !== undefined) {
       const newOrgId = activeOrganizationIdUpdate;
 
@@ -51,10 +60,7 @@ export function createSessionUpdateBeforeHook(db: DrizzleClient) {
         };
       }
 
-      const endpointParse = endpointContextWithSessionSchema.safeParse(context);
-      const userId = endpointParse.success
-        ? endpointParse.data.context?.session?.user?.id
-        : undefined;
+      const userId = endpointSession?.user?.id;
 
       if (userId) {
         const lookup = await tolerateMissingOrgTables(
@@ -95,20 +101,16 @@ export function createSessionUpdateBeforeHook(db: DrizzleClient) {
       return { data: session };
     }
 
-    const persistedPlatform =
-      typeof session.platform === "string" && session.platform === "mobile"
-        ? ("mobile" as const)
-        : ("web" as const);
+    const platform =
+      endpointSession?.session?.platform === "mobile" ? "mobile" : "web";
 
-    if (persistedPlatform === "web") {
-      return {
-        data: {
-          ...session,
-          expiresAt: new Date(Date.now() + SESSION_CONFIG.web.expiresIn * 1000),
-        },
-      };
-    }
-
-    return { data: session };
+    return {
+      data: {
+        ...session,
+        expiresAt: new Date(
+          Date.now() + SESSION_CONFIG[platform].expiresIn * 1000
+        ),
+      },
+    };
   };
 }

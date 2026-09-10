@@ -1,5 +1,6 @@
 import type { DrizzleClient } from "@repo/db";
 import { sendEmail, VerificationOtpEmail } from "@repo/email";
+import type { BrandConfig } from "@repo/shared/brand";
 import { logger } from "@repo/shared/logger";
 import { TWO_FACTOR_CONFIG } from "../constants";
 import type { AuthBindings } from "../instance";
@@ -26,7 +27,7 @@ export function createSendVerificationOTP(
   db: DrizzleClient,
   env: AuthBindings,
   ctx: MinimalExecutionContext,
-  brand: { appName: string }
+  brand: BrandConfig
 ) {
   return async ({
     email,
@@ -65,6 +66,7 @@ export function createSendVerificationOTP(
         apiKey: env.RESEND_API_KEY,
         from: `${brand.appName} <${env.EMAIL_FROM}>`,
         props: {
+          brand,
           expiresIn: `${Math.floor(TWO_FACTOR_CONFIG.emailOtpExpiresIn / 60)} minutes`,
           otp,
           type: templateType,

@@ -74,7 +74,7 @@ describe("sendEmail", () => {
       to: "ada@example.com",
     });
 
-    expect(result).toEqual({ success: true });
+    expect(result).toEqual({ messageId: "msg_123", success: true });
     expect(resendInstances).toHaveLength(1);
     expect(resendInstances[0]?.apiKey).toBe("key-success");
   });
@@ -127,45 +127,35 @@ describe("sendEmail", () => {
     expect(resendInstances[1]?.apiKey).toBe("key-b");
   });
 
-  test("surfaces a Resend API error in the result", async () => {
+  test("throws on a Resend API error", async () => {
     sendQueue.push({ kind: "apiError", message: "Invalid recipient" });
     const { sendEmail } = await import("../lib/send");
 
-    const result = await sendEmail<DummyProps>({
-      apiKey: "key-error",
-      from: "noreply@example.com",
-      props: { name: "Ada" },
-      subject: "Boom",
-      template: DummyTemplate,
-      to: "ada@example.com",
-    });
-
-    expect(result.success).toBe(false);
-    if (result.success) {
-      throw new Error("expected failure result");
-    }
-    expect(result.error).toBeInstanceOf(Error);
-    expect(result.error?.message).toBe("Invalid recipient");
+    await expect(
+      sendEmail<DummyProps>({
+        apiKey: "key-error",
+        from: "noreply@example.com",
+        props: { name: "Ada" },
+        subject: "Boom",
+        template: DummyTemplate,
+        to: "ada@example.com",
+      })
+    ).rejects.toThrow("Invalid recipient");
   });
 
-  test("catches thrown errors from the Resend client", async () => {
+  test("propagates thrown errors from the Resend client", async () => {
     sendQueue.push({ error: new Error("network down"), kind: "throw" });
     const { sendEmail } = await import("../lib/send");
 
-    const result = await sendEmail<DummyProps>({
-      apiKey: "key-throws",
-      from: "noreply@example.com",
-      props: { name: "Ada" },
-      subject: "Boom",
-      template: DummyTemplate,
-      to: "ada@example.com",
-    });
-
-    expect(result.success).toBe(false);
-    if (result.success) {
-      throw new Error("expected failure result");
-    }
-    expect(result.error).toBeInstanceOf(Error);
-    expect(result.error?.message).toBe("network down");
+    await expect(
+      sendEmail<DummyProps>({
+        apiKey: "key-throws",
+        from: "noreply@example.com",
+        props: { name: "Ada" },
+        subject: "Boom",
+        template: DummyTemplate,
+        to: "ada@example.com",
+      })
+    ).rejects.toThrow("network down");
   });
 });

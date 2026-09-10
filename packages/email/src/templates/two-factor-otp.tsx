@@ -1,8 +1,9 @@
 import React from "react";
 import { Heading, Section, Text } from "react-email";
-import { BaseLayout } from "../components/base-layout";
+import { BaseLayout, type EmailBrandProps } from "../components/base-layout";
 
 export interface TwoFactorOtpEmailProps {
+  brand?: EmailBrandProps;
   expiresIn: string;
   ipAddress?: string;
   otp: string;
@@ -16,9 +17,10 @@ export function TwoFactorOtpEmail({
   expiresIn,
   ipAddress,
   userAgent,
+  brand,
 }: TwoFactorOtpEmailProps) {
   return (
-    <BaseLayout previewText={`Your 2FA code: ${otp}`}>
+    <BaseLayout previewText={`Your 2FA code: ${otp}`} {...brand}>
       <Section>
         <Heading className="text-[28px] font-bold text-slate-900 text-center m-0 mb-6 leading-tight">
           Two-Factor Authentication

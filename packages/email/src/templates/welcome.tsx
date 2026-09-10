@@ -1,15 +1,16 @@
 import React from "react";
 import { Button, Heading, Section, Text } from "react-email";
-import { BaseLayout } from "../components/base-layout";
+import { BaseLayout, type EmailBrandProps } from "../components/base-layout";
 
 interface WelcomeEmailProps {
+  brand?: EmailBrandProps;
   loginUrl: string;
   userName: string;
 }
 
-export function WelcomeEmail({ userName, loginUrl }: WelcomeEmailProps) {
+export function WelcomeEmail({ userName, loginUrl, brand }: WelcomeEmailProps) {
   return (
-    <BaseLayout previewText="Welcome aboard! Your account is ready.">
+    <BaseLayout previewText="Welcome aboard! Your account is ready." {...brand}>
       <Section>
         <Heading className="text-[28px] font-bold text-slate-900 text-center m-0 mb-6 leading-tight">
           Welcome, {userName}!

@@ -1,8 +1,9 @@
 import React from "react";
 import { Button, Heading, Link, Section, Text } from "react-email";
-import { BaseLayout } from "../components/base-layout";
+import { BaseLayout, type EmailBrandProps } from "../components/base-layout";
 
 interface PasswordResetEmailProps {
+  brand?: EmailBrandProps;
   expiresIn: string;
   resetUrl: string;
   userName: string;
@@ -12,9 +13,10 @@ export function PasswordResetEmail({
   userName,
   resetUrl,
   expiresIn,
+  brand,
 }: PasswordResetEmailProps) {
   return (
-    <BaseLayout previewText="Reset your password (link inside).">
+    <BaseLayout previewText="Reset your password (link inside)." {...brand}>
       <Section>
         <Heading className="text-[28px] font-bold text-slate-900 text-center m-0 mb-6 leading-tight">
           Reset your password

@@ -3,7 +3,6 @@ import { generateIdForModel } from "@repo/db/ids";
 import * as schema from "@repo/db/schema";
 import type { ApiBindingRpc } from "@repo/shared/api-binding";
 import { getBrandConfig } from "@repo/shared/brand";
-import { kvDelete, kvGetJson, kvSetJson } from "@repo/shared/kv-cache";
 import {
   type BetterAuthOptions,
   betterAuth,
@@ -24,8 +23,10 @@ import {
 import type { MinimalExecutionContext } from "./lib/execution-context";
 import {
   platformSchema,
+  SESSION_CONFIG,
   type SessionWithAdditionalFields,
 } from "./lib/platform";
+import { createSecondaryStorage } from "./lib/secondary-storage";
 import { adminPlugin } from "./plugins/admin";
 import { loginSecurityPlugin } from "./plugins/login-security";
 import { createOrganizationPlugin } from "./plugins/organization-setup";
@@ -141,8 +142,6 @@ export function createAuth(
           sendOTP: createSendTwoFactorOTP(env, ctx, brand),
         },
 
-        skipVerificationOnEnable: true,
-
         twoFactorTable: "twoFactor",
       }),
       openAPI({
@@ -192,34 +191,7 @@ export function createAuth(
       storage: "secondary-storage" as const,
       window: RATE_LIMIT_CONFIG.global.window,
     },
-    secondaryStorage: {
-      delete: async (key) => {
-        await kvDelete(env.CACHE, key);
-      },
-      get: async (key) => kvGetJson(env.CACHE, key),
-
-      getAndDelete: async (key) => {
-        const value = await kvGetJson(env.CACHE, key);
-        if (value !== null) {
-          await kvDelete(env.CACHE, key);
-        }
-        return value;
-      },
-
-      increment: async (key, ttl) => {
-        const current = await kvGetJson<number>(env.CACHE, key);
-        const next = (typeof current === "number" ? current : 0) + 1;
-        if (typeof current === "number") {
-          await env.CACHE.put(key, JSON.stringify(next));
-        } else {
-          await kvSetJson(env.CACHE, key, next, ttl);
-        }
-        return next;
-      },
-      set: async (key, value, ttl) => {
-        await kvSetJson(env.CACHE, key, value, ttl);
-      },
-    },
+    secondaryStorage: createSecondaryStorage(env.CACHE),
     secret: env.BETTER_AUTH_SECRET,
 
     session: {
@@ -242,8 +214,10 @@ export function createAuth(
         maxAge: 60,
       },
 
-      expiresIn: 604_800,
-      updateAge: 86_400,
+      expiresIn: SESSION_CONFIG.mobile.expiresIn,
+      updateAge:
+        SESSION_CONFIG.mobile.expiresIn -
+        (SESSION_CONFIG.web.expiresIn - SESSION_CONFIG.web.updateAge),
     },
     trustedOrigins: corsOrigins,
   } satisfies BetterAuthOptions;

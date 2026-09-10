@@ -43,6 +43,7 @@ export function TwoFactorSection() {
     setIsLoading(true);
     try {
       const { error } = await authClient.twoFactor.enable({
+        method: "otp",
         password,
       });
 

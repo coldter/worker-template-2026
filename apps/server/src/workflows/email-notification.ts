@@ -80,7 +80,7 @@ export class EmailNotificationWorkflow extends WorkflowEntrypoint<
 
     const recipientEmail = notificationData.email;
 
-    await step.do(
+    const { messageId } = await step.do(
       "send-email",
       { retries: { backoff: "exponential", delay: "5 seconds", limit: 3 } },
       async () => {
@@ -89,11 +89,12 @@ export class EmailNotificationWorkflow extends WorkflowEntrypoint<
         const brand = getBrandConfig(
           this.env as unknown as Record<string, string | undefined>
         );
-        await sendEmail({
+        return await sendEmail({
           apiKey: this.env.RESEND_API_KEY,
           from: `${brand.appName} <${this.env.EMAIL_FROM}>`,
           props: {
             body: notificationData.body ?? "",
+            brand,
             subject: notificationData.subject ?? "",
           },
           subject: notificationData.subject ?? "",
@@ -112,7 +113,11 @@ export class EmailNotificationWorkflow extends WorkflowEntrypoint<
           async (db) => {
             await db
               .update(schema.notifications)
-              .set({ sentAt: new Date(), status: "sent" })
+              .set({
+                providerMessageId: messageId ?? null,
+                sentAt: new Date(),
+                status: "sent",
+              })
               .where(eq(schema.notifications.id, event.payload.notificationId));
           },
           { logger: getDrizzleLogger() }

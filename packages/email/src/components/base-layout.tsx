@@ -14,13 +14,17 @@ import {
 import { EmailFooter } from "./footer";
 import { EmailLogo } from "./logo";
 
-interface BaseLayoutProps {
+export interface EmailBrandProps {
   appName?: string;
+  companyName?: string;
+  primaryColor?: string;
+  supportEmail?: string;
+}
+
+interface BaseLayoutProps extends EmailBrandProps {
   children: ReactNode;
   companyAddress?: string;
-  companyName?: string;
   previewText: string;
-  supportEmail?: string;
 }
 
 export function BaseLayout({
@@ -29,6 +33,7 @@ export function BaseLayout({
   appName,
   companyName,
   companyAddress,
+  primaryColor = BRAND_DEFAULTS.primaryColor,
   supportEmail,
 }: BaseLayoutProps) {
   return (
@@ -63,7 +68,7 @@ export function BaseLayout({
               colors: {
                 brand: {
                   DEFAULT: "#000000",
-                  primary: BRAND_DEFAULTS.primaryColor,
+                  primary: primaryColor,
                 },
                 slate: {
                   50: "#f8fafc",

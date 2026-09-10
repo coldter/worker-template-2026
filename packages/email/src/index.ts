@@ -1,3 +1,4 @@
+export type { EmailBrandProps } from "./components/base-layout";
 export * from "./lib/send";
 export * from "./templates/notification";
 export * from "./templates/password-reset";

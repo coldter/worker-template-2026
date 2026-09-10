@@ -1,8 +1,9 @@
 import React from "react";
 import { Heading, Section, Text } from "react-email";
-import { BaseLayout } from "../components/base-layout";
+import { BaseLayout, type EmailBrandProps } from "../components/base-layout";
 
 export interface VerificationOtpEmailProps {
+  brand?: EmailBrandProps;
   expiresIn: string;
   otp: string;
   type: "sign-in" | "email-verification" | "forget-password";
@@ -29,12 +30,13 @@ export function VerificationOtpEmail({
   otp,
   type,
   expiresIn,
+  brand,
 }: VerificationOtpEmailProps) {
   const title = TYPE_TITLES[type];
   const description = TYPE_DESCRIPTIONS[type];
 
   return (
-    <BaseLayout previewText={`Your verification code: ${otp}`}>
+    <BaseLayout previewText={`Your verification code: ${otp}`} {...brand}>
       <Section>
         <Heading className="text-[28px] font-bold text-slate-900 text-center m-0 mb-6 leading-tight">
           {title}

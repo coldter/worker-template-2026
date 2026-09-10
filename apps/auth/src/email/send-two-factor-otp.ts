@@ -1,4 +1,5 @@
 import { sendEmail, TwoFactorOtpEmail } from "@repo/email";
+import type { BrandConfig } from "@repo/shared/brand";
 import { getClientIpFromHeaders } from "@repo/shared/client-ip";
 import { logger } from "@repo/shared/logger";
 import { TWO_FACTOR_CONFIG } from "../constants";
@@ -30,7 +31,7 @@ function sanitizeHeaderText(
 export function createSendTwoFactorOTP(
   env: AuthBindings,
   ctx: MinimalExecutionContext,
-  brand: { appName: string }
+  brand: BrandConfig
 ) {
   return async (
     {
@@ -61,6 +62,7 @@ export function createSendTwoFactorOTP(
         apiKey: env.RESEND_API_KEY,
         from: `${brand.appName} <${env.EMAIL_FROM}>`,
         props: {
+          brand,
           expiresIn: `${TWO_FACTOR_CONFIG.twoFactorOtpPeriodMinutes} minutes`,
           ipAddress,
           otp,
