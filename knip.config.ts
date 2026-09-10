@@ -1,14 +1,12 @@
 import type { KnipConfig } from "knip";
 
 const config: KnipConfig = {
-  ignore: [".agents/skills/**/templates/**", ".claude/skills/**/templates/**"],
+  ignore: [".agents/skills/**/templates/**"],
   ignoreDependencies: [
     "cloudflare",
     "postcss",
     "tailwindcss",
     "tw-animate-css",
-    "react-dom",
-    "@types/react-dom",
     "drizzle-orm",
   ],
   ignoreExportsUsedInFile: true,
@@ -24,7 +22,12 @@ const config: KnipConfig = {
   tags: ["-lintignore"],
   workspaces: {
     "apps/server": {
-      entry: ["scripts/**/*.ts", "mocks/**/*.ts", "tests/**/*.ts"],
+      entry: [
+        "scripts/**/*.ts",
+        "mocks/**/*.ts",
+        "tests/**/*.ts",
+        "src/**/*.test.ts",
+      ],
       ignore: ["src/middlewares/**", "src/lib/**"],
       paths: {
         "@/*": ["./src/*"],
@@ -46,12 +49,15 @@ const config: KnipConfig = {
       project: ["src/**/*.{ts,tsx}", "*.{ts,tsx}"],
     },
     "packages/*": {
+      includeEntryExports: true,
       project: "**/*.ts",
     },
     "packages/email": {
+      includeEntryExports: true,
       project: "**/*.{ts,tsx}",
     },
     "packages/shared": {
+      includeEntryExports: true,
       project: "**/*.ts",
     },
   },

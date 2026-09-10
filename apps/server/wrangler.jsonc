@@ -110,8 +110,6 @@
         "max_retries": 3,
         "dead_letter_queue": "audit-log-dlq"
       },
-      // Without a consumer, dead-lettered audit events expire unseen after the
-      // queue retention period; this log-and-ack consumer makes them visible.
       {
         "queue": "audit-log-dlq",
         "max_batch_size": 100,

@@ -1,10 +1,4 @@
 #!/usr/bin/env bash
-# Generate workspace .dev.vars (worker secrets) and .env (non-wrangler) from root .env.
-# Run from repo root: bun run setup:env
-#
-# Non-secret env-specific vars (NODE_ENV, APP_URL, CORS_ORIGINS) live in
-# wrangler.jsonc "vars" and are overridden at deploy time via --var flags.
-# .dev.vars files only contain secrets needed by wrangler dev.
 
 set -euo pipefail
 
@@ -16,40 +10,61 @@ if [ ! -f "$ROOT_ENV" ]; then
   exit 1
 fi
 
-# Extract a variable value from root .env (skips comments and blank lines)
 get_var() {
   grep -E "^$1=" "$ROOT_ENV" | head -1 | cut -d'=' -f2-
 }
 
-# --- packages/db/.env (database credentials for drizzle-kit) ------------------
-cat > packages/db/.env <<EOF
-NODE_ENV=$(get_var NODE_ENV)
-DATABASE_URL=$(get_var DATABASE_URL)
-DATABASE_TEST_URL=$(get_var DATABASE_TEST_URL)
-EOF
-echo "  Generated packages/db/.env"
+write_env_file() {
+  local target="$1"
+  shift
+  local keys=("$@")
+  local generated
+  generated="$(mktemp)"
 
-# --- apps/server/.dev.vars (wrangler secrets only) ----------------------------
-cat > apps/server/.dev.vars <<EOF
-FIREBASE_SERVICE_ACCOUNT_KEY_BASE64=$(get_var FIREBASE_SERVICE_ACCOUNT_KEY_BASE64)
-RESEND_API_KEY=$(get_var RESEND_API_KEY)
-VAULT_MASTER_KEY=$(get_var VAULT_MASTER_KEY)
-EOF
-echo "  Generated apps/server/.dev.vars"
+  local key
+  for key in "${keys[@]}"; do
+    printf '%s=%s\n' "$key" "$(get_var "$key")" >> "$generated"
+  done
 
-# --- apps/auth/.dev.vars (wrangler secrets only) ------------------------------
-cat > apps/auth/.dev.vars <<EOF
-BETTER_AUTH_SECRET=$(get_var BETTER_AUTH_SECRET)
-RESEND_API_KEY=$(get_var RESEND_API_KEY)
-EOF
-echo "  Generated apps/auth/.dev.vars"
+  if [ -f "$target" ]; then
+    local line existing managed
+    while IFS= read -r line || [ -n "$line" ]; do
+      if [[ ! "$line" =~ ^[A-Za-z_][A-Za-z0-9_]*= ]]; then
+        continue
+      fi
+      existing="${line%%=*}"
+      managed=false
+      for key in "${keys[@]}"; do
+        if [ "$existing" = "$key" ]; then
+          managed=true
+          break
+        fi
+      done
+      if [ "$managed" = false ]; then
+        printf '%s\n' "$line" >> "$generated"
+      fi
+    done < "$target"
+  fi
 
-# --- apps/web/.env (Vite public vars) -----------------------------------------
-cat > apps/web/.env <<EOF
-NODE_ENV=$(get_var NODE_ENV)
-VITE_SERVER_URL=$(get_var VITE_SERVER_URL)
-EOF
-echo "  Generated apps/web/.env"
+  mv "$generated" "$target"
+  echo "  Generated $target"
+}
+
+write_env_file packages/db/.env \
+  NODE_ENV DATABASE_URL DATABASE_TEST_URL
+
+write_env_file apps/server/.dev.vars \
+  FIREBASE_SERVICE_ACCOUNT_KEY_BASE64 RESEND_API_KEY VAULT_MASTER_KEY
+
+write_env_file apps/auth/.dev.vars \
+  BETTER_AUTH_SECRET RESEND_API_KEY
+
+WEB_KEYS=(NODE_ENV APP_URL)
+while IFS= read -r key; do
+  WEB_KEYS+=("$key")
+done < <(grep -E '^VITE_[A-Za-z0-9_]+=' "$ROOT_ENV" | cut -d'=' -f1)
+
+write_env_file apps/web/.env "${WEB_KEYS[@]}"
 
 echo ""
 echo "Done. Worker .dev.vars (secrets) and .env files generated from root .env."

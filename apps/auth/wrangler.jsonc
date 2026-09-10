@@ -59,7 +59,6 @@
   },
   "vars": {
     "NODE_ENV": "development",
-    // Dev default keeps local signup flows working; deploys override via --var.
     "ENABLE_SIGNUP": "true",
     "APP_URL": "http://localhost:8787",
     "CORS_ORIGINS": "http://localhost:3001",

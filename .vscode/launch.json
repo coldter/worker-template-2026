@@ -8,8 +8,7 @@
       "port": 9229,
       "cwd": "${workspaceFolder}/apps/server",
       "resolveSourceMapLocations": ["${workspaceFolder}/**", "!**/node_modules/**"],
-      "attachSimplePort": 9229,
-      "preLaunchTask": "wrangler-dev-inspect"
+      "attachSimplePort": 9229
     },
     {
       "name": "[NODE] Debug Any Script",

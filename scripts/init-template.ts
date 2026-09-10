@@ -1,5 +1,5 @@
 #!/usr/bin/env bun
-// biome-ignore-all lint/suspicious/noConsole: CLI script — console output is the interface.
+// biome-ignore-all lint/suspicious/noConsole: CLI script
 
 import { readdir, readFile, stat, unlink, writeFile } from "node:fs/promises";
 import { dirname, join, relative, resolve } from "node:path";
@@ -246,12 +246,48 @@ async function updateEnvExample(path: string, answers: Answers): Promise<void> {
     next = setEnvVar(next, "APP_NAME", answers.appName);
     next = setEnvVar(next, "COMPANY_NAME", answers.companyName);
     next = setEnvVar(next, "SUPPORT_EMAIL", answers.supportEmail);
+    next = setEnvVar(next, "LOGO_TEXT", answers.appName);
     next = setEnvVar(next, "VITE_APP_NAME", answers.appName);
     next = setEnvVar(next, "VITE_COMPANY_NAME", answers.companyName);
     next = setEnvVar(next, "VITE_SUPPORT_EMAIL", answers.supportEmail);
-    next = setEnvVar(next, "EMAIL_FROM_NAME", answers.appName);
+    next = setEnvVar(next, "VITE_LOGO_TEXT", answers.appName);
     return next;
   });
+}
+
+function setJsonStringVar(content: string, key: string, value: string): string {
+  const pattern = new RegExp(`^(\\s*)"${key}"\\s*:\\s*"[^"]*"`, "gm");
+  return content.replace(
+    pattern,
+    (_match, indent: string) => `${indent}"${key}": ${JSON.stringify(value)}`
+  );
+}
+
+async function updateWranglerBrandVars(answers: Answers): Promise<void> {
+  const replacements: Record<string, string> = {
+    APP_NAME: answers.appName,
+    COMPANY_NAME: answers.companyName,
+    LOGO_TEXT: answers.appName,
+    SUPPORT_EMAIL: answers.supportEmail,
+  };
+
+  await Promise.all(
+    WORKER_APPS.map(async (worker) => {
+      const path = join(ROOT, "apps", worker, "wrangler.jsonc");
+      try {
+        await stat(path);
+      } catch {
+        return;
+      }
+      await rewriteFile(path, (content) => {
+        let next = content;
+        for (const [key, value] of Object.entries(replacements)) {
+          next = setJsonStringVar(next, key, value);
+        }
+        return next;
+      });
+    })
+  );
 }
 
 function setEnvVar(content: string, key: string, value: string): string {
@@ -319,12 +355,11 @@ async function main(): Promise<void> {
   console.info("Updating wrangler.jsonc worker names...");
   await renameWorkerNames(answers);
 
+  console.info("Updating wrangler.jsonc brand vars...");
+  await updateWranglerBrandVars(answers);
+
   console.info("Updating env examples...");
   await updateEnvExample(join(ROOT, ".env.example"), answers);
-
-  await updateEnvExample(join(ROOT, "apps/server/.dev.vars.example"), answers);
-  await updateEnvExample(join(ROOT, "apps/auth/.dev.vars.example"), answers);
-  await updateEnvExample(join(ROOT, "apps/web/.dev.vars.example"), answers);
 
   console.info("Updating README...");
   await updateReadme(answers);

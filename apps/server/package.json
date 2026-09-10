@@ -5,13 +5,8 @@
   "scripts": {
     "cf-typegen": "wrangler types --env-interface CloudflareBindings",
     "check-types": "tsc --noEmit",
-    "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate",
-    "db:mm:up": "drizzle-kit up",
-    "db:push": "drizzle-kit push",
     "db:seed": "tsx scripts/seeds/index.ts",
-    "db:studio": "drizzle-kit studio",
-    "deploy": "wrangler deploy --var NODE_ENV:production",
+    "deploy": "set -a && . ../../.env && set +a && wrangler deploy --var NODE_ENV:production --var \"APP_URL:${APP_URL:?APP_URL must be set in the root .env}\" --var \"CORS_ORIGINS:${CORS_ORIGINS:?CORS_ORIGINS must be set in the root .env}\"",
     "dev": "wrangler types --env-interface CloudflareBindings && wrangler dev --inspector-port 9229",
     "generate-openapi": "tsx scripts/generate-openapi.ts",
     "push:debug": "tsx scripts/push-debug.ts",
@@ -19,8 +14,7 @@
     "start": "wrangler dev",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "test:watch": "vitest",
-    "vault:debug": "tsx scripts/vault-debug.ts"
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@hono/zod-openapi": "^1.6.3",
