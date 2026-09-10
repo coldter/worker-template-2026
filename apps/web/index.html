@@ -12,6 +12,25 @@
     <meta content="/og_image.png" property="og:image">
 
     <meta content="#fff" name="theme-color">
+    <script>
+    "use strict";
+    (() => {
+      try {
+        const stored = JSON.parse(localStorage.getItem("ui-store") || "{}");
+        const theme = stored?.state?.theme;
+        const prefersDark = window.matchMedia(
+          "(prefers-color-scheme: dark)"
+        ).matches;
+        const resolved =
+          theme === "dark" || (theme !== "light" && prefersDark)
+            ? "dark"
+            : "light";
+        document.documentElement.classList.add(resolved);
+      } catch {
+        document.documentElement.classList.add("light");
+      }
+    })();
+    </script>
   </head>
 
   <body>

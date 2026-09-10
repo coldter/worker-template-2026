@@ -296,7 +296,8 @@ export const notificationService = {
         .limit(1);
 
       const globalValues = {
-        emailEnabled: input.emailEnabled ?? existingGlobal?.emailEnabled ?? true,
+        emailEnabled:
+          input.emailEnabled ?? existingGlobal?.emailEnabled ?? true,
         pushEnabled: input.pushEnabled ?? existingGlobal?.pushEnabled ?? true,
         smsEnabled: input.smsEnabled ?? existingGlobal?.smsEnabled ?? false,
         typePattern: "*",
@@ -329,8 +330,7 @@ export const notificationService = {
             const channels =
               override.channels ??
               (override.enabled ? [...NOTIFICATION_CHANNEL] : []);
-            const enabledChannels =
-              override.enabled === false ? [] : channels;
+            const enabledChannels = override.enabled === false ? [] : channels;
             const typeValues = {
               emailEnabled: enabledChannels.includes("email"),
               pushEnabled: enabledChannels.includes("push"),

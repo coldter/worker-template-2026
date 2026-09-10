@@ -347,9 +347,7 @@ describe("evaluate", () => {
   it("fails closed when a global deny condition throws", async () => {
     const result = await evaluate({
       ...defaults,
-      globalPolicies: [
-        denyRule("*", "*", [throwingCondition()]),
-      ],
+      globalPolicies: [denyRule("*", "*", [throwingCondition()])],
       principal: activePrincipal,
       resourcePolicies: [allowRule(["user"], ["read"])],
     });

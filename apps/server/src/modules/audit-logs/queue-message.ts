@@ -8,7 +8,7 @@ export const auditLogQueueMessageSchema = z.object({
   ipAddress: z.string().optional(),
   metadata: z.record(z.string(), z.unknown()).optional(),
 
-  occurredAt: z.string(),
+  occurredAt: z.string().datetime(),
   targetId: z.string().optional(),
   targetType: z.enum(["user", "role", "session"]).optional(),
   userAgent: z.string().optional(),
