@@ -17,12 +17,12 @@
   },
   "dependencies": {
     "@repo/shared": "workspace:*",
-    "drizzle-orm": "^1.0.0-rc.5-ab785fc",
+    "drizzle-orm": "1.0.0-rc.5-5935859",
     "pg": "^8.23.0"
   },
   "devDependencies": {
     "@types/pg": "^8.23.1",
-    "drizzle-kit": "^1.0.0-rc.5-ab785fc",
+    "drizzle-kit": "1.0.0-rc.5-5935859",
     "typescript": "^7.0.2"
   }
 }

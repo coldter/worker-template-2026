@@ -15,7 +15,7 @@
     "@repo/email": "workspace:*",
     "@repo/shared": "workspace:*",
     "better-auth": "^1.7.3",
-    "drizzle-orm": "^1.0.0-rc.5-ab785fc",
+    "drizzle-orm": "1.0.0-rc.5-5935859",
     "hono": "^4.13.7",
     "pg": "^8.23.0",
     "zod": "^4.6.1"

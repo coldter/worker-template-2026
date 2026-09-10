@@ -1,5 +1,5 @@
-import { Button, Heading, Section, Text } from "@react-email/components";
 import React from "react";
+import { Button, Heading, Section, Text } from "react-email";
 import { BaseLayout } from "../components/base-layout";
 
 interface NotificationEmailProps {

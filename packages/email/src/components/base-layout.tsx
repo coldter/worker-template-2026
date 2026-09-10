@@ -1,3 +1,6 @@
+import { BRAND_DEFAULTS } from "@repo/shared/brand";
+import type { ReactNode } from "react";
+import React from "react";
 import {
   Body,
   Container,
@@ -7,10 +10,7 @@ import {
   Preview,
   Section,
   Tailwind,
-} from "@react-email/components";
-import { BRAND_DEFAULTS } from "@repo/shared/brand";
-import type { ReactNode } from "react";
-import React from "react";
+} from "react-email";
 import { EmailFooter } from "./footer";
 import { EmailLogo } from "./logo";
 

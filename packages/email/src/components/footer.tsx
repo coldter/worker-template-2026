@@ -1,6 +1,6 @@
-import { Hr, Link, Section, Text } from "@react-email/components";
 import { BRAND_DEFAULTS } from "@repo/shared/brand";
 import React from "react";
+import { Hr, Link, Section, Text } from "react-email";
 
 interface EmailFooterProps {
   companyAddress?: string;
