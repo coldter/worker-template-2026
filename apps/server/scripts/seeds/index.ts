@@ -3,6 +3,10 @@ import { rolesSeed } from "./roles/seed";
 import { userSeed } from "./users/seed";
 
 const seed = async () => {
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("Refusing to seed a production database");
+  }
+
   console.info("Starting database seeding...\n");
 
   await rolesSeed();

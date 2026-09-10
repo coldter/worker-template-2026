@@ -6,7 +6,7 @@ This package is designed around a simple idea: keep policy definitions in code, 
 
 - RBAC: roles such as `admin`, `manager`, or `user`
 - ABAC: principal and resource attributes such as `status`, `emailVerified`, or `organizationId`
-- ReBAC: direct relationships such as `owner`, `member`, or `approver`
+- ReBAC: direct relationships such as `owner`, `member`, or `approver` (requires a `resolveRelation` implementation per route)
 
 The package is framework-agnostic at its core, with small adapters for Hono and Drizzle.
 
@@ -75,7 +75,7 @@ import {
 
 - `createAuthorize(registry, options)` builds the route middleware. The returned `authorize(resource, action)` is type-safe: both `resource` and `action` are narrowed to the registry's vocabulary, so typos fail to compile.
 - `getAuthorizedResource<T>(c)` retrieves the record loaded by `loadResource` so handlers do not need to refetch. It throws if invoked on a route that did not declare a `loadResource`, so handlers can rely on a non-null `T`.
-- `assertCanOrThrow(registry, principal, resource, action, opts?)` is an in-handler escape hatch that throws an `HTTPException` (401/403) on deny. Prefer middleware where possible.
+- `assertCanOrThrow(registry, principal, resource, action, opts?)` is an in-handler escape hatch that throws an `HTTPException` (401/403, or 404 when a required resource is missing) on deny. Prefer middleware where possible.
 - `authorize.unsafeBypassAuthorization(label)` opts a route out of authorization. The label MUST appear in `createAuthorize({ allowedBypassLabels: [...] })` or the call throws at construction time. Each request through a bypassed route emits a structured `authorization.bypass` warning to stderr.
 
 Note on `globalPolicies`: only `deny()` is exposed by the global builder. The engine is deny-first, and a global allow would invert that contract; resource-level `allow` policies are the right place to grant access.

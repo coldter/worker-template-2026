@@ -67,7 +67,6 @@ export interface CreateAuthorizeOptions<
   TEnv extends Record<string, unknown> = Record<string, unknown>,
 > {
   allowedBypassLabels?: readonly string[];
-  resolveDb?: (c: Context<TEnv>) => unknown;
   resolvePrincipal: (c: Context<TEnv>) => Principal | null | undefined;
 }
 

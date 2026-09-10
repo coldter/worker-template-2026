@@ -34,13 +34,9 @@ function resolvePrincipal(c: Context<AppEnv>): Principal | null {
   return principal;
 }
 
-function resolveDb(c: Context<AppEnv>) {
-  return c.var.db;
-}
-
 export const authorize = createAuthorize<
   typeof authorization.resources,
   AppEnv
->(authorization, { resolveDb, resolvePrincipal });
+>(authorization, { resolvePrincipal });
 
 export { getAuthorizedResource };
