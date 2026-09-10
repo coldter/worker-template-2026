@@ -8,6 +8,7 @@
   "scripts": {
     "build": "turbo build",
     "build:storybook": "turbo -F web build-storybook",
+    "cf-typegen": "turbo cf-typegen",
     "check": "ultracite check",
     "check-types": "turbo check-types",
     "clean": "rm -rf .turbo && git clean -xdf node_modules apps/*/node_modules packages/*/node_modules && rm bun.lock",

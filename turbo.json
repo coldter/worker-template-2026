@@ -13,8 +13,13 @@
     "deploy": {
       "cache": false
     },
+    "cf-typegen": {
+      "cache": true,
+      "inputs": ["wrangler.jsonc"],
+      "outputs": ["worker-configuration.d.ts"]
+    },
     "check-types": {
-      "dependsOn": ["^check-types"],
+      "dependsOn": ["^check-types", "cf-typegen"],
       "inputs": ["$TURBO_DEFAULT$", "tsconfig*.json", "../../tsconfig*.json"],
       "outputs": []
     },
