@@ -1,7 +1,5 @@
-import type { LegacyPermissionKey } from "@repo/shared/authorization";
 import { sql } from "drizzle-orm";
 import {
-  jsonb,
   pgTable,
   text,
   timestamp,
@@ -22,10 +20,6 @@ export const roles = pgTable(
       .primaryKey()
       .$defaultFn(() => generatePrefixedCuid(ID_PREFIXES.role)),
     name: varchar("name", { length: 32 }).notNull(),
-    permissions: jsonb("permissions")
-      .$type<LegacyPermissionKey[]>()
-      .default([])
-      .notNull(),
     slug: varchar("slug", { length: 32 }).notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .defaultNow()

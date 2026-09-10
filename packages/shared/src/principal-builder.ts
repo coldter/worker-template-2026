@@ -1,4 +1,3 @@
-import type { Principal } from "@repo/authorization";
 import {
   type AuthorizationAttributes,
   type AuthorizationPrincipal,
@@ -9,8 +8,6 @@ import {
 import { logger } from "./logger";
 
 export type AuthorizationUserInput = {
-  email?: string;
-  emailVerified?: boolean;
   id: string;
   roleSlugs?: string[] | null;
   status?: string;
@@ -44,11 +41,7 @@ export function buildAuthorizationPrincipal(
     : "deleted";
 
   return {
-    attributes: {
-      email: user.email ?? "",
-      emailVerified: user.emailVerified ?? false,
-      status,
-    },
+    attributes: { status },
     id: user.id,
     roles,
     ...(session.activeOrganizationId &&
@@ -61,16 +54,5 @@ export function buildAuthorizationPrincipal(
           },
         }
       : {}),
-  };
-}
-
-export function toBaseAuthorizationPrincipal(
-  principal: AuthorizationPrincipal
-): Principal {
-  return {
-    attributes: principal.attributes,
-    id: principal.id,
-    organization: principal.organization,
-    roles: principal.roles,
   };
 }

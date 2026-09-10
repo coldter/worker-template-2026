@@ -3,10 +3,7 @@ import {
   createAuthorize,
   getAuthorizedResource,
 } from "@repo/authorization/hono";
-import {
-  buildAuthorizationPrincipal,
-  toBaseAuthorizationPrincipal,
-} from "@repo/shared/authorization";
+import { buildAuthorizationPrincipal } from "@repo/shared/authorization";
 import type { Context } from "hono";
 import type { AppEnv } from "@/lib/context";
 import { authorization } from "./registry";
@@ -25,9 +22,7 @@ function resolvePrincipal(c: Context<AppEnv>): Principal | null {
 
   const user = c.get("user");
   const principal = user
-    ? toBaseAuthorizationPrincipal(
-        buildAuthorizationPrincipal(user, c.get("session") ?? {})
-      )
+    ? buildAuthorizationPrincipal(user, c.get("session") ?? {})
     : null;
 
   c.set("principal", principal);

@@ -1,24 +1,9 @@
 import { roles } from "@repo/db/schema";
-import { getLegacyPermissionKeysForRole } from "@repo/shared/authorization";
 import chalk from "chalk";
-import { type PermissionKey, SYSTEM_ROLES } from "@/modules/roles";
+import { SYSTEM_ROLES } from "@/modules/roles";
 import { db } from "../utils";
 
-const systemRoles: Array<{
-  slug: string;
-  name: string;
-  description: string;
-  permissions: PermissionKey[];
-}> = [
-  {
-    ...SYSTEM_ROLES.ADMIN,
-    permissions: getLegacyPermissionKeysForRole("admin"),
-  },
-  {
-    ...SYSTEM_ROLES.USER,
-    permissions: getLegacyPermissionKeysForRole("user") as PermissionKey[],
-  },
-];
+const systemRoles = [SYSTEM_ROLES.ADMIN, SYSTEM_ROLES.USER];
 
 export const rolesSeed = async () => {
   console.info("Seeding system roles...");
@@ -39,7 +24,6 @@ export const rolesSeed = async () => {
       await db.insert(roles).values({
         description: role.description,
         name: role.name,
-        permissions: role.permissions,
         slug: role.slug,
       });
 

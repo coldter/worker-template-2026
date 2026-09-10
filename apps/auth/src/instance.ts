@@ -27,7 +27,6 @@ import {
   type SessionWithAdditionalFields,
 } from "./lib/platform";
 import { createSecondaryStorage } from "./lib/secondary-storage";
-import { adminPlugin } from "./plugins/admin";
 import { loginSecurityPlugin } from "./plugins/login-security";
 import { createOrganizationPlugin } from "./plugins/organization-setup";
 import {
@@ -129,7 +128,6 @@ export function createAuth(
     plugins: [
       enhancedUserPlugin(db),
       loginSecurityPlugin(db),
-      adminPlugin(env.API),
       emailOTP({
         expiresIn: TWO_FACTOR_CONFIG.emailOtpExpiresIn,
         otpLength: TWO_FACTOR_CONFIG.otpLength,

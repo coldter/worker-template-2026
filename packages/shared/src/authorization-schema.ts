@@ -1,21 +1,16 @@
 import {
   createAuthSchema,
   type Principal,
-  principalAttribute,
   principalNotActive,
 } from "@repo/authorization";
 import { SYSTEM_ROLE_SLUG_VALUES } from "./roles";
 import { USER_STATUS_VALUES, type UserStatus } from "./users";
 
 export const auth = createAuthSchema({
-  globalPolicies: (p) => [p.deny("*").to("*").where(principalNotActive())],
+  globalPolicies: (p) => [
+    p.deny("*").to("*").whereCondition(principalNotActive()),
+  ],
   organizationRoles: ["owner", "admin", "member"],
-  principal: {
-    email: principalAttribute<string>(),
-    emailVerified: principalAttribute<boolean>(),
-    status: principalAttribute<UserStatus>(),
-  },
-  relations: ["owner", "member"],
   roles: ["admin", "user"],
   systemAdminRoles: ["admin"],
 });
@@ -24,8 +19,6 @@ export type AuthorizationRole = (typeof auth)["roleValues"][number];
 export type AuthorizationOrgRole = (typeof auth)["orgRoleValues"][number];
 export type AuthorizationAttributes = {
   status: UserStatus;
-  email: string;
-  emailVerified: boolean;
 };
 export type AuthorizationPrincipal = Principal<
   AuthorizationRole,
@@ -57,8 +50,9 @@ export interface UserAuthorizationResource {
   id: string;
 }
 
-export const usersAuthorization =
-  auth.createResource<UserAuthorizationResource>("user", {
+const usersAuthorization = auth.createResource<UserAuthorizationResource>()(
+  "user",
+  {
     actions: [
       "list",
       "view",
@@ -78,9 +72,10 @@ export const usersAuthorization =
       p.deny("*").to("deactivate").whereTargetIsSelf(),
     ],
     resolveOwner: (resource) => resource.id,
-  });
+  }
+);
 
-export const rolesAuthorization = auth.createResource<Record<string, never>>(
+const rolesAuthorization = auth.createResource<Record<string, never>>()(
   "role",
   {
     actions: ["list", "view", "update"],
@@ -88,30 +83,32 @@ export const rolesAuthorization = auth.createResource<Record<string, never>>(
   }
 );
 
-export const auditLogsAuthorization = auth.createResource<
-  Record<string, never>
->("audit-log", {
-  actions: ["list", "view"],
-  policies: (p) => [p.allow("admin").to("*")],
-});
+const auditLogsAuthorization = auth.createResource<Record<string, never>>()(
+  "audit-log",
+  {
+    actions: ["list", "view"],
+    policies: (p) => [p.allow("admin").to("*")],
+  }
+);
 
-export const notificationsAuthorization = auth.createResource<
-  Record<string, never>
->("notification", {
-  actions: [
-    "list",
-    "view",
-    "mark-read",
-    "mark-all-read",
-    "get-preferences",
-    "update-preferences",
-    "list-push-tokens",
-    "register-push-token",
-    "delete-push-token",
-    "get-unread-count",
-  ],
-  policies: (p) => [p.allow("admin").to("*"), p.allow("user").to("*")],
-});
+const notificationsAuthorization = auth.createResource<Record<string, never>>()(
+  "notification",
+  {
+    actions: [
+      "list",
+      "view",
+      "mark-read",
+      "mark-all-read",
+      "get-preferences",
+      "update-preferences",
+      "list-push-tokens",
+      "register-push-token",
+      "delete-push-token",
+      "get-unread-count",
+    ],
+    policies: (p) => [p.allow("admin").to("*"), p.allow("user").to("*")],
+  }
+);
 
 export const authorization = auth.buildRegistry({
   "audit-log": auditLogsAuthorization,

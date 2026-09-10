@@ -1,17 +1,21 @@
 import { Hono } from "hono";
 import { describe, expect, it } from "vitest";
 import { principalNotActive } from "../conditions";
-import { createAuthorize, getAuthorizedResource } from "../hono";
-import { createAuthSchema, principalAttribute } from "../schema";
+import {
+  AUTHORIZATION_GUARD,
+  createAuthorize,
+  getAuthorizedResource,
+  isAuthorizationGuard,
+} from "../hono";
+import { createAuthSchema } from "../schema";
 import type { Principal } from "../types";
 
 const NO_RESOURCE_LOADED = /no resource was loaded/;
-const NOT_IN_ALLOWED_BYPASS = /not in allowedBypassLabels/;
 
 const auth = createAuthSchema({
-  globalPolicies: (p) => [p.deny("*").to("*").where(principalNotActive())],
-  principal: { status: principalAttribute<string>() },
-  relations: [],
+  globalPolicies: (p) => [
+    p.deny("*").to("*").whereCondition(principalNotActive()),
+  ],
   roles: ["admin", "user"],
   systemAdminRoles: ["admin"],
 });
@@ -21,12 +25,21 @@ interface TestResource {
   id: string;
 }
 
-const testResource = auth.createResource<TestResource>("test", {
-  actions: ["list", "view", "create", "update", "delete"],
+const testResource = auth.createResource<TestResource>()("test", {
+  actions: ["list", "view", "create", "update", "delete", "explode"],
   policies: (p) => [
     p.allow("admin").to("*"),
     p.allow("user").to("list"),
     p.allow("user").to("view", "update").whereOwner(),
+    p
+      .allow("user")
+      .to("explode")
+      .where(
+        () => {
+          throw new Error("condition boom");
+        },
+        { effect: "principal_only" }
+      ),
   ],
   resolveOwner: (r) => r.createdBy,
 });
@@ -46,7 +59,6 @@ const userPrincipal: Principal = {
 
 describe("createAuthorize", () => {
   const authorize = createAuthorize(registry, {
-    allowedBypassLabels: ["health-check"],
     resolvePrincipal: (c) => {
       const principalHeader = c.req.header("x-test-principal");
       if (!principalHeader) {
@@ -146,44 +158,6 @@ describe("createAuthorize", () => {
     expect(res.status).toBe(403);
   });
 
-  it("unsafeBypassAuthorization passes for whitelisted label and warns", async () => {
-    const warnings: string[] = [];
-    const originalWarn = console.warn;
-    console.warn = (msg: string) => warnings.push(msg);
-    try {
-      const app = new Hono();
-      app.use("/health", authorize.unsafeBypassAuthorization("health-check"));
-      app.get("/health", (c) => c.json({ ok: true }));
-
-      const res = await app.request("/health");
-      expect(res.status).toBe(200);
-
-      expect(warnings).toHaveLength(1);
-      const parsed = JSON.parse(warnings[0] ?? "{}") as Record<string, unknown>;
-      expect(parsed.event).toBe("authorization.bypass");
-      expect(parsed.label).toBe("health-check");
-      expect(parsed.path).toBe("/health");
-      expect(parsed.method).toBe("GET");
-    } finally {
-      console.warn = originalWarn;
-    }
-  });
-
-  it("unsafeBypassAuthorization throws at construction for unregistered label", () => {
-    expect(() => {
-      authorize.unsafeBypassAuthorization("unknown-label");
-    }).toThrow(NOT_IN_ALLOWED_BYPASS);
-  });
-
-  it("createAuthorize without allowedBypassLabels rejects every bypass call", () => {
-    const strictAuthorize = createAuthorize(registry, {
-      resolvePrincipal: () => null,
-    });
-    expect(() => {
-      strictAuthorize.unsafeBypassAuthorization("anything");
-    }).toThrow(NOT_IN_ALLOWED_BYPASS);
-  });
-
   it("propagates loadResource errors to Hono onError (does not 403)", async () => {
     const app = new Hono();
     app.onError((err, c) =>
@@ -229,5 +203,74 @@ describe("createAuthorize", () => {
     expect(body).toEqual({
       error: { code: "FORBIDDEN", message: "Forbidden" },
     });
+  });
+
+  it("returns NOT_FOUND when an allowed action targets a missing resource", async () => {
+    const app = new Hono();
+    app.use(
+      "/test/:id",
+      authorize("test", "view", {
+        loadResource: async () => null,
+      })
+    );
+    app.get("/test/:id", (c) => c.json({ ok: true }));
+
+    const res = await app.request("/test/res_1", {
+      headers: { "x-test-principal": JSON.stringify(adminPrincipal) },
+    });
+    expect(res.status).toBe(404);
+    const body = await res.json();
+    expect(body).toEqual({
+      error: { code: "NOT_FOUND", message: "Not Found" },
+    });
+  });
+
+  it("returns INTERNAL_ERROR with status 500 when a condition throws", async () => {
+    const app = new Hono();
+    app.use("/test", authorize("test", "explode"));
+    app.get("/test", (c) => c.json({ ok: true }));
+
+    const res = await app.request("/test", {
+      headers: { "x-test-principal": JSON.stringify(userPrincipal) },
+    });
+    expect(res.status).toBe(500);
+    const body = await res.json();
+    expect(body).toEqual({
+      error: { code: "INTERNAL_ERROR", message: "Internal Server Error" },
+    });
+  });
+});
+
+describe("isAuthorizationGuard", () => {
+  it("createAuthorize marks every returned middleware", () => {
+    const authorize = createAuthorize(registry, {
+      resolvePrincipal: () => null,
+    });
+
+    expect(isAuthorizationGuard(authorize("test", "list"))).toBe(true);
+    expect(
+      isAuthorizationGuard(
+        authorize("test", "view", {
+          loadResource: async () => ({ createdBy: "u1", id: "u1" }),
+        })
+      )
+    ).toBe(true);
+  });
+
+  it("detects functions marked with AUTHORIZATION_GUARD", () => {
+    const marked = Object.assign(async () => undefined, {
+      [AUTHORIZATION_GUARD]: true,
+    });
+    expect(isAuthorizationGuard(marked)).toBe(true);
+  });
+
+  it("rejects functions without the guard marker", () => {
+    expect(isAuthorizationGuard(async () => undefined)).toBe(false);
+  });
+
+  it("rejects values that are not functions", () => {
+    expect(isAuthorizationGuard({ [AUTHORIZATION_GUARD]: true })).toBe(false);
+    expect(isAuthorizationGuard(null)).toBe(false);
+    expect(isAuthorizationGuard(undefined)).toBe(false);
   });
 });

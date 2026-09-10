@@ -9,7 +9,6 @@ export const ID_PREFIXES = {
   notification: "ntf",
   organization: "org",
   pushToken: "ptk",
-  relation: "rel",
   role: "rol",
   session: "ses",
   team: "tm",

@@ -1,13 +1,11 @@
 import { describe, expect, expectTypeOf, it } from "vitest";
 import { principalNotActive } from "../conditions";
-import { createAuthSchema, principalAttribute } from "../schema";
+import { createAuthSchema } from "../schema";
 
 describe("createAuthSchema", () => {
   it("infers role literal types", () => {
     const auth = createAuthSchema({
       globalPolicies: () => [],
-      principal: { status: principalAttribute<string>() },
-      relations: [],
       roles: ["admin", "user"],
       systemAdminRoles: ["admin"],
     });
@@ -18,54 +16,56 @@ describe("createAuthSchema", () => {
     >();
   });
 
-  it("infers relation literal types", () => {
-    const auth = createAuthSchema({
-      globalPolicies: () => [],
-      principal: { status: principalAttribute<string>() },
-      relations: ["owner", "member"],
-      roles: ["admin"],
-      systemAdminRoles: ["admin"],
-    });
-
-    expect(auth.relationValues).toEqual(["owner", "member"]);
-  });
-
   it("supports optional organizationRoles", () => {
     const auth = createAuthSchema({
       globalPolicies: () => [],
       organizationRoles: ["owner", "admin", "member"],
-      principal: { status: principalAttribute<string>() },
-      relations: [],
       roles: ["admin"],
       systemAdminRoles: ["admin"],
     });
 
     expect(auth.orgRoleValues).toEqual(["owner", "admin", "member"]);
+    expectTypeOf(auth.orgRoleValues).toEqualTypeOf<
+      readonly ("owner" | "admin" | "member")[]
+    >();
   });
 
-  it("createResource method exists", () => {
+  it("createResource is curried and returns a builder function", () => {
     const auth = createAuthSchema({
       globalPolicies: () => [],
-      principal: { status: principalAttribute<string>() },
-      relations: [],
       roles: ["admin"],
       systemAdminRoles: ["admin"],
     });
 
     expect(typeof auth.createResource).toBe("function");
+    expect(typeof auth.createResource<{ id: string }>()).toBe("function");
     expect(typeof auth.buildRegistry).toBe("function");
   });
 
   it("global policies are stored", () => {
     const auth = createAuthSchema({
-      globalPolicies: (p) => [p.deny("*").to("*").where(principalNotActive())],
-      principal: { status: principalAttribute<string>() },
-      relations: [],
+      globalPolicies: (p) => [
+        p.deny("*").to("*").whereCondition(principalNotActive()),
+      ],
       roles: ["admin"],
       systemAdminRoles: ["admin"],
     });
 
     expect(auth.globalPolicies).toHaveLength(1);
     expect(auth.globalPolicies[0]?.effect).toBe("deny");
+  });
+
+  it("global deny requires to() before conditions at the type level", () => {
+    const auth = createAuthSchema({
+      globalPolicies: (p) => {
+        // @ts-expect-error -- whereCondition() is not available before to()
+        p.deny("*").whereCondition(principalNotActive());
+        return [];
+      },
+      roles: ["admin"],
+      systemAdminRoles: ["admin"],
+    });
+
+    expect(auth.globalPolicies).toEqual([]);
   });
 });

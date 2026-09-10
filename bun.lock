@@ -17,7 +17,6 @@
     "apps/auth": {
       "name": "auth",
       "dependencies": {
-        "@repo/authorization": "workspace:*",
         "@repo/db": "workspace:*",
         "@repo/email": "workspace:*",
         "@repo/shared": "workspace:*",
@@ -151,11 +150,9 @@
         "vitest": "^5.0.0",
       },
       "peerDependencies": {
-        "drizzle-orm": "^0.45.2 || >=1.0.0-rc.1 <2.0.0",
         "hono": "^4.0.0",
       },
       "optionalPeers": [
-        "drizzle-orm",
         "hono",
       ],
     },

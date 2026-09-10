@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { principalNotActive } from "../conditions";
-import { evaluate } from "../evaluator";
+import { evaluate, evaluateOptimistic } from "../evaluator";
 import type {
   Condition,
   ConditionContext,
@@ -116,7 +116,6 @@ function throwingCondition(): Condition {
 const defaults = {
   action: "read",
   globalPolicies: [] as PolicyRule[],
-  resourceName: "document",
   resourcePolicies: [] as PolicyRule[],
   systemAdminRoles: [] as string[],
 } as const;
@@ -250,7 +249,6 @@ describe("evaluate", () => {
       ...defaults,
       principal: activePrincipal,
       resourcePolicies: [allowRule(["user"], ["read"], [ownerCondition()])],
-      // no resource provided
     });
 
     expect(result).toEqual({ allowed: false, reason: "NO_MATCHING_POLICY" });
@@ -264,7 +262,6 @@ describe("evaluate", () => {
         denyRule(["user"], ["read"], [ownerCondition()]),
         allowRule(["user"], ["read"]),
       ],
-      // no resource; deny policy has a requires_resource condition so it is skipped
     });
     expect(result.allowed).toBe(true);
   });
@@ -360,6 +357,18 @@ describe("evaluate", () => {
       principal: activePrincipal,
       resourcePolicies: [
         denyRule(["user"], ["read"], [throwingCondition()]),
+        allowRule(["user"], ["read"]),
+      ],
+    });
+    expect(result).toEqual({ allowed: false, reason: "EVALUATION_ERROR" });
+  });
+
+  it("returns EVALUATION_ERROR immediately when an allow condition throws before a later match", async () => {
+    const result = await evaluate({
+      ...defaults,
+      principal: activePrincipal,
+      resourcePolicies: [
+        allowRule(["user"], ["read"], [throwingCondition()]),
         allowRule(["user"], ["read"]),
       ],
     });
@@ -491,8 +500,6 @@ describe("evaluate", () => {
 
         resourcePolicies: [allowRule(["member", "admin"], ["read"])],
         systemAdminRoles: ["admin"],
-        // Note: principalWithAdminAndMember has no organization context,
-        // so without the bypass this would deny with ORG_CONTEXT_MISSING.
       });
       expect(result.allowed).toBe(true);
     });
@@ -599,6 +606,34 @@ describe("evaluate", () => {
         ],
       });
       expect(result).toEqual({ allowed: false, reason: "NO_MATCHING_POLICY" });
+    });
+  });
+});
+
+describe("evaluateOptimistic", () => {
+  it("skips requires_resource conditions so conditional allows match", async () => {
+    const result = await evaluateOptimistic({
+      ...defaults,
+      principal: activePrincipal,
+      resourcePolicies: [allowRule(["user"], ["read"], [ownerCondition()])],
+    });
+    expect(result).toEqual({
+      allowed: true,
+      matchedPolicy: "allow:user:read",
+    });
+  });
+
+  it("still evaluates principal_only conditions", async () => {
+    const result = await evaluateOptimistic({
+      ...defaults,
+      globalPolicies: [denyRule("*", "*", [principalNotActive()])],
+      principal: inactivePrincipal,
+      resourcePolicies: [allowRule(["user"], ["read"], [ownerCondition()])],
+    });
+    expect(result).toEqual({
+      allowed: false,
+      matchedPolicy: "deny:*:*",
+      reason: "GLOBAL_DENY",
     });
   });
 });

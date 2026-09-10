@@ -1,3 +1,4 @@
+import { isAuthorizationGuard } from "@repo/authorization/hono";
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("pg", () => ({ Client: class {}, default: {}, Pool: class {} }));
@@ -11,15 +12,18 @@ import notificationsRoutes from "@/modules/notifications/routes";
 import rolesRoutes from "@/modules/roles/routes";
 import usersRoutes from "@/modules/users/routes";
 
-function hasGuard(route: { middleware?: unknown }): boolean {
-  return Array.isArray(route.middleware) && route.middleware.length > 0;
+function hasAuthorizationGuard(route: { middleware?: unknown }): boolean {
+  return (
+    Array.isArray(route.middleware) &&
+    route.middleware.some((middleware) => isAuthorizationGuard(middleware))
+  );
 }
 
 describe("route authorization coverage", () => {
   it("all user routes have authorization middleware", () => {
     for (const [name, route] of Object.entries(usersRoutes)) {
       expect(
-        hasGuard(route as { middleware?: unknown }),
+        hasAuthorizationGuard(route as { middleware?: unknown }),
         `users.${name} missing authorization guard`
       ).toBe(true);
     }
@@ -28,7 +32,7 @@ describe("route authorization coverage", () => {
   it("all role routes have authorization middleware", () => {
     for (const [name, route] of Object.entries(rolesRoutes)) {
       expect(
-        hasGuard(route as { middleware?: unknown }),
+        hasAuthorizationGuard(route as { middleware?: unknown }),
         `roles.${name} missing authorization guard`
       ).toBe(true);
     }
@@ -37,7 +41,7 @@ describe("route authorization coverage", () => {
   it("all audit-log routes have authorization middleware", () => {
     for (const [name, route] of Object.entries(auditLogsRoutes)) {
       expect(
-        hasGuard(route as { middleware?: unknown }),
+        hasAuthorizationGuard(route as { middleware?: unknown }),
         `audit-logs.${name} missing authorization guard`
       ).toBe(true);
     }
@@ -46,7 +50,7 @@ describe("route authorization coverage", () => {
   it("all notification routes have authorization middleware", () => {
     for (const [name, route] of Object.entries(notificationsRoutes)) {
       expect(
-        hasGuard(route as { middleware?: unknown }),
+        hasAuthorizationGuard(route as { middleware?: unknown }),
         `notifications.${name} missing authorization guard`
       ).toBe(true);
     }

@@ -1,20 +1,14 @@
 import { describe, expect, it } from "vitest";
-import {
-  AuthorizationError,
-  createAuthSchema,
-  principalAttribute,
-  principalNotActive,
-} from "../index";
+import { principalNotActive } from "../conditions";
+import { AuthorizationError } from "../errors";
+import { createAuthSchema } from "../schema";
 import type { Principal } from "../types";
 
 describe("integration: single-tenant", () => {
   const auth = createAuthSchema({
-    globalPolicies: (p) => [p.deny("*").to("*").where(principalNotActive())],
-    principal: {
-      email: principalAttribute<string>(),
-      status: principalAttribute<"active" | "inactive">(),
-    },
-    relations: [],
+    globalPolicies: (p) => [
+      p.deny("*").to("*").whereCondition(principalNotActive()),
+    ],
     roles: ["admin", "user"],
     systemAdminRoles: ["admin"],
   });
@@ -25,7 +19,7 @@ describe("integration: single-tenant", () => {
     id: string;
   }
 
-  const userResource = auth.createResource<UserResource>("user", {
+  const userResource = auth.createResource<UserResource>()("user", {
     actions: ["list", "view", "create", "update", "delete", "deactivate"],
     policies: (p) => [
       p.allow("admin").to("*"),
@@ -58,7 +52,7 @@ describe("integration: single-tenant", () => {
   };
 
   it("admin can do everything", async () => {
-    const actions = ["list", "view", "create", "update", "deactivate"];
+    const actions = ["list", "view", "create", "update", "deactivate"] as const;
     const decisions = await Promise.all(
       actions.map((action) =>
         registry.can(admin, "user", action, {
@@ -184,7 +178,7 @@ describe("integration: single-tenant", () => {
     const unknownRolePrincipal: Principal = {
       attributes: { email: "unknown@test.com", status: "active" },
       id: "usr_unknown",
-      roles: ["unknown_role" as string],
+      roles: ["unknown_role"],
     };
 
     const decision = await registry.can(unknownRolePrincipal, "user", "list");
@@ -261,12 +255,10 @@ describe("integration: single-tenant", () => {
 
 describe("integration: multi-tenant", () => {
   const auth = createAuthSchema({
-    globalPolicies: (p) => [p.deny("*").to("*").where(principalNotActive())],
+    globalPolicies: (p) => [
+      p.deny("*").to("*").whereCondition(principalNotActive()),
+    ],
     organizationRoles: ["owner", "admin", "member"],
-    principal: {
-      status: principalAttribute<"active" | "inactive">(),
-    },
-    relations: [],
     roles: ["admin", "member"],
     systemAdminRoles: ["admin"],
   });
@@ -277,7 +269,7 @@ describe("integration: multi-tenant", () => {
     organizationId: string;
   }
 
-  const projectResource = auth.createResource<ProjectResource>("project", {
+  const projectResource = auth.createResource<ProjectResource>()("project", {
     actions: ["list", "view", "create", "update", "delete"],
     policies: (p) => [
       p.allow("admin").to("*"),
@@ -296,14 +288,14 @@ describe("integration: multi-tenant", () => {
     id: "usr_org_member",
     organization: { id: "org_1", role: "member" },
     roles: ["member"],
-  } as unknown as Principal;
+  };
 
   const orgOwner: Principal = {
     attributes: { status: "active" },
     id: "usr_org_owner",
     organization: { id: "org_1", role: "owner" },
     roles: ["member"],
-  } as unknown as Principal;
+  };
 
   const sysAdmin: Principal = {
     attributes: { status: "active" },
@@ -376,7 +368,7 @@ describe("integration: multi-tenant", () => {
 
   it("user with no org context is denied for all org-scoped actions", async () => {
     const decisions = await Promise.all(
-      ["list", "view", "create", "update", "delete"].map((action) =>
+      (["list", "view", "create", "update", "delete"] as const).map((action) =>
         registry.can(noOrgUser, "project", action, {
           resource: project1,
         })
@@ -403,7 +395,7 @@ describe("integration: multi-tenant", () => {
 
   it("system admin can perform all actions without org context", async () => {
     const decisions = await Promise.all(
-      ["list", "view", "create", "update", "delete"].map((action) =>
+      (["list", "view", "create", "update", "delete"] as const).map((action) =>
         registry.can(sysAdmin, "project", action, {
           resource: project1,
         })

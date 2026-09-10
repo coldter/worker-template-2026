@@ -1,5 +1,6 @@
 import type { authorization } from "@repo/shared/authorization";
 import { queryOptions, useQuery } from "@tanstack/react-query";
+import { useCallback } from "react";
 import { getAuthorizationCapabilities } from "@/api.gen/sdk.gen";
 
 export type Capability = keyof Awaited<
@@ -12,6 +13,8 @@ export const authorizationKeys = {
   capabilities: () => [...authorizationKeys.all, "capabilities"] as const,
 };
 
+const EMPTY_CAPABILITIES: Record<string, boolean> = {};
+
 export const authorizationCapabilitiesQueryOptions = () =>
   queryOptions({
     queryFn: async ({ signal }) => {
@@ -20,14 +23,14 @@ export const authorizationCapabilitiesQueryOptions = () =>
     },
     queryKey: authorizationKeys.capabilities(),
     retry: 1,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 60 * 1000,
   });
 
 export function useAuthorization() {
   const query = useQuery(authorizationCapabilitiesQueryOptions());
 
   return {
-    capabilities: query.data ?? {},
+    capabilities: query.data ?? EMPTY_CAPABILITIES,
     isLoading: query.isLoading,
     refetch: query.refetch,
   };
@@ -49,14 +52,19 @@ export function useCapabilityChecker(): {
   isLoading: boolean;
 } {
   const { capabilities, isLoading } = useAuthorization();
-  const check = (capability: Capability | null | undefined): boolean => {
-    if (capability === null || capability === undefined) {
-      return true;
-    }
-    if (isLoading) {
-      return false;
-    }
-    return capabilities[capability] === true;
-  };
+
+  const check = useCallback(
+    (capability: Capability | null | undefined): boolean => {
+      if (capability === null || capability === undefined) {
+        return true;
+      }
+      if (isLoading) {
+        return false;
+      }
+      return capabilities[capability] === true;
+    },
+    [capabilities, isLoading]
+  );
+
   return { check, isLoading };
 }

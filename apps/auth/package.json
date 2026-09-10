@@ -10,7 +10,6 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
-    "@repo/authorization": "workspace:*",
     "@repo/db": "workspace:*",
     "@repo/email": "workspace:*",
     "@repo/shared": "workspace:*",

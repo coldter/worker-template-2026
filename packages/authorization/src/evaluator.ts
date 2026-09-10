@@ -10,25 +10,27 @@ import type {
 export interface EvaluateInput {
   action: string;
   globalPolicies: PolicyRule[];
-
-  ignoreResourceConditions?: boolean;
   principal: Principal | null | undefined;
-
   resolveOrganization?: (resource: never) => string | null | undefined;
-  resolveRelation?: (
-    subjectType: string,
-    subjectId: string,
-    relation: string,
-    objectType: string,
-    objectId: string
-  ) => Promise<boolean>;
   resource?: unknown;
-  resourceName: string;
   resourcePolicies: PolicyRule[];
   systemAdminRoles: readonly string[];
 }
 
 export async function evaluate(input: EvaluateInput): Promise<PolicyDecision> {
+  return runEvaluation(input, false);
+}
+
+export async function evaluateOptimistic(
+  input: EvaluateInput
+): Promise<PolicyDecision> {
+  return runEvaluation(input, true);
+}
+
+async function runEvaluation(
+  input: EvaluateInput,
+  optimistic: boolean
+): Promise<PolicyDecision> {
   const {
     principal,
     action,
@@ -37,15 +39,11 @@ export async function evaluate(input: EvaluateInput): Promise<PolicyDecision> {
     systemAdminRoles,
     resolveOrganization,
     resource,
-    resolveRelation,
-    ignoreResourceConditions = false,
   } = input;
 
   if (!principal) {
     return { allowed: false, reason: "UNAUTHENTICATED" };
   }
-
-  let sawEvaluationError = false;
 
   for (const policy of globalPolicies) {
     if (policy.effect !== "deny") {
@@ -56,7 +54,7 @@ export async function evaluate(input: EvaluateInput): Promise<PolicyDecision> {
       principal,
       action,
       undefined,
-      resolveRelation
+      false
     );
     if (conditionError) {
       return { allowed: false, reason: "EVALUATION_ERROR" };
@@ -100,7 +98,7 @@ export async function evaluate(input: EvaluateInput): Promise<PolicyDecision> {
       principal,
       action,
       resource,
-      resolveRelation
+      false
     );
     if (conditionError) {
       return { allowed: false, reason: "EVALUATION_ERROR" };
@@ -122,7 +120,7 @@ export async function evaluate(input: EvaluateInput): Promise<PolicyDecision> {
     if (
       hasResourceConditions(policy) &&
       resource === undefined &&
-      !ignoreResourceConditions
+      !optimistic
     ) {
       continue;
     }
@@ -146,21 +144,16 @@ export async function evaluate(input: EvaluateInput): Promise<PolicyDecision> {
       principal,
       action,
       resource,
-      resolveRelation,
-      ignoreResourceConditions
+      optimistic
     );
     if (conditionError) {
-      sawEvaluationError = true;
-      continue;
+      return { allowed: false, reason: "EVALUATION_ERROR" };
     }
     if (matched) {
       return { allowed: true, matchedPolicy: policy.label };
     }
   }
 
-  if (sawEvaluationError) {
-    return { allowed: false, reason: "EVALUATION_ERROR" };
-  }
   if (orgDenyReason) {
     return { allowed: false, reason: orgDenyReason };
   }
@@ -192,8 +185,7 @@ async function matchPolicy(
   principal: Principal,
   action: string,
   resource: unknown | undefined,
-  resolveRelation?: EvaluateInput["resolveRelation"],
-  ignoreResourceConditions = false
+  optimistic: boolean
 ): Promise<MatchResult> {
   if (!roleMatches(policy, principal)) {
     return { matched: false };
@@ -204,7 +196,7 @@ async function matchPolicy(
   }
 
   for (const condition of policy.conditions) {
-    if (condition.effect === "requires_resource" && ignoreResourceConditions) {
+    if (condition.effect === "requires_resource" && optimistic) {
       continue;
     }
 
@@ -214,7 +206,6 @@ async function matchPolicy(
 
     const ctx: ConditionContext = {
       principal,
-      resolveRelation,
       resource,
     };
     try {
