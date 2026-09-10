@@ -23,32 +23,33 @@
     "vault:debug": "tsx scripts/vault-debug.ts"
   },
   "dependencies": {
-    "@hono/zod-openapi": "^1.6.1",
+    "@hono/zod-openapi": "^1.6.3",
     "@repo/authorization": "workspace:*",
     "@repo/db": "workspace:*",
     "@repo/email": "workspace:*",
     "@repo/shared": "workspace:*",
-    "@scalar/hono-api-reference": "^0.12.0",
-    "better-auth": "^1.7.2",
+    "@scalar/hono-api-reference": "^0.12.1",
+    "better-auth": "^1.7.3",
     "drizzle-orm": "^1.0.0-rc.5-ab785fc",
-    "hono": "^4.13.5",
+    "hono": "^4.13.7",
     "pg": "^8.23.0",
     "pg-error-enum": "^2.0.1",
-    "react": "^19.2.8",
-    "react-dom": "^19.2.8",
-    "zod": "^4.5.4"
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "zod": "^4.6.1"
   },
   "devDependencies": {
-    "@cloudflare/vitest-pool-workers": "^0.22.0",
+    "@cloudflare/vitest-plugin": "^1.1.6",
     "@faker-js/faker": "^10.6.0",
-    "@inquirer/prompts": "^8.7.0",
+    "@inquirer/prompts": "^8.7.2",
     "@types/pg": "^8.23.1",
+    "@vitest/coverage-v8": "^4.1.11",
     "chalk": "^6.0.0",
     "cli-highlight": "^2.1.11",
     "drizzle-kit": "^1.0.0-rc.5-ab785fc",
     "type-fest": "^5.9.0",
     "typescript": "^7.0.2",
     "vitest": "^4.1.11",
-    "wrangler": "^4.128.0"
+    "wrangler": "^4.130.0"
   }
 }
