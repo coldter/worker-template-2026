@@ -1,10 +1,16 @@
-import { withDrizzleClient } from "@repo/db";
 import type { createDrizzleClient } from "@repo/db/client";
+import { withDrizzleClient } from "@repo/db/client";
 import { logger } from "@repo/shared/logger";
 import { DrizzleLogger } from "@repo/shared/logger-drizzle";
 import { Hono } from "hono";
 import { trimTrailingSlash } from "hono/trailing-slash";
+import { z } from "zod";
 import { type AuthBindings, createAuth } from "./instance";
+
+const cfPropertiesSchema = z.object({
+  colo: z.string().optional().catch(undefined),
+  country: z.string().optional().catch(undefined),
+});
 
 type AuthEnv = {
   Bindings: CloudflareBindings;
@@ -24,14 +30,14 @@ app.use("*", async (c, next) => {
 
   try {
     const { path } = c.req;
-    const { cf } = c.req.raw;
+    const cf = cfPropertiesSchema.safeParse(c.req.raw.cf);
     c.env.ANALYTICS?.writeDataPoint({
       blobs: [
         "auth",
         c.req.method,
         path,
-        typeof cf?.country === "string" ? cf.country : null,
-        typeof cf?.colo === "string" ? cf.colo : null,
+        cf.data?.country ?? null,
+        cf.data?.colo ?? null,
         c.env.CF_VERSION_METADATA?.id ?? null,
       ],
       doubles: [c.res.status, duration],
@@ -62,6 +68,7 @@ app.use("*", async (c, next) => {
 });
 
 app.all("/*", async (c) => {
+  // SAFETY: the API service binding targets the server worker's ApiEntrypoint, so it exposes the ApiBindingRpc methods at runtime.
   const auth = createAuth(c.var.db, c.env as AuthBindings, c.executionCtx);
   return auth.handler(c.req.raw);
 });

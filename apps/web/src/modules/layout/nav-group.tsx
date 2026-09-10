@@ -39,27 +39,25 @@ function useFilteredItems(items: NavItem[]): NavItem[] {
 
   return useMemo(() => {
     const filterItems = (itemList: NavItem[]): NavItem[] =>
-      itemList
-        .map((item) => {
-          if (!check(item.permission)) {
-            return null;
+      itemList.flatMap<NavItem>((item) => {
+        if (!check(item.permission)) {
+          return [];
+        }
+
+        if (item.items) {
+          const filteredChildren = item.items.filter((child) =>
+            check(child.permission)
+          );
+
+          if (filteredChildren.length === 0) {
+            return [];
           }
 
-          if (item.items) {
-            const filteredChildren = item.items.filter((child) =>
-              check(child.permission)
-            );
+          return [{ ...item, items: filteredChildren }];
+        }
 
-            if (filteredChildren.length === 0) {
-              return null;
-            }
-
-            return { ...item, items: filteredChildren };
-          }
-
-          return item;
-        })
-        .filter((item): item is NavItem => item !== null);
+        return [item];
+      });
 
     return filterItems(items);
   }, [items, check]);

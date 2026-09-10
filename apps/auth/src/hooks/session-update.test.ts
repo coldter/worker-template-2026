@@ -1,11 +1,31 @@
 import type { DrizzleClient } from "@repo/db";
 import { describe, expect, test } from "vitest";
 import { SESSION_CONFIG } from "../lib/platform";
-import { createSessionUpdateBeforeHook } from "./session-update";
+import {
+  createSessionUpdateBeforeHook,
+  type SessionUpdateHookContext,
+} from "./session-update";
 
-const db = {} as DrizzleClient;
+function createDatabaseStub(): DrizzleClient {
+  // SAFETY: both tests resolve before the hook reaches a database call, so the stub value is never read.
+  return {} as DrizzleClient;
+}
 
-function createContext(platform: "mobile" | "web") {
+type SessionUpdateResult = Awaited<
+  ReturnType<ReturnType<typeof createSessionUpdateBeforeHook>>
+>;
+
+function readExpiresAt(result: SessionUpdateResult): number {
+  const { expiresAt } = result.data;
+  if (!(expiresAt instanceof Date)) {
+    throw new Error("expected the hook to return an expiresAt");
+  }
+  return expiresAt.getTime();
+}
+
+const db = createDatabaseStub();
+
+function createContext(platform: "mobile" | "web"): SessionUpdateHookContext {
   return {
     context: {
       session: {
@@ -13,15 +33,7 @@ function createContext(platform: "mobile" | "web") {
         user: { id: "usr_test" },
       },
     },
-  } as unknown as { headers?: Headers };
-}
-
-function readExpiresAt(result: unknown): number {
-  const { expiresAt } = (result as { data?: { expiresAt?: Date } }).data ?? {};
-  if (!expiresAt) {
-    throw new Error("expected the hook to return an expiresAt");
-  }
-  return expiresAt.getTime();
+  };
 }
 
 describe("createSessionUpdateBeforeHook", () => {

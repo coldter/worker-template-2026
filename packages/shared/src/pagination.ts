@@ -64,7 +64,7 @@ export interface PaginatedResponse<T> {
 
 export const PAGINATION_DEFAULTS = {
   MAX_PER_PAGE: 100,
-  ORDER: "desc" as SortOrder,
+  ORDER: "desc",
   PAGE: 1,
   PER_PAGE: 20,
 } as const;
@@ -93,18 +93,19 @@ export function createPaginatedResponse<T, R>(options: {
   query: Partial<PaginationQuery>;
   formatter: (item: T) => R;
 }): PaginatedResponse<R>;
-export function createPaginatedResponse<T>(options: {
+export function createPaginatedResponse<T, R>(options: {
   data: T[];
   total: number;
   query: Partial<PaginationQuery>;
-  formatter?: (item: T) => unknown;
-}): PaginatedResponse<unknown> {
+  formatter?: (item: T) => R;
+}): PaginatedResponse<R | T> {
   const { data, total, query, formatter } = options;
   const { page, perPage } = getPaginationParams(query);
   const pageCount = Math.ceil(total / perPage);
+  const formatted = formatter ? data.map(formatter) : data;
 
   return {
-    data: formatter ? data.map(formatter) : data,
+    data: formatted,
     meta: {
       hasNext: page < pageCount,
       hasPrev: page > 1,
@@ -118,13 +119,27 @@ export function createPaginatedResponse<T>(options: {
   };
 }
 
+function valueAt<T extends Record<string, unknown>>(
+  columns: T,
+  key: keyof T
+): T[keyof T] {
+  return columns[key];
+}
+
+function isOwnKey<T extends Record<string, unknown>>(
+  columns: T,
+  key: PropertyKey
+): key is keyof T {
+  return Object.hasOwn(columns, key);
+}
+
 export function resolveSortColumn<T extends Record<string, unknown>>(
   columns: T,
   sort: string | undefined,
   fallback: T[keyof T]
 ): T[keyof T] {
-  if (sort !== undefined && Object.hasOwn(columns, sort)) {
-    return columns[sort as keyof T];
+  if (sort !== undefined && isOwnKey(columns, sort)) {
+    return valueAt(columns, sort);
   }
   return fallback;
 }

@@ -40,6 +40,7 @@ import type {
   UpdateUserInput,
   UpdateUserRolesInput,
   UserRecord,
+  UserStatus,
 } from "./types";
 import { onUserStatusChange } from "./user-status-hooks";
 
@@ -68,7 +69,7 @@ export const userService = {
     actorId: string,
     auditContext: AuditContext
   ): Promise<void> {
-    let previousStatus = USER_STATUS.ACTIVE as string;
+    let previousStatus: UserStatus = USER_STATUS.ACTIVE;
 
     await auditTransaction(db, auditContext, async (tx, audit) => {
       const [existing] = await tx
@@ -153,7 +154,7 @@ export const userService = {
     actorId: string,
     auditContext: AuditContext
   ): Promise<void> {
-    let previousStatus = USER_STATUS.ACTIVE as string;
+    let previousStatus: UserStatus = USER_STATUS.ACTIVE;
 
     await auditTransaction(db, auditContext, async (tx, audit) => {
       const [existing] = await tx
@@ -319,7 +320,7 @@ export const userService = {
     actorId: string,
     auditContext: AuditContext
   ): Promise<void> {
-    let previousStatus = USER_STATUS.ACTIVE as string;
+    let previousStatus: UserStatus = USER_STATUS.ACTIVE;
 
     await auditTransaction(db, auditContext, async (tx, audit) => {
       const [existing] = await tx

@@ -1,5 +1,5 @@
 import { WorkerEntrypoint } from "cloudflare:workers";
-import { withDrizzleClient } from "@repo/db";
+import { withDrizzleClient } from "@repo/db/client";
 import { DrizzleLogger } from "@repo/shared/logger-drizzle";
 import { NOTIFICATION_TYPES } from "@/modules/notifications/constants";
 import { notificationDispatch } from "@/modules/notifications/dispatch";

@@ -25,6 +25,11 @@ const oauthTokenResponseSchema = z.object({
   expires_in: z.number(),
 });
 
+const cachedTokenSchema = z.object({
+  accessToken: z.string().min(1),
+  expiresAt: z.number(),
+});
+
 const FCM_SCOPE = "https://www.googleapis.com/auth/firebase.messaging";
 const TOKEN_URL = "https://oauth2.googleapis.com/token";
 const TOKEN_REFRESH_MARGIN_MS = 5 * 60 * 1000;
@@ -176,17 +181,17 @@ export async function getAccessToken(
   }
 
   try {
-    const stored = (await env.CACHE.get(
-      "fcm:access_token",
-      "json"
-    )) as CachedToken | null;
-    if (stored && Date.now() < stored.expiresAt - TOKEN_REFRESH_MARGIN_MS) {
-      cachedToken = stored;
-      return stored.accessToken;
+    const parsed = cachedTokenSchema.safeParse(
+      await env.CACHE.get("fcm:access_token", "json")
+    );
+    if (
+      parsed.success &&
+      Date.now() < parsed.data.expiresAt - TOKEN_REFRESH_MARGIN_MS
+    ) {
+      cachedToken = parsed.data;
+      return parsed.data.accessToken;
     }
-  } catch {
-    // KV unavailable - proceed to generate
-  }
+  } catch {}
 
   const token = await fetchAccessToken(serviceAccount);
   cachedToken = token;
@@ -195,9 +200,7 @@ export async function getAccessToken(
     await env.CACHE.put("fcm:access_token", JSON.stringify(token), {
       expirationTtl: 3300,
     });
-  } catch {
-    // KV write failure is non-critical
-  }
+  } catch {}
 
   return token.accessToken;
 }

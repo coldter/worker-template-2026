@@ -12,10 +12,10 @@ type QueueConsumer = (
   ctx: ExecutionContext
 ) => Promise<void>;
 
-const QUEUE_CONSUMERS: Record<string, QueueConsumer> = {
-  [AUDIT_LOG_QUEUE_NAME]: handleAuditLogQueue,
-  [AUDIT_LOG_DLQ_NAME]: handleAuditLogDlq,
-};
+const QUEUE_CONSUMERS = new Map<string, QueueConsumer>([
+  [AUDIT_LOG_QUEUE_NAME, handleAuditLogQueue],
+  [AUDIT_LOG_DLQ_NAME, handleAuditLogDlq],
+]);
 
 function recordBatchMetrics(
   batch: MessageBatch,
@@ -53,7 +53,7 @@ export async function routeQueueBatch(
   env: CloudflareBindings,
   ctx: ExecutionContext
 ): Promise<void> {
-  const consumer = QUEUE_CONSUMERS[batch.queue];
+  const consumer = QUEUE_CONSUMERS.get(batch.queue);
 
   if (!consumer) {
     logger.warn("No consumer registered for queue; acking batch", {

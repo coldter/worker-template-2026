@@ -1,14 +1,12 @@
+import { toast } from "sonner";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-
-const { toastError } = vi.hoisted(() => ({ toastError: vi.fn() }));
-
-vi.mock("sonner", () => ({ toast: { error: toastError } }));
-vi.mock("@/lib/auth-client", () => ({ authClient: { signOut: vi.fn() } }));
 
 import { createClientConfig } from "@/api-config";
 import { ApiError } from "@/lib/api";
 import { handleGlobalError, handleGlobalSuccess } from "@/query/on-error";
 import { useAlertStore } from "@/store/alert";
+
+const toastError = vi.spyOn(toast, "error").mockImplementation(() => "");
 
 beforeEach(() => {
   toastError.mockClear();
@@ -17,7 +15,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  vi.restoreAllMocks();
+  vi.mocked(console.error).mockRestore();
   vi.unstubAllGlobals();
 });
 

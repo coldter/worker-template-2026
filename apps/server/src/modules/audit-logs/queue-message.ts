@@ -16,8 +16,10 @@ export const auditLogQueueMessageSchema = z.object({
 
 export type AuditLogQueueMessage = z.infer<typeof auditLogQueueMessageSchema>;
 
+export type AuditLogQueueMessageBody = MessageBatch["messages"][number]["body"];
+
 export function parseAuditLogMessage(
-  body: unknown
+  body: AuditLogQueueMessageBody
 ): AuditLogQueueMessage | null {
   const result = auditLogQueueMessageSchema.safeParse(body);
   return result.success ? result.data : null;

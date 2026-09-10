@@ -52,28 +52,28 @@ const inactivePrincipal: Principal = {
   roles: ["user"],
 };
 
-function ownerCondition(): Condition {
+function ownerCondition(): Condition<{ ownerId: string }> {
   return {
     effect: "requires_resource",
-    evaluate(ctx: ConditionContext): boolean {
+    evaluate(ctx: ConditionContext<{ ownerId: string }>): boolean {
       if (!ctx.resource) {
         return false;
       }
-      return (ctx.resource as { ownerId: string }).ownerId === ctx.principal.id;
+      return ctx.resource.ownerId === ctx.principal.id;
     },
     label: "whereOwner",
     type: "whereOwner",
   };
 }
 
-function selfTargetCondition(): Condition {
+function selfTargetCondition(): Condition<{ id: string }> {
   return {
     effect: "requires_resource",
-    evaluate(ctx: ConditionContext): boolean {
+    evaluate(ctx: ConditionContext<{ id: string }>): boolean {
       if (!ctx.resource) {
         return false;
       }
-      return (ctx.resource as { id: string }).id === ctx.principal.id;
+      return ctx.resource.id === ctx.principal.id;
     },
     label: "whereTargetIsSelf",
     type: "whereTargetIsSelf",
@@ -115,10 +115,10 @@ function throwingCondition(): Condition {
 
 const defaults = {
   action: "read",
-  globalPolicies: [] as PolicyRule[],
-  resourcePolicies: [] as PolicyRule[],
-  systemAdminRoles: [] as string[],
-} as const;
+  globalPolicies: [],
+  resourcePolicies: [],
+  systemAdminRoles: [],
+};
 
 describe("evaluate", () => {
   it("denies with UNAUTHENTICATED when principal is null", async () => {
@@ -370,14 +370,8 @@ describe("evaluate", () => {
     };
 
     const resolveOrganization = (
-      resource: unknown
-    ): string | null | undefined => {
-      const r = resource as { orgId?: string | null | undefined } | undefined;
-      if (!r) {
-        return;
-      }
-      return r.orgId;
-    };
+      resource: { orgId?: string | null } | undefined
+    ): string | null | undefined => resource?.orgId;
 
     it("allows when org IDs match", async () => {
       const result = await evaluate({

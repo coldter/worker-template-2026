@@ -1,18 +1,26 @@
 import {
   type ColumnDef,
+  isFunction,
   type ReactTable,
   type RowData,
   useTable,
 } from "@tanstack/react-table";
 import { useEffect } from "react";
 
-import { type NavigateFn, useTableUrlState } from "@/hooks/use-table-url-state";
+import {
+  type NavigateFn,
+  type SearchPatch,
+  type SearchRecord,
+  useTableUrlState,
+} from "@/hooks/use-table-url-state";
 import {
   type DataTableFeatures,
   dataTableFeatures,
 } from "@/modules/data-table/features";
 
-type SearchRecord = Record<string, unknown>;
+const isSearchUpdater = (
+  update: SearchPatch | ((prev: SearchRecord) => SearchPatch)
+): update is (prev: SearchRecord) => SearchPatch => isFunction(update);
 
 type RouteNavigateOpts<TSearch> = {
   search: true | TSearch | ((prev: TSearch) => TSearch | Partial<TSearch>);
@@ -99,15 +107,15 @@ export function useServerTable<
   const search = route.useSearch();
 
   const navigate: NavigateFn = ({ search: searchUpdate, replace }) => {
-    if (typeof searchUpdate === "function") {
+    if (searchUpdate === true) {
+      routeNavigate({ replace, search: true });
+      return;
+    }
+    if (isSearchUpdater(searchUpdate)) {
       routeNavigate({
         replace,
         search: (prev: TSearch) => ({ ...prev, ...searchUpdate(prev) }),
       });
-      return;
-    }
-    if (searchUpdate === true) {
-      routeNavigate({ replace, search: true });
       return;
     }
     routeNavigate({

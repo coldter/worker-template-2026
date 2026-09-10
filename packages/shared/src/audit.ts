@@ -65,16 +65,37 @@ export type AuditEventKey = AuditEventObject extends { event: infer E }
     : string
   : string;
 
+export type AuditLogMetadataScalar =
+  | string
+  | number
+  | boolean
+  | null
+  | undefined;
+
+export type AuditLogMetadataValue =
+  | AuditLogMetadataScalar
+  | AuditLogMetadataScalar[];
+
 export interface FieldChange<T = unknown> {
   from: T;
   to: T;
 }
 
-export interface AuditLogMetadata {
+export type AuditLogChangeSet = {
   changedFields?: string[];
   changes?: Record<string, FieldChange>;
-  [key: string]: unknown;
-}
+};
+
+export type AuditLogOpenMetadata = {
+  changedFields?: string[];
+  changes?: Record<string, FieldChange>;
+  [key: string]:
+    | AuditLogMetadataValue
+    | Record<string, FieldChange>
+    | undefined;
+};
+
+export type AuditLogMetadata = AuditLogChangeSet | AuditLogOpenMetadata;
 
 export const CRITICAL_EVENTS = [
   "user.created",

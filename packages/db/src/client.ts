@@ -40,6 +40,7 @@ export async function withDrizzleClient<T>(
   };
   const originalQuery = client.query.bind(client);
 
+  // SAFETY: the wrapper forwards every call to the bound pg method after connecting, preserving each query overload's argument and return contract; no single arrow signature can be inferred against an overload set.
   client.query = ((...queryArgs: Parameters<typeof originalQuery>) =>
     ensureConnected().then(() =>
       originalQuery(...queryArgs)

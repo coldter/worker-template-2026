@@ -3,8 +3,11 @@ import { describe, expect, it } from "vitest";
 
 import { checkReadiness, type ReadinessCache } from "@/modules/status/service";
 
-function fakeDb(execute: () => Promise<unknown>): DrizzleClient {
-  return { execute } as unknown as DrizzleClient;
+function fakeDb(execute: (query: string) => Promise<unknown[]>): DrizzleClient {
+  // SAFETY: readiness probes only read db.execute, so a proxy that answers every member with the probe is a complete double for that call path.
+  return new Proxy({} as DrizzleClient, {
+    get: () => execute,
+  });
 }
 
 const healthyCache: ReadinessCache = { get: () => Promise.resolve(null) };

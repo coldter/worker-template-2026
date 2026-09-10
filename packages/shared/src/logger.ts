@@ -1,26 +1,39 @@
 export type LogLevel = "debug" | "info" | "warn" | "error";
-export type LogContext = Record<string, unknown>;
 
 export interface Logger {
-  debug: (message: string, context?: LogContext) => void;
-  error: (message: string, context?: LogContext) => void;
-  info: (message: string, context?: LogContext) => void;
-  warn: (message: string, context?: LogContext) => void;
+  debug: <T extends object>(message: string, context?: T) => void;
+  error: <T extends object>(message: string, context?: T) => void;
+  info: <T extends object>(message: string, context?: T) => void;
+  warn: <T extends object>(message: string, context?: T) => void;
 }
 
-function replaceErrors(_key: string, value: unknown): unknown {
+interface SerializedError {
+  cause?: unknown;
+  message: string;
+  name: string;
+  stack: string | undefined;
+}
+
+function replaceErrors<T>(_key: string, value: T): T | SerializedError {
   if (value instanceof Error) {
-    return {
+    const serialized: SerializedError = {
       message: value.message,
       name: value.name,
       stack: value.stack,
-      ...(value.cause === undefined ? {} : { cause: value.cause }),
     };
+    if (value.cause !== undefined) {
+      serialized.cause = value.cause;
+    }
+    return serialized;
   }
   return value;
 }
 
-function log(level: LogLevel, message: string, context?: LogContext): void {
+function log<T extends object>(
+  level: LogLevel,
+  message: string,
+  context?: T
+): void {
   const payload = { level, message, ts: Date.now(), ...context };
   const entry =
     process.env.NODE_ENV === "production"

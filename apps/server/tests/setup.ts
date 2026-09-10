@@ -4,7 +4,6 @@ import { accounts, sessions, users, verifications } from "@repo/db/schema";
 import { logger } from "@repo/shared/logger";
 import { DrizzleLogger } from "@repo/shared/logger-drizzle";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
-import type { Context, Next } from "hono";
 import { Client } from "pg";
 import { vi } from "vitest";
 
@@ -16,15 +15,6 @@ const db = createDrizzleClient(
   client,
   process.env.NODE_ENV === "development" ? new DrizzleLogger() : undefined
 );
-
-vi.mock("@/middlewares/rate-limit", () => ({
-  globalRateLimitMW: async (_: Context, next: Next) => {
-    await next();
-  },
-  rateLimiter: vi.fn().mockReturnValue(async (_: Context, next: Next) => {
-    await next();
-  }),
-}));
 
 export function mockFetchRequest() {
   vi.stubGlobal(

@@ -1,6 +1,12 @@
 import { logger } from "@repo/shared/logger";
 import { createMiddleware } from "hono/factory";
+import { z } from "zod";
 import type { AppEnv } from "@/lib/context";
+
+const cfPropertiesSchema = z.object({
+  colo: z.string().optional().catch(undefined),
+  country: z.string().optional().catch(undefined),
+});
 
 export const analyticsMiddleware = createMiddleware<AppEnv>(async (c, next) => {
   const start = Date.now();
@@ -10,14 +16,14 @@ export const analyticsMiddleware = createMiddleware<AppEnv>(async (c, next) => {
   try {
     const { path } = c.req;
 
-    const { cf } = c.req.raw;
+    const cf = cfPropertiesSchema.safeParse(c.req.raw.cf);
     c.env.ANALYTICS?.writeDataPoint({
       blobs: [
         "api",
         c.req.method,
         path,
-        typeof cf?.country === "string" ? cf.country : null,
-        typeof cf?.colo === "string" ? cf.colo : null,
+        cf.data?.country ?? null,
+        cf.data?.colo ?? null,
         c.env.CF_VERSION_METADATA?.id ?? null,
       ],
       doubles: [c.res.status, duration],

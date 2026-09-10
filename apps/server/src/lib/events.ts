@@ -14,7 +14,7 @@ export interface DeferralContext {
 }
 
 export interface DispatchEventOptions {
-  onFailure?: (error: unknown) => void | Promise<void>;
+  onFailure?: (error: Error) => void | Promise<void>;
 }
 
 export async function triggerWorkflow(
@@ -61,7 +61,7 @@ export async function triggerWorkflow(
   }
 }
 
-function eventContext(event: AppEvent): Record<string, unknown> {
+function eventContext(event: AppEvent) {
   switch (event.type) {
     case "user.created":
       return { userId: event.payload.userId };
@@ -82,7 +82,8 @@ export function dispatchEvent(
 ): void {
   const task = triggerWorkflow(event).then(
     () => undefined,
-    async (error: unknown) => {
+    async (cause: unknown) => {
+      const error = cause instanceof Error ? cause : new Error(String(cause));
       if (options.onFailure) {
         try {
           await options.onFailure(error);

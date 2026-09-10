@@ -36,10 +36,7 @@ export function useAuthorization() {
   };
 }
 
-export function useCan(capability: Capability): {
-  allowed: boolean;
-  isLoading: boolean;
-} {
+export function useCan(capability: Capability) {
   const { capabilities, isLoading } = useAuthorization();
   if (isLoading) {
     return { allowed: false, isLoading: true };
@@ -47,10 +44,7 @@ export function useCan(capability: Capability): {
   return { allowed: capabilities[capability] === true, isLoading: false };
 }
 
-export function useCapabilityChecker(): {
-  check: (capability: Capability | null | undefined) => boolean;
-  isLoading: boolean;
-} {
+export function useCapabilityChecker() {
   const { capabilities, isLoading } = useAuthorization();
 
   const check = useCallback(

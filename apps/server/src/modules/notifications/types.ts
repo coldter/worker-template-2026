@@ -18,6 +18,8 @@ export type {
   PushPlatform,
 };
 
+export type NotificationProps = NonNullable<Notification["props"]>;
+
 export interface ListNotificationsQuery extends PaginationQuery {
   channel?: NotificationChannel;
   sort?: NotificationsSortColumn;
@@ -33,7 +35,7 @@ export interface SendNotificationInput {
 
   priority?: NotificationPriority;
 
-  props?: Record<string, unknown>;
+  props?: NotificationProps;
   subject: string;
   type: NotificationType;
   userId: string;
@@ -71,7 +73,7 @@ export interface NotificationSummary {
   id: string;
   isRead: boolean | null;
   priority: NotificationPriority;
-  props: Record<string, unknown> | null;
+  props: NotificationProps | null;
   readAt: string | null;
   sentAt: string | null;
   status: NotificationStatus;

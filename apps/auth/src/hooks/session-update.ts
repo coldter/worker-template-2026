@@ -35,10 +35,26 @@ const endpointContextWithSessionSchema = z
   })
   .passthrough();
 
+export type SessionUpdatePayload = Partial<Session> & {
+  activeOrgRole?: string | null;
+  activeOrganizationId?: string | null;
+  platform?: "mobile" | "web";
+};
+
+export type SessionUpdateHookContext = {
+  headers?: Headers;
+  context?: {
+    session?: {
+      session?: { expiresAt?: Date; platform?: string };
+      user?: { email?: string; id?: string };
+    } | null;
+  };
+};
+
 export function createSessionUpdateBeforeHook(db: DrizzleClient) {
   return async (
-    session: Partial<Session> & Record<string, unknown>,
-    context: { headers?: Headers } | null | undefined
+    session: SessionUpdatePayload,
+    context: SessionUpdateHookContext | null | undefined
   ) => {
     const updateParse = sessionUpdatePayloadSchema.safeParse(session);
     const activeOrganizationIdUpdate =

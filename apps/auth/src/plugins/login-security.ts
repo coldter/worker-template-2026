@@ -16,14 +16,15 @@ import {
 } from "../constants";
 import { userStatusSchema } from "./user-status";
 
+const hookBodySchema = z.object({
+  email: z.string(),
+});
+
 type HookCtxWithBody = { body?: unknown };
 
 function extractEmailFromHookBody(ctx: HookCtxWithBody): string | null {
-  const body = ctx.body as { email?: string } | undefined;
-  if (!body?.email || typeof body.email !== "string") {
-    return null;
-  }
-  return body.email.trim().toLowerCase();
+  const parsed = hookBodySchema.safeParse(ctx.body);
+  return parsed.success ? parsed.data.email.trim().toLowerCase() : null;
 }
 
 const twoFactorRedirectSchema = z
@@ -32,7 +33,9 @@ const twoFactorRedirectSchema = z
   })
   .passthrough();
 
-function isTwoFactorRedirect(returned: unknown): boolean {
+function isTwoFactorRedirect(
+  returned: unknown
+): returned is { twoFactorRedirect: true } {
   const parsed = twoFactorRedirectSchema.safeParse(returned);
   return parsed.success && parsed.data.twoFactorRedirect === true;
 }
@@ -48,13 +51,6 @@ const twoFactorVerifySuccessSchema = z
   })
   .passthrough();
 
-function readEmailFromTwoFactorVerifyResponse(
-  returned: unknown
-): string | undefined {
-  const parsed = twoFactorVerifySuccessSchema.safeParse(returned);
-  return parsed.success ? parsed.data.user?.email : undefined;
-}
-
 export const AUTH_ERROR_CODES = {
   ACCOUNT_DELETED: "ACCOUNT_DELETED",
   ACCOUNT_INACTIVE: "ACCOUNT_INACTIVE",
@@ -65,12 +61,15 @@ export const AUTH_ERROR_CODES = {
 
 const BETTER_AUTH_CREDENTIALS_FAILURE_CODE = "INVALID_EMAIL_OR_PASSWORD";
 
-export function isCredentialFailure(returned: unknown): boolean {
+const credentialFailureBodySchema = z.object({
+  code: z.literal(BETTER_AUTH_CREDENTIALS_FAILURE_CODE),
+});
+
+export function isCredentialFailure(returned: unknown): returned is APIError {
   if (!(returned instanceof APIError) || returned.status !== "UNAUTHORIZED") {
     return false;
   }
-  const body = returned.body as { code?: string } | undefined;
-  return body?.code === BETTER_AUTH_CREDENTIALS_FAILURE_CODE;
+  return credentialFailureBodySchema.safeParse(returned.body).success;
 }
 
 export const loginSecurityPlugin = (db: DrizzleClient) =>
@@ -143,7 +142,8 @@ export const loginSecurityPlugin = (db: DrizzleClient) =>
               return;
             }
 
-            const email = readEmailFromTwoFactorVerifyResponse(returned);
+            const parsed = twoFactorVerifySuccessSchema.safeParse(returned);
+            const email = parsed.success ? parsed.data.user?.email : undefined;
             if (!email) {
               return;
             }

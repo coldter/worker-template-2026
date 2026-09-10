@@ -13,10 +13,7 @@ export const USER_STATUS = {
   LOCKED: "locked",
 } as const;
 
-export const USER_STATUS_VALUES = Object.values(USER_STATUS) as [
-  (typeof USER_STATUS)[keyof typeof USER_STATUS],
-  ...(typeof USER_STATUS)[keyof typeof USER_STATUS][],
-];
+export const USER_STATUS_VALUES = Object.values(USER_STATUS);
 
 export const userStatusSchema = z.enum(USER_STATUS_VALUES);
 

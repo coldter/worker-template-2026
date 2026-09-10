@@ -104,10 +104,7 @@ export function AuditLogsFilters({ search, navigate }: AuditLogsFiltersProps) {
         <Select
           onValueChange={(value) =>
             updateFilter({
-              targetType:
-                value === "__all__"
-                  ? undefined
-                  : (value as "user" | "role" | "session"),
+              targetType: ALL_TARGET_TYPES.find((type) => type === value),
             })
           }
           value={search.targetType ?? "__all__"}

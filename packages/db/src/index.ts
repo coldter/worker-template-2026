@@ -1,10 +1,8 @@
-export {
-  createDrizzleClient,
-  type DrizzleClient,
-  type Executor,
-  type Transaction,
-  type WithDrizzleClientOptions,
-  withDrizzleClient,
+export type {
+  DrizzleClient,
+  Executor,
+  Transaction,
+  WithDrizzleClientOptions,
 } from "./client";
 export { firstOrNull, firstOrThrow } from "./helpers";
 export type {

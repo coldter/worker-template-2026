@@ -1,11 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
 
-vi.mock("pg", () => ({ Client: class {}, default: {}, Pool: class {} }));
-vi.mock("drizzle-orm/node-postgres", () => ({ drizzle: () => ({}) }));
-
 import { handleAuditLogDlq } from "@/modules/audit-logs/queue";
+import type { AuditLogQueueMessageBody } from "@/modules/audit-logs/queue-message";
 
-function makeMessage(body: unknown) {
+function makeMessage(body: AuditLogQueueMessageBody) {
   return {
     ack: vi.fn(),
     attempts: 4,
@@ -27,18 +25,21 @@ describe("handleAuditLogDlq", () => {
     ];
     const ackAll = vi.fn();
 
-    const batch = {
+    const batch: MessageBatch = {
       ackAll,
       messages,
+      metadata: { metrics: { backlogBytes: 0, backlogCount: 0 } },
       queue: "audit-log-dlq",
       retryAll: vi.fn(),
-    } as unknown as MessageBatch;
+    };
 
-    await handleAuditLogDlq(
-      batch,
+    // SAFETY: handleAuditLogDlq ignores env and ctx, so empty stand-ins exercise only the batch handling under test.
+    const [unusedEnv, unusedCtx] = [
       {} as CloudflareBindings,
-      {} as ExecutionContext
-    );
+      {} as ExecutionContext,
+    ];
+
+    await handleAuditLogDlq(batch, unusedEnv, unusedCtx);
 
     expect(ackAll).toHaveBeenCalledTimes(1);
     for (const message of messages) {

@@ -1,5 +1,5 @@
 import { WorkerEntrypoint } from "cloudflare:workers";
-import { withDrizzleClient } from "@repo/db";
+import { withDrizzleClient } from "@repo/db/client";
 import { logger } from "@repo/shared/logger";
 import { DrizzleLogger } from "@repo/shared/logger-drizzle";
 import { type AuthBindings, createAuth } from "./instance";
@@ -57,6 +57,7 @@ export class AuthEntrypoint extends WorkerEntrypoint<CloudflareBindings> {
       withDrizzleClient(
         this.env.HYPERDRIVE.connectionString,
         async (db) => {
+          // SAFETY: the API service binding targets the server worker's ApiEntrypoint, so it exposes the ApiBindingRpc methods at runtime.
           const auth = createAuth(db, this.env as AuthBindings, this.ctx);
           return await auth.api.getSession({ headers });
         },

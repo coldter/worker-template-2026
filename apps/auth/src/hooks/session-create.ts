@@ -14,7 +14,7 @@ export function createSessionCreateBeforeHook(
   ctx: MinimalExecutionContext
 ) {
   return async (
-    session: Session & Record<string, unknown>,
+    session: Session,
     context: { headers?: Headers } | null | undefined
   ) => {
     const userAgent = context?.headers?.get("user-agent") ?? null;
@@ -68,8 +68,8 @@ export function createSessionCreateBeforeHook(
             platform,
             userAgent: userAgent ?? "",
             userId: session.userId,
-          }).catch((err: unknown) => {
-            console.error("Failed to trigger new device notification:", err);
+          }).catch((cause: unknown) => {
+            console.error("Failed to trigger new device notification:", cause);
           })
         );
       }
@@ -91,7 +91,7 @@ export function createSessionCreateBeforeHook(
         ...session,
         expiresAt,
         platform,
-        ...(orgContext ?? {}),
+        ...orgContext,
       },
     };
   };

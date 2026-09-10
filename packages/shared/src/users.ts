@@ -7,10 +7,16 @@ export const USER_STATUS = {
 
 export type UserStatus = (typeof USER_STATUS)[keyof typeof USER_STATUS];
 
-export const USER_STATUS_VALUES = Object.values(USER_STATUS) as [
-  UserStatus,
-  ...UserStatus[],
-];
+export const USER_STATUS_VALUES: readonly UserStatus[] =
+  Object.values(USER_STATUS);
+
+const USER_STATUS_SET: ReadonlySet<string> = new Set<string>(
+  USER_STATUS_VALUES
+);
+
+export function isUserStatus(value: string): value is UserStatus {
+  return USER_STATUS_SET.has(value);
+}
 
 export const USER_STATUS_CONFIG = {
   [USER_STATUS.ACTIVE]: {

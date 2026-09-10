@@ -3,7 +3,7 @@ import {
   type WorkflowEvent,
   type WorkflowStep,
 } from "cloudflare:workers";
-import { withDrizzleClient } from "@repo/db";
+import { withDrizzleClient } from "@repo/db/client";
 import * as schema from "@repo/db/schema";
 import { logger } from "@repo/shared/logger";
 import { DrizzleLogger } from "@repo/shared/logger-drizzle";

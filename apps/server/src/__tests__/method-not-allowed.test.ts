@@ -1,19 +1,13 @@
-import { describe, expect, it, vi } from "vitest";
-
-vi.mock("pg", () => ({ Client: class {}, default: {}, Pool: class {} }));
-vi.mock("drizzle-orm/node-postgres", () => ({ drizzle: () => ({}) }));
-vi.mock("drizzle-orm/node-postgres/migrator", () => ({
-  migrate: async () => undefined,
-}));
-
+import { describe, expect, it } from "vitest";
 import app from "@/server";
+import { testBindings } from "../../tests/helpers";
 
-const env = {
+const env = testBindings({
   CACHE: {
     get: async () => null,
     put: async () => undefined,
   },
-} as unknown as CloudflareBindings;
+});
 
 describe("method not allowed middleware", () => {
   it("returns 405 with Allow header when the path exists with other methods", async () => {

@@ -9,6 +9,7 @@ import { Badge } from "@/modules/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/modules/ui/tooltip";
 import { EventIcon } from "../event-icon";
 import {
+  type AuditLogMetadata,
   getActorTypeLabel,
   getEventBadgeStyle,
   getEventDescription,
@@ -16,13 +17,18 @@ import {
   getTargetTypeLabel,
 } from "../event-utils";
 
-export type AuditLog = ListAuditLogsResponse["data"][number];
+export type AuditLog = Omit<
+  ListAuditLogsResponse["data"][number],
+  "metadata"
+> & {
+  metadata: AuditLogMetadata | null;
+};
 
-const actorTypeIcons: Record<string, typeof User> = {
+const actorTypeIcons = {
   api: Globe,
   system: Bot,
   user: User,
-};
+} satisfies Record<AuditLog["actorType"], typeof User>;
 
 export const auditLogsColumns: ColumnDef<DataTableFeatures, AuditLog>[] = [
   {

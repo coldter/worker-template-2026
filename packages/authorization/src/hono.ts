@@ -1,29 +1,25 @@
-import type { Context, MiddlewareHandler } from "hono";
+import type { Context, Env, MiddlewareHandler } from "hono";
 import { HTTPException } from "hono/http-exception";
 import type { RegistryInstance } from "./registry";
 import type { ActionsOf, ResourceTypeFor } from "./resource";
 import type { AnyResourceDef } from "./schema";
-import type { DenyReason, PolicyDecision, Principal } from "./types";
+import type { DenyReason, Principal } from "./types";
 
 const AUTHORIZED_RESOURCE_KEY = "authorizedResource";
 
 export const AUTHORIZATION_GUARD = Symbol("authorizationGuard");
 
-export function isAuthorizationGuard(middleware: unknown): boolean {
-  return (
-    typeof middleware === "function" &&
-    Object.hasOwn(middleware, AUTHORIZATION_GUARD)
-  );
+export interface AuthorizationGuard {
+  readonly [AUTHORIZATION_GUARD]?: true;
 }
 
-function denyReasonOf(input: PolicyDecision | DenyReason): DenyReason {
-  if (typeof input === "string") {
-    return input;
-  }
-  if (input.allowed === false) {
-    return input.reason;
-  }
-  return "NO_MATCHING_POLICY";
+export function isAuthorizationGuard(
+  middleware: unknown
+): middleware is MiddlewareHandler & AuthorizationGuard {
+  return (
+    middleware instanceof Function &&
+    Object.hasOwn(middleware, AUTHORIZATION_GUARD)
+  );
 }
 
 function denyStatus(reason: DenyReason): 401 | 403 | 404 | 500 {
@@ -65,10 +61,7 @@ function denyCode(status: 401 | 403 | 404 | 500): string {
   return "FORBIDDEN";
 }
 
-function denyResponse(
-  decisionOrReason: PolicyDecision | DenyReason
-): HTTPException {
-  const reason = denyReasonOf(decisionOrReason);
+function denyResponse(reason: DenyReason): HTTPException {
   const status = denyStatus(reason);
   const message = denyMessage(status);
   const code = denyCode(status);
@@ -81,9 +74,7 @@ function denyResponse(
   });
 }
 
-export interface CreateAuthorizeOptions<
-  TEnv extends Record<string, unknown> = Record<string, unknown>,
-> {
+export interface CreateAuthorizeOptions<TEnv extends Env = Env> {
   resolvePrincipal: (c: Context<TEnv>) => Principal | null | undefined;
 }
 
@@ -104,28 +95,27 @@ export type AuthorizeFunction<
 
 export function createAuthorize<
   TResources extends Record<string, AnyResourceDef>,
-  TEnv extends Record<string, unknown> = Record<string, unknown>,
+  TEnv extends Env = Env,
 >(
   registry: RegistryInstance<TResources>,
   options: CreateAuthorizeOptions<TEnv>
 ): AuthorizeFunction<TResources> {
-  const authorizeImpl = (
-    resource: string,
-    action: string,
-    opts?: AuthorizeOptions
-  ): MiddlewareHandler => {
+  function authorizeImpl<K extends keyof TResources & string>(
+    resource: K,
+    action: ActionsOf<TResources[K]>,
+    opts?: AuthorizeOptions<ResourceTypeFor<TResources[K]>>
+  ): MiddlewareHandler {
     const middleware: MiddlewareHandler = async (c, next) => {
-      const principal = options.resolvePrincipal(c as Context<TEnv>);
+      const principal = options.resolvePrincipal(c);
 
-      let loadedResource: unknown;
+      let loadedResource: ResourceTypeFor<TResources[K]> | undefined;
       if (opts?.loadResource) {
-        loadedResource = await opts.loadResource(c);
-        if (loadedResource === null || loadedResource === undefined) {
+        const loaded = await opts.loadResource(c);
+        if (loaded === null || loaded === undefined) {
           const globalDecision = await registry.can(
             principal,
             resource,
-
-            action as never
+            action
           );
 
           if (globalDecision.allowed) {
@@ -134,16 +124,12 @@ export function createAuthorize<
 
           throw denyResponse("NO_MATCHING_POLICY");
         }
+        loadedResource = loaded;
       }
 
-      const decision = await registry.can(
-        principal,
-        resource,
-        action as never,
-        {
-          resource: loadedResource as never,
-        }
-      );
+      const decision = await registry.can(principal, resource, action, {
+        resource: loadedResource,
+      });
 
       if (!decision.allowed) {
         if (decision.reason === "EVALUATION_ERROR") {
@@ -155,7 +141,7 @@ export function createAuthorize<
             })
           );
         }
-        throw denyResponse(decision);
+        throw denyResponse(decision.reason);
       }
 
       if (loadedResource !== undefined) {
@@ -168,9 +154,9 @@ export function createAuthorize<
     Object.defineProperty(middleware, AUTHORIZATION_GUARD, { value: true });
 
     return middleware;
-  };
+  }
 
-  return authorizeImpl as unknown as AuthorizeFunction<TResources>;
+  return authorizeImpl;
 }
 
 export function getAuthorizedResource<T>(c: Context): T {
@@ -182,5 +168,5 @@ export function getAuthorizedResource<T>(c: Context): T {
     );
   }
 
-  return value as T;
+  return value;
 }

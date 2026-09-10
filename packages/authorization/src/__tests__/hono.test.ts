@@ -64,7 +64,7 @@ describe("createAuthorize", () => {
       if (!principalHeader) {
         return null;
       }
-      return JSON.parse(principalHeader) as Principal;
+      return JSON.parse(principalHeader);
     },
   });
 

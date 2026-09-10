@@ -3,7 +3,7 @@ import {
   type WorkflowEvent,
   type WorkflowStep,
 } from "cloudflare:workers";
-import { getBrandConfig } from "@repo/shared/brand";
+import { getBrandConfigFromBindings } from "@/lib/brand";
 import { runWithWorkflowMetrics } from "@/lib/workflow-metrics";
 
 interface OnboardingParams {
@@ -35,9 +35,7 @@ export class OnboardingWorkflow extends WorkflowEntrypoint<
       async () => {
         const { sendEmail, WelcomeEmail } = await import("@repo/email");
 
-        const brand = getBrandConfig(
-          this.env as unknown as Record<string, string | undefined>
-        );
+        const brand = getBrandConfigFromBindings(this.env);
         await sendEmail({
           apiKey: this.env.RESEND_API_KEY,
           from: `${brand.appName} <${this.env.EMAIL_FROM}>`,

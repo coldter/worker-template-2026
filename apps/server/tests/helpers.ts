@@ -1,7 +1,7 @@
 export async function parseResponse<T>(response: {
-  json: () => Promise<unknown>;
+  json: () => Promise<T>;
 }): Promise<T> {
-  return response.json() as Promise<T>;
+  return response.json();
 }
 
 export type ErrorResponse = {
@@ -24,4 +24,9 @@ export function expectError(
       `Expected error code "${expectedCode}" but got "${response.error.code}"`
     );
   }
+}
+
+export function testBindings<T>(bindings: T): CloudflareBindings & T {
+  // SAFETY: tests supply only the bindings exercised by their code path; the remaining CloudflareBindings members are never read.
+  return bindings as CloudflareBindings & T;
 }

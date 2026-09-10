@@ -1,9 +1,138 @@
+import { z } from "zod";
+import type { ListAuditLogsResponse } from "@/api.gen/types.gen";
+
 type BadgeStyle = {
   variant: "default" | "secondary" | "destructive" | "outline";
   className: string;
 };
 
-const eventDisplayNames: Record<string, string> = {
+export type AuditLogMetadataValue =
+  | { kind: "null" }
+  | { kind: "boolean"; value: boolean }
+  | { kind: "number"; value: number }
+  | { kind: "string"; value: string }
+  | { kind: "array"; items: AuditLogMetadataValue[] }
+  | { kind: "object"; fields: Record<string, AuditLogMetadataValue> };
+
+export type AuditLogMetadata = Record<string, AuditLogMetadataValue>;
+
+const metadataValueSchema: z.ZodType<AuditLogMetadataValue> = z.lazy(() =>
+  z.union([
+    z.null().transform((): AuditLogMetadataValue => ({ kind: "null" })),
+    z
+      .boolean()
+      .transform(
+        (value): AuditLogMetadataValue => ({ kind: "boolean", value })
+      ),
+    z
+      .number()
+      .transform((value): AuditLogMetadataValue => ({ kind: "number", value })),
+    z
+      .string()
+      .transform((value): AuditLogMetadataValue => ({ kind: "string", value })),
+    z
+      .array(metadataValueSchema)
+      .transform((items): AuditLogMetadataValue => ({ items, kind: "array" })),
+    z
+      .record(z.string(), metadataValueSchema)
+      .transform(
+        (fields): AuditLogMetadataValue => ({ fields, kind: "object" })
+      ),
+  ])
+);
+
+const auditLogMetadataSchema = z.record(z.string(), metadataValueSchema);
+
+type RawAuditLogMetadata = ListAuditLogsResponse["data"][number]["metadata"];
+
+export function decodeAuditLogMetadata(
+  metadata: RawAuditLogMetadata
+): AuditLogMetadata | null {
+  if (metadata === null) {
+    return null;
+  }
+
+  const parsed = auditLogMetadataSchema.safeParse(metadata);
+  return parsed.success ? parsed.data : null;
+}
+
+export type AuditLogMetadataRawValue =
+  | null
+  | boolean
+  | number
+  | string
+  | AuditLogMetadataRawValue[]
+  | { [key: string]: AuditLogMetadataRawValue };
+
+function encodeMetadataValue(
+  value: AuditLogMetadataValue
+): AuditLogMetadataRawValue {
+  if (value.kind === "array") {
+    return value.items.map(encodeMetadataValue);
+  }
+  if (value.kind === "object") {
+    return Object.fromEntries(
+      Object.entries(value.fields).map(([key, entry]) => [
+        key,
+        encodeMetadataValue(entry),
+      ])
+    );
+  }
+  return value.kind === "null" ? null : value.value;
+}
+
+export function encodeAuditLogMetadata(
+  metadata: AuditLogMetadata
+): Record<string, AuditLogMetadataRawValue> {
+  return Object.fromEntries(
+    Object.entries(metadata).map(([key, value]) => [
+      key,
+      encodeMetadataValue(value),
+    ])
+  );
+}
+
+export function formatMetadataValue(value: AuditLogMetadataValue): string {
+  if (value.kind === "null") {
+    return "null";
+  }
+  if (value.kind === "array") {
+    return value.items.map(formatMetadataValue).join(",");
+  }
+  if (value.kind === "object") {
+    return "[object Object]";
+  }
+  return String(value.value);
+}
+
+function isPresentMetadataValue(
+  value: AuditLogMetadataValue | undefined
+): boolean {
+  if (value === undefined || value.kind === "null") {
+    return false;
+  }
+  if (value.kind === "boolean") {
+    return value.value;
+  }
+  if (value.kind === "number") {
+    return value.value !== 0;
+  }
+  if (value.kind === "string") {
+    return value.value.length > 0;
+  }
+  return true;
+}
+
+function presentMetadataValueText(
+  value: AuditLogMetadataValue | undefined
+): string | null {
+  if (value === undefined || !isPresentMetadataValue(value)) {
+    return null;
+  }
+  return formatMetadataValue(value);
+}
+
+const eventDisplayNames = {
   "auth.login.failed": "Login Failed",
   "auth.login.success": "Login Success",
   "auth.logout": "Logout",
@@ -22,9 +151,15 @@ const eventDisplayNames: Record<string, string> = {
   "user.unlocked": "User Unlocked",
   "user.updated": "User Updated",
   "user.viewed": "User Viewed",
-};
+} satisfies Record<string, string>;
 
-const eventBadgeStyles: Record<string, BadgeStyle> = {
+export type KnownEventKey = keyof typeof eventDisplayNames;
+
+export function isKnownEvent(event: string): event is KnownEventKey {
+  return Object.hasOwn(eventDisplayNames, event);
+}
+
+const eventBadgeStyles = {
   "auth.login.failed": {
     className:
       "bg-red-600/15 text-red-700 border-red-600/20 dark:bg-red-500/15 dark:text-red-400 dark:border-red-500/20",
@@ -115,7 +250,7 @@ const eventBadgeStyles: Record<string, BadgeStyle> = {
       "bg-slate-600/10 text-slate-600 border-slate-600/15 dark:bg-slate-400/10 dark:text-slate-400 dark:border-slate-400/15",
     variant: "secondary",
   },
-};
+} satisfies Record<KnownEventKey, BadgeStyle>;
 
 const defaultBadgeStyle: BadgeStyle = {
   className: "",
@@ -137,7 +272,7 @@ const eventBadgeDotClassNames = [
   ["slate", "bg-slate-500"],
 ] as const;
 
-const eventIconNames: Record<string, string> = {
+const eventIconNames = {
   "auth.login.failed": "ShieldX",
   "auth.login.success": "LogIn",
   "auth.logout": "LogOut",
@@ -156,14 +291,18 @@ const eventIconNames: Record<string, string> = {
   "user.unlocked": "Unlock",
   "user.updated": "UserCog",
   "user.viewed": "Eye",
-};
+} as const satisfies Record<KnownEventKey, string>;
+
+export type KnownEventIconName =
+  | (typeof eventIconNames)[KnownEventKey]
+  | "Activity";
 
 export function getEventDisplayName(event: string): string {
-  return eventDisplayNames[event] ?? event;
+  return isKnownEvent(event) ? eventDisplayNames[event] : event;
 }
 
 export function getEventBadgeStyle(event: string): BadgeStyle {
-  return eventBadgeStyles[event] ?? defaultBadgeStyle;
+  return isKnownEvent(event) ? eventBadgeStyles[event] : defaultBadgeStyle;
 }
 
 export function getEventBadgeDotClassName(event: string): string {
@@ -178,8 +317,8 @@ export function getEventBadgeDotClassName(event: string): string {
   return "bg-slate-500";
 }
 
-export function getEventIconName(event: string): string {
-  return eventIconNames[event] ?? "Activity";
+export function getEventIconName(event: string): KnownEventIconName {
+  return isKnownEvent(event) ? eventIconNames[event] : "Activity";
 }
 
 function getActorDescription(actorType: string): string {
@@ -226,7 +365,7 @@ export function getTargetTypeLabel(targetType: string | null): string {
 export function getEventDescription(
   event: string,
   actorType: string,
-  metadata: Record<string, unknown> | null
+  metadata: AuditLogMetadata | null
 ): string {
   const actor = getActorDescription(actorType);
 
@@ -234,14 +373,14 @@ export function getEventDescription(
     case "auth.login.success":
       return `${actor} successfully logged in.`;
     case "auth.login.failed": {
-      const reason = metadata?.reason;
-      const attempts = metadata?.attempts;
+      const reason = presentMetadataValueText(metadata?.reason);
+      const attempts = presentMetadataValueText(metadata?.attempts);
       const parts = [`${actor} failed to log in`];
-      if (reason) {
-        parts[0] += ` (${String(reason).replace(/_/g, " ")})`;
+      if (reason !== null) {
+        parts[0] += ` (${reason.replace(/_/g, " ")})`;
       }
-      if (attempts) {
-        parts.push(`Attempt #${String(attempts)}`);
+      if (attempts !== null) {
+        parts.push(`Attempt #${attempts}`);
       }
       return `${parts.join(". ")}.`;
     }
@@ -258,10 +397,10 @@ export function getEventDescription(
     case "user.deleted":
       return `${actor} deleted a user account.`;
     case "user.deactivated": {
-      const reason = metadata?.reason;
-      return reason
-        ? `${actor} deactivated the user. Reason: ${String(reason)}`
-        : `${actor} deactivated the user.`;
+      const reason = presentMetadataValueText(metadata?.reason);
+      return reason === null
+        ? `${actor} deactivated the user.`
+        : `${actor} deactivated the user. Reason: ${reason}`;
     }
     case "user.activated":
       return `${actor} activated the user.`;

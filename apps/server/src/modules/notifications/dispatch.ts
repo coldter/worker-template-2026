@@ -22,9 +22,9 @@ export interface DispatchOptions {
 async function markNotificationFailed(
   db: DrizzleClient,
   notificationId: string,
-  error: unknown
+  cause: unknown
 ): Promise<void> {
-  const errorMessage = error instanceof Error ? error.message : "Unknown error";
+  const errorMessage = cause instanceof Error ? cause.message : "Unknown error";
   try {
     await db
       .update(notifications)

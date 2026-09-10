@@ -2,7 +2,7 @@ import type { DrizzleClient } from "@repo/db";
 import * as schema from "@repo/db/schema";
 import type { User } from "better-auth";
 import type { Invitation, Member, Organization } from "better-auth/plugins";
-import { organization } from "better-auth/plugins";
+import { type OrganizationOptions, organization } from "better-auth/plugins";
 import { and, eq } from "drizzle-orm";
 import { tolerateMissingOrgTables } from "../lib/org-tables";
 
@@ -20,18 +20,13 @@ export function createOrganizationPlugin(
     request?: Request
   ) => Promise<void>
 ) {
-  return organization({
+  const options = {
     allowUserToCreateOrganization: false,
     cancelPendingInvitationsOnReInvite: true,
     creatorRole: "owner",
 
     invitationExpiresIn: 172_800,
     membershipLimit: 100,
-    organizationLimit: 5,
-
-    ...(sendInvitationEmailFn
-      ? { sendInvitationEmail: sendInvitationEmailFn }
-      : {}),
 
     organizationHooks: {
       afterRemoveMember: async ({ member }) => {
@@ -85,5 +80,15 @@ export function createOrganizationPlugin(
         );
       },
     },
-  });
+    organizationLimit: 5,
+  } satisfies OrganizationOptions;
+
+  if (sendInvitationEmailFn) {
+    return organization({
+      ...options,
+      sendInvitationEmail: sendInvitationEmailFn,
+    });
+  }
+
+  return organization(options);
 }

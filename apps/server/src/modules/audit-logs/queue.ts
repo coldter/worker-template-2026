@@ -1,6 +1,5 @@
-import { type DrizzleClient, withDrizzleClient } from "@repo/db";
+import type { DrizzleClient } from "@repo/db";
 import { auditLogs } from "@repo/db/schema";
-import type { AuditLogMetadata } from "@repo/shared/audit";
 import { logger } from "@repo/shared/logger";
 import {
   type AuditLogQueueMessage,
@@ -47,7 +46,7 @@ function toInsertRow(
     event: message.event,
     ipAddress: message.ipAddress,
 
-    metadata: message.metadata as AuditLogMetadata | undefined,
+    metadata: message.metadata,
     targetId: message.targetId,
     targetType: message.targetType,
     userAgent: message.userAgent,
@@ -114,6 +113,7 @@ export async function handleAuditLogQueue(
   }
 
   try {
+    const { withDrizzleClient } = await import("@repo/db/client");
     await withDrizzleClient(
       env.HYPERDRIVE.connectionString,
       (db) => flushAuditRows(db, pending),

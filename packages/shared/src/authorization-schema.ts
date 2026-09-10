@@ -26,20 +26,20 @@ export type AuthorizationPrincipal = Principal<
   AuthorizationOrgRole
 >;
 
-const VALID_ORG_ROLES = new Set<AuthorizationOrgRole>([
-  "owner",
-  "admin",
-  "member",
-]);
+const VALID_ORG_ROLES: Record<AuthorizationOrgRole, true> = {
+  admin: true,
+  member: true,
+  owner: true,
+};
 
 export function isAuthorizationRole(slug: string): slug is AuthorizationRole {
-  return SYSTEM_ROLE_SLUG_VALUES.includes(slug as AuthorizationRole);
+  return SYSTEM_ROLE_SLUG_VALUES.some((role) => role === slug);
 }
 
 export function isAuthorizationOrgRole(
   role: string
 ): role is AuthorizationOrgRole {
-  return VALID_ORG_ROLES.has(role as AuthorizationOrgRole);
+  return Object.hasOwn(VALID_ORG_ROLES, role);
 }
 
 export const VALID_STATUSES = new Set<AuthorizationAttributes["status"]>(

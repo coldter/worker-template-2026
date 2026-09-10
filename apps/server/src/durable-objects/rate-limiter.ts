@@ -1,9 +1,17 @@
 import { DurableObject } from "cloudflare:workers";
 import { logger } from "@repo/shared/logger";
+import { z } from "zod";
 
 const WINDOW_MS = 60_000;
 const STORAGE_KEY = "ts";
 const MAX_TIMESTAMPS = 10_000;
+
+const storedTimestampsSchema = z.array(z.unknown()).transform((entries) =>
+  entries.flatMap((entry) => {
+    const parsed = z.number().safeParse(entry);
+    return parsed.success && Number.isFinite(parsed.data) ? [parsed.data] : [];
+  })
+);
 
 export class RateLimiter extends DurableObject {
   private timestamps: number[] = [];
@@ -91,11 +99,11 @@ export class RateLimiter extends DurableObject {
       return;
     }
     try {
-      const stored = await this.ctx.storage.get<number[]>(STORAGE_KEY);
-      if (Array.isArray(stored)) {
-        this.timestamps = stored.filter(
-          (t): t is number => typeof t === "number" && Number.isFinite(t)
-        );
+      const parsed = storedTimestampsSchema.safeParse(
+        await this.ctx.storage.get(STORAGE_KEY)
+      );
+      if (parsed.success) {
+        this.timestamps = parsed.data;
       }
       this.hydrated = true;
     } catch (err) {

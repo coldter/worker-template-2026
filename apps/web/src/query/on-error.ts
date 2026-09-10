@@ -1,4 +1,5 @@
 import { toast } from "sonner";
+import * as z from "zod/mini";
 import { ApiError } from "@/lib/api";
 import { authClient } from "@/lib/auth-client";
 
@@ -6,57 +7,44 @@ import { clearSession } from "@/modules/auth/helpers";
 import { useAlertStore } from "@/store/alert";
 import { useUserStore } from "@/store/user";
 
-const FALLBACK_MESSAGES: Record<number, string> = {
-  400: "Bad request. Please check your input.",
-  401: "Your session has expired. Please sign in again.",
-  403: "You do not have permission to perform this action.",
-  404: "The requested resource was not found.",
-  429: "Too many requests. Please slow down.",
-  500: "An internal server error occurred.",
-  502: "Server is temporarily unavailable.",
-  503: "Service is under maintenance.",
-  504: "Request timed out. Please try again.",
-};
+const FALLBACK_MESSAGES = new Map<number, string>([
+  [400, "Bad request. Please check your input."],
+  [401, "Your session has expired. Please sign in again."],
+  [403, "You do not have permission to perform this action."],
+  [404, "The requested resource was not found."],
+  [429, "Too many requests. Please slow down."],
+  [500, "An internal server error occurred."],
+  [502, "Server is temporarily unavailable."],
+  [503, "Service is under maintenance."],
+  [504, "Request timed out. Please try again."],
+]);
 
-const readStringProp = (error: unknown, key: string): string | undefined => {
-  if (typeof error !== "object" || error === null) {
-    return;
-  }
-  if (!(key in error)) {
-    return;
-  }
-  const value = (error as Record<string, unknown>)[key];
-  return typeof value === "string" ? value : undefined;
-};
+const thrownErrorSchema = z.catch(
+  z.object({
+    message: z.catch(z.optional(z.string()), undefined),
+    path: z.catch(z.optional(z.string()), undefined),
+    status: z.catch(z.optional(z.number()), undefined),
+  }),
+  {}
+);
 
-const readNumberProp = (error: unknown, key: string): number | undefined => {
-  if (typeof error !== "object" || error === null) {
-    return;
-  }
-  if (!(key in error)) {
-    return;
-  }
-  const value = (error as Record<string, unknown>)[key];
-  return typeof value === "number" ? value : undefined;
-};
+type ErrorDetails = z.infer<typeof thrownErrorSchema>;
 
-const getStatusCode = (error: unknown): number => {
-  if (ApiError.is(error)) {
-    return error.status;
-  }
-  return readNumberProp(error, "status") ?? 0;
-};
+const parseErrorDetails = (error: Error): ErrorDetails =>
+  thrownErrorSchema.parse(error);
 
-const getErrorPath = (error: unknown): string | undefined => {
-  if (ApiError.is(error)) {
-    return error.path;
-  }
-  return readStringProp(error, "path");
-};
+const fallbackMessage = (status: number): string =>
+  FALLBACK_MESSAGES.get(status) ?? "An unexpected error occurred";
 
-const getErrorMessage = (error: unknown): string => {
-  const status = getStatusCode(error);
+const getStatusCode = (error: Error, details: ErrorDetails): number =>
+  ApiError.is(error) ? error.status : (details.status ?? 0);
 
+const getErrorPath = (
+  error: Error,
+  details: ErrorDetails
+): string | undefined => (ApiError.is(error) ? error.path : details.path);
+
+const getErrorMessage = (error: Error, details: ErrorDetails): string => {
   if (ApiError.is(error)) {
     if (error.error.message) {
       return error.error.message;
@@ -64,15 +52,14 @@ const getErrorMessage = (error: unknown): string => {
     if (error.message && error.message !== "Error") {
       return error.message;
     }
-    return FALLBACK_MESSAGES[status] || "An unexpected error occurred";
+    return fallbackMessage(error.status);
   }
 
-  const message = readStringProp(error, "message");
-  if (message && message !== "Error") {
-    return message;
+  if (details.message && details.message !== "Error") {
+    return details.message;
   }
 
-  return FALLBACK_MESSAGES[status] || "An unexpected error occurred";
+  return fallbackMessage(details.status ?? 0);
 };
 
 const isSessionCheckPath = (path?: string): boolean => {
@@ -117,11 +104,12 @@ const handleAuthError = (): Promise<void> => {
   return authErrorInFlight;
 };
 
-export const handleGlobalError = async (error: unknown): Promise<void> => {
+export const handleGlobalError = async (error: Error): Promise<void> => {
   console.error("Global query/mutation error:", error);
 
-  const statusCode = getStatusCode(error);
-  const errorPath = getErrorPath(error);
+  const details = parseErrorDetails(error);
+  const statusCode = getStatusCode(error, details);
+  const errorPath = getErrorPath(error, details);
   const isCasualSessionCheck = isSessionCheckPath(errorPath);
 
   switch (statusCode) {
@@ -150,7 +138,7 @@ export const handleGlobalError = async (error: unknown): Promise<void> => {
         return;
       }
       toast.error("Server Error", {
-        description: getErrorMessage(error),
+        description: getErrorMessage(error, details),
       });
       return;
 
@@ -161,14 +149,14 @@ export const handleGlobalError = async (error: unknown): Promise<void> => {
     case 403:
       useAlertStore.getState().setDownAlert("forbidden");
       toast.error("Access Denied", {
-        description: getErrorMessage(error),
+        description: getErrorMessage(error, details),
       });
       return;
 
     default:
       if (statusCode >= 400) {
         toast.error("Error", {
-          description: getErrorMessage(error),
+          description: getErrorMessage(error, details),
         });
       }
   }

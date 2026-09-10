@@ -1,11 +1,10 @@
 import {
-  type AuthorizationAttributes,
   type AuthorizationPrincipal,
   isAuthorizationOrgRole,
   isAuthorizationRole,
-  VALID_STATUSES,
 } from "./authorization-schema";
 import { logger } from "./logger";
+import { isUserStatus } from "./users";
 
 export type AuthorizationUserInput = {
   id: string;
@@ -34,25 +33,27 @@ export function buildAuthorizationPrincipal(
   }
 
   const requestedStatus = user.status;
-  const status = VALID_STATUSES.has(
-    requestedStatus as AuthorizationAttributes["status"]
-  )
-    ? (requestedStatus as AuthorizationAttributes["status"])
-    : "deleted";
+  const status =
+    requestedStatus !== undefined && isUserStatus(requestedStatus)
+      ? requestedStatus
+      : "deleted";
 
-  return {
+  const principal: AuthorizationPrincipal = {
     attributes: { status },
     id: user.id,
     roles,
-    ...(session.activeOrganizationId &&
+  };
+
+  if (
+    session.activeOrganizationId &&
     session.activeOrgRole &&
     isAuthorizationOrgRole(session.activeOrgRole)
-      ? {
-          organization: {
-            id: session.activeOrganizationId,
-            role: session.activeOrgRole,
-          },
-        }
-      : {}),
-  };
+  ) {
+    principal.organization = {
+      id: session.activeOrganizationId,
+      role: session.activeOrgRole,
+    };
+  }
+
+  return principal;
 }

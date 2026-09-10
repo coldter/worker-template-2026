@@ -7,6 +7,7 @@ export async function kvGetJson<T>(
     return null;
   }
   try {
+    // SAFETY: kvSetJson serializes the caller's T for this key, so the stored payload parses back as T.
     return JSON.parse(raw) as T;
   } catch {
     return null;

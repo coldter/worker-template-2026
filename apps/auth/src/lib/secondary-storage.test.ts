@@ -12,6 +12,7 @@ function createFakeKv() {
   const puts: PutRecord[] = [];
   let putError: Error | null = null;
 
+  // SAFETY: createSecondaryStorage only calls get/put/delete and this stub implements all three with KV-compatible signatures.
   const cache = {
     delete: async (key: string) => {
       store.delete(key);
@@ -28,7 +29,7 @@ function createFakeKv() {
       store.set(key, value);
       puts.push({ expirationTtl: options?.expirationTtl, key, value });
     },
-  } as unknown as KVNamespace;
+  } as KVNamespace;
 
   return {
     cache,

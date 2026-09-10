@@ -3,12 +3,12 @@ import {
   type WorkflowEvent,
   type WorkflowStep,
 } from "cloudflare:workers";
-import { withDrizzleClient } from "@repo/db";
+import { withDrizzleClient } from "@repo/db/client";
 import * as schema from "@repo/db/schema";
-import { getBrandConfig } from "@repo/shared/brand";
 import { logger } from "@repo/shared/logger";
 import { DrizzleLogger } from "@repo/shared/logger-drizzle";
 import { eq } from "drizzle-orm";
+import { getBrandConfigFromBindings } from "@/lib/brand";
 import { runWithWorkflowMetrics } from "@/lib/workflow-metrics";
 
 function getDrizzleLogger() {
@@ -86,9 +86,7 @@ export class EmailNotificationWorkflow extends WorkflowEntrypoint<
       async () => {
         const { sendEmail, NotificationEmail } = await import("@repo/email");
 
-        const brand = getBrandConfig(
-          this.env as unknown as Record<string, string | undefined>
-        );
+        const brand = getBrandConfigFromBindings(this.env);
         return await sendEmail({
           apiKey: this.env.RESEND_API_KEY,
           from: `${brand.appName} <${this.env.EMAIL_FROM}>`,

@@ -81,9 +81,7 @@ export function DataTableToolbar<TData extends RowData>({
               table.getColumn(searchKey)?.setFilterValue(value)
             }
             placeholder={searchPlaceholder}
-            value={
-              (table.getColumn(searchKey)?.getFilterValue() as string) ?? ""
-            }
+            value={String(table.getColumn(searchKey)?.getFilterValue() ?? "")}
           />
         ) : (
           <DebouncedInput

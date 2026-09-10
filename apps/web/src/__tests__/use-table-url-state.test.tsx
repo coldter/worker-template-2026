@@ -1,8 +1,12 @@
+import { isFunction } from "@tanstack/react-table";
 import { act, renderHook } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-
 import { useServerTable } from "@/hooks/use-server-table";
-import { useTableUrlState } from "@/hooks/use-table-url-state";
+import {
+  type NavigateFn,
+  type SearchRecord,
+  useTableUrlState,
+} from "@/hooks/use-table-url-state";
 
 describe("useTableUrlState", () => {
   it("derives pagination from a custom page size key", () => {
@@ -18,9 +22,9 @@ describe("useTableUrlState", () => {
   });
 
   it("derives the global filter from the URL and stays in sync", () => {
-    const navigate = vi.fn();
+    const navigate = vi.fn<NavigateFn>();
     const { result, rerender } = renderHook(
-      ({ search }: { search: Record<string, unknown> }) =>
+      ({ search }: { search: SearchRecord }) =>
         useTableUrlState({
           globalFilter: { key: "search" },
           navigate,
@@ -37,11 +41,13 @@ describe("useTableUrlState", () => {
     act(() => result.current.onGlobalFilterChange?.("hopper"));
     expect(navigate).toHaveBeenCalledTimes(1);
 
-    const updater = navigate.mock.calls[0]?.[0].search as (
-      prev: Record<string, unknown>
-    ) => Record<string, unknown>;
+    const [call] = navigate.mock.calls[0] ?? [];
+    const update = call?.search;
+    if (!isFunction(update)) {
+      throw new Error("Expected the navigate search update to be a function");
+    }
 
-    expect(updater({ search: "grace" })).toEqual({
+    expect(update({ search: "grace" })).toEqual({
       page: undefined,
       search: "hopper",
     });

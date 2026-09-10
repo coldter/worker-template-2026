@@ -11,6 +11,7 @@ import {
 } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { bearer, emailOTP, jwt, openAPI, twoFactor } from "better-auth/plugins";
+import { z } from "zod";
 import { RATE_LIMIT_CONFIG, TWO_FACTOR_CONFIG } from "./constants";
 import { createSendTwoFactorOTP } from "./email/send-two-factor-otp";
 import { createSendVerificationOTP } from "./email/send-verification-otp";
@@ -45,6 +46,17 @@ export type AuthBindings = Omit<
 
 export type { SessionWithAdditionalFields };
 
+type SessionInference = {
+  Session: {
+    user: User & UserWithStatusFields;
+    session: Session & SessionWithAdditionalFields;
+  };
+};
+
+const jwtUserFieldsSchema = z.object({
+  roleSlugs: z.array(z.string()),
+});
+
 let memoizedCorsOrigins: string[] | undefined;
 let memoizedBrand: ReturnType<typeof getBrandConfig> | undefined;
 
@@ -61,9 +73,14 @@ function getMemoizedBrandConfig(
   env: AuthBindings
 ): ReturnType<typeof getBrandConfig> {
   if (!memoizedBrand) {
-    memoizedBrand = getBrandConfig(
-      env as unknown as Record<string, string | undefined>
-    );
+    memoizedBrand = getBrandConfig({
+      APP_NAME: env.APP_NAME,
+      APP_URL: env.APP_URL,
+      BRAND_PRIMARY_COLOR: env.BRAND_PRIMARY_COLOR,
+      COMPANY_NAME: env.COMPANY_NAME,
+      LOGO_TEXT: env.LOGO_TEXT,
+      SUPPORT_EMAIL: env.SUPPORT_EMAIL,
+    });
   }
   return memoizedBrand;
 }
@@ -154,11 +171,11 @@ export function createAuth(
         jwt: {
           audience: env.APP_URL,
           definePayload: ({ user, session }) => {
-            const typedUser = user as typeof user & UserWithStatusFields;
+            const parsed = jwtUserFieldsSchema.safeParse(user);
             return {
               email: user.email,
               platform: session.platform,
-              roleSlugs: typedUser.roleSlugs,
+              roleSlugs: parsed.success ? parsed.data.roleSlugs : undefined,
               sub: user.id,
             };
           },
@@ -167,12 +184,8 @@ export function createAuth(
         },
       }),
       {
-        $Infer: {} as {
-          Session: {
-            user: User & UserWithStatusFields;
-            session: Session & SessionWithAdditionalFields;
-          };
-        },
+        // SAFETY: better-auth reads `$Infer` only at the type level, so this runtime value is intentionally empty.
+        $Infer: {} as SessionInference,
         id: "override-type",
       },
     ],
