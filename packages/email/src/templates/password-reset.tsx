@@ -1,6 +1,8 @@
 import React from "react";
 import { Button, Heading, Link, Section, Text } from "react-email";
-import { BaseLayout, type EmailBrandProps } from "../components/base-layout";
+
+import { BaseLayout } from "../components/base-layout";
+import type { EmailBrandProps } from "../components/base-layout";
 
 interface PasswordResetEmailProps {
   brand?: EmailBrandProps;
@@ -9,51 +11,49 @@ interface PasswordResetEmailProps {
   userName: string;
 }
 
-export function PasswordResetEmail({
+export const PasswordResetEmail = ({
   userName,
   resetUrl,
   expiresIn,
   brand,
-}: PasswordResetEmailProps) {
-  return (
-    <BaseLayout previewText="Reset your password (link inside)." {...brand}>
-      <Section>
-        <Heading className="text-[28px] font-bold text-slate-900 text-center m-0 mb-6 leading-tight">
-          Reset your password
-        </Heading>
-        <Text className="text-[16px] text-slate-600 leading-relaxed m-0 mb-4">
-          Hi {userName},
-        </Text>
-        <Text className="text-[16px] text-slate-600 leading-relaxed m-0 mb-8">
-          We received a request to reset the password for your account. No
-          worries—it happens to the best of us. This link will be active for the
-          next <strong>{expiresIn}</strong>.
-        </Text>
-        <Section className="text-center mb-8">
-          <Button
-            className="bg-brand-primary text-white text-[16px] font-bold no-underline text-center px-10 py-4 rounded-lg inline-block shadow-lg"
-            href={resetUrl}
-          >
-            Reset Password
-          </Button>
-        </Section>
-        <Section className="bg-slate-50 rounded-lg p-4 border border-slate-100 mb-6">
-          <Text className="text-[13px] text-slate-500 m-0 leading-relaxed">
-            If you're having trouble with the button, copy and paste this link
-            into your browser:
-            <br />
-            <Link className="text-brand-primary break-all" href={resetUrl}>
-              {resetUrl}
-            </Link>
-          </Text>
-        </Section>
-        <Text className="text-[14px] text-slate-400 leading-relaxed m-0 text-center">
-          Didn't request this? You can safely ignore this email.
+}: PasswordResetEmailProps) => (
+  <BaseLayout previewText="Reset your password (link inside)." {...brand}>
+    <Section>
+      <Heading className="m-0 mb-6 text-center text-[28px] leading-tight font-bold text-slate-900">
+        Reset your password
+      </Heading>
+      <Text className="m-0 mb-4 text-[16px] leading-relaxed text-slate-600">
+        Hi {userName},
+      </Text>
+      <Text className="m-0 mb-8 text-[16px] leading-relaxed text-slate-600">
+        We received a request to reset the password for your account. No
+        worries—it happens to the best of us. This link will be active for the
+        next <strong>{expiresIn}</strong>.
+      </Text>
+      <Section className="mb-8 text-center">
+        <Button
+          className="bg-brand-primary inline-block rounded-lg px-10 py-4 text-center text-[16px] font-bold text-white no-underline shadow-lg"
+          href={resetUrl}
+        >
+          Reset Password
+        </Button>
+      </Section>
+      <Section className="mb-6 rounded-lg border border-slate-100 bg-slate-50 p-4">
+        <Text className="m-0 text-[13px] leading-relaxed text-slate-500">
+          If you&apos;re having trouble with the button, copy and paste this
+          link into your browser:
+          <br />
+          <Link className="text-brand-primary break-all" href={resetUrl}>
+            {resetUrl}
+          </Link>
         </Text>
       </Section>
-    </BaseLayout>
-  );
-}
+      <Text className="m-0 text-center text-[14px] leading-relaxed text-slate-400">
+        Didn&apos;t request this? You can safely ignore this email.
+      </Text>
+    </Section>
+  </BaseLayout>
+);
 
 PasswordResetEmail.PreviewProps = {
   expiresIn: "60 minutes",

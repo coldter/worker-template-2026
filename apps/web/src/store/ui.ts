@@ -2,7 +2,9 @@ import { create } from "zustand";
 import { createJSONStorage, devtools, persist } from "zustand/middleware";
 
 export type Theme = "dark" | "light" | "system";
+
 export type Collapsible = "offcanvas" | "icon" | "none";
+
 export type Variant = "inset" | "sidebar" | "floating";
 
 interface UIStoreState {

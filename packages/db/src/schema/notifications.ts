@@ -7,6 +7,7 @@ import {
   timestamp,
   varchar,
 } from "drizzle-orm/pg-core";
+
 import { createdAt, updatedAt } from "../helpers";
 import { generatePrefixedCuid, ID_PREFIXES } from "../ids";
 import { users } from "./auth";
@@ -18,9 +19,11 @@ export const NOTIFICATION_STATUS = [
   "failed",
   "cancelled",
 ] as const;
+
 export type NotificationStatus = (typeof NOTIFICATION_STATUS)[number];
 
 export const NOTIFICATION_CHANNEL = ["email", "sms", "push"] as const;
+
 export type NotificationChannel = (typeof NOTIFICATION_CHANNEL)[number];
 
 export const NOTIFICATION_PRIORITY = [
@@ -29,6 +32,7 @@ export const NOTIFICATION_PRIORITY = [
   "high",
   "critical",
 ] as const;
+
 export type NotificationPriority = (typeof NOTIFICATION_PRIORITY)[number];
 
 export type NotificationPropsScalar = string | number | boolean | null;
@@ -91,4 +95,5 @@ export const notifications = pgTable(
 );
 
 export type Notification = typeof notifications.$inferSelect;
+
 export type NewNotification = typeof notifications.$inferInsert;

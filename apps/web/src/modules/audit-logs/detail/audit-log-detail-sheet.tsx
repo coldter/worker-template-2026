@@ -1,6 +1,7 @@
 import { format, formatDistanceToNow } from "date-fns";
 import { Check, Copy } from "lucide-react";
 import { useCallback, useState } from "react";
+
 import { cn } from "@/lib/utils";
 import { Badge } from "@/modules/ui/badge";
 import { ScrollArea } from "@/modules/ui/scroll-area";
@@ -12,10 +13,9 @@ import {
   SheetTitle,
 } from "@/modules/ui/sheet";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/modules/ui/tooltip";
+
 import { EventIcon } from "../event-icon";
 import {
-  type AuditLogMetadata,
-  type AuditLogMetadataValue,
   encodeAuditLogMetadata,
   formatMetadataValue,
   getActorTypeLabel,
@@ -24,17 +24,25 @@ import {
   getEventDisplayName,
   getTargetTypeLabel,
 } from "../event-utils";
+import type { AuditLogMetadata, AuditLogMetadataValue } from "../event-utils";
 import type { AuditLog } from "../table/columns";
 
-type AuditLogDetailSheetProps = {
+interface AuditLogDetailSheetProps {
   log: AuditLog | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-};
+}
 
-const FIELD_NAME_LEADING_CHAR_REGEX = /^\w/;
+const FIELD_NAME_LEADING_CHAR_REGEX = /^\w/u;
 
-function CopyableValue({ value, label }: { value: string; label?: string }) {
+const formatFieldName = (name: string): string =>
+  name
+    .replaceAll(/(?<letter>[A-Z])/gu, " $<letter>")
+    .replaceAll(/[_-]/gu, " ")
+    .replace(FIELD_NAME_LEADING_CHAR_REGEX, (c) => c.toUpperCase())
+    .trim();
+
+const CopyableValue = ({ value, label }: { value: string; label?: string }) => {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = useCallback(async () => {
@@ -53,9 +61,9 @@ function CopyableValue({ value, label }: { value: string; label?: string }) {
         >
           <span className="max-w-[200px] truncate">{value}</span>
           {copied ? (
-            <Check className="text-emerald-500 size-3 shrink-0" />
+            <Check className="size-3 shrink-0 text-emerald-500" />
           ) : (
-            <Copy className="text-muted-foreground size-3 shrink-0 opacity-0 group-hover/row:opacity-100 transition-opacity" />
+            <Copy className="text-muted-foreground size-3 shrink-0 opacity-0 transition-opacity group-hover/row:opacity-100" />
           )}
         </button>
       </TooltipTrigger>
@@ -64,24 +72,22 @@ function CopyableValue({ value, label }: { value: string; label?: string }) {
       </TooltipContent>
     </Tooltip>
   );
-}
+};
 
-function DetailRow({
+const DetailRow = ({
   label,
   children,
 }: {
   label: string;
   children: React.ReactNode;
-}) {
-  return (
-    <div className="group/row flex items-start justify-between gap-4 py-2.5">
-      <span className="text-muted-foreground shrink-0 text-sm">{label}</span>
-      <div className="text-right text-sm">{children}</div>
-    </div>
-  );
-}
+}) => (
+  <div className="group/row flex items-start justify-between gap-4 py-2.5">
+    <span className="text-muted-foreground shrink-0 text-sm">{label}</span>
+    <div className="text-right text-sm">{children}</div>
+  </div>
+);
 
-function MetadataValue({ data }: { data: AuditLogMetadataValue }) {
+const MetadataValue = ({ data }: { data: AuditLogMetadataValue }) => {
   if (data.kind === "null") {
     return <span className="text-muted-foreground italic">None</span>;
   }
@@ -98,6 +104,7 @@ function MetadataValue({ data }: { data: AuditLogMetadataValue }) {
     if (data.items.length === 0) {
       return <span className="text-muted-foreground italic">Empty</span>;
     }
+
     return (
       <div className="flex flex-wrap justify-end gap-1">
         {data.items.map((item, idx) => (
@@ -133,18 +140,20 @@ function MetadataValue({ data }: { data: AuditLogMetadataValue }) {
       </div>
     </div>
   );
-}
+};
 
-function MetadataSection({ metadata }: { metadata: AuditLogMetadata }) {
+const MetadataSection = ({ metadata }: { metadata: AuditLogMetadata }) => {
   const entries = Object.entries(metadata);
 
   const { changes, changedFields } = metadata;
+
   const otherEntries = entries.filter(
     ([key]) => key !== "changes" && key !== "changedFields"
   );
 
   const changeEntries =
     changes?.kind === "object" ? Object.entries(changes.fields) : [];
+
   const changedFieldCount =
     changedFields?.kind === "array" ? changedFields.items.length : null;
 
@@ -154,6 +163,7 @@ function MetadataSection({ metadata }: { metadata: AuditLogMetadata }) {
         if (value.kind === "object") {
           return null;
         }
+
         return (
           <DetailRow key={key} label={formatFieldName(key)}>
             <MetadataValue data={value} />
@@ -187,17 +197,9 @@ function MetadataSection({ metadata }: { metadata: AuditLogMetadata }) {
       )}
     </div>
   );
-}
+};
 
-function formatFieldName(name: string): string {
-  return name
-    .replace(/([A-Z])/g, " $1")
-    .replace(/[_-]/g, " ")
-    .replace(FIELD_NAME_LEADING_CHAR_REGEX, (c) => c.toUpperCase())
-    .trim();
-}
-
-function parseUserAgent(ua: string) {
+const parseUserAgent = (ua: string) => {
   let browser = "Unknown";
   let os = "Unknown";
 
@@ -228,13 +230,13 @@ function parseUserAgent(ua: string) {
   }
 
   return { browser, os };
-}
+};
 
-export function AuditLogDetailSheet({
+export const AuditLogDetailSheet = ({
   log,
   open,
   onOpenChange,
-}: AuditLogDetailSheetProps) {
+}: AuditLogDetailSheetProps) => {
   if (!log) {
     return null;
   }
@@ -245,7 +247,7 @@ export function AuditLogDetailSheet({
 
   return (
     <Sheet onOpenChange={onOpenChange} open={open}>
-      <SheetContent className="sm:max-w-[480px] p-0 flex flex-col" side="right">
+      <SheetContent className="flex flex-col p-0 sm:max-w-[480px]" side="right">
         <SheetHeader className="border-b px-6 pt-6 pb-4">
           <div className="flex items-start gap-3">
             <span
@@ -268,14 +270,14 @@ export function AuditLogDetailSheet({
         </SheetHeader>
 
         <ScrollArea className="flex-1 overflow-hidden">
-          <div className="divide-y px-6 flex flex-col max-w-full">
+          <div className="flex max-w-full flex-col divide-y px-6">
             <div className="py-4">
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+              <h3 className="text-muted-foreground mb-2 text-xs font-semibold tracking-wider uppercase">
                 Event Information
               </h3>
               <DetailRow label="Event">
                 <Badge
-                  className={cn("text-[11px] font-mono", style.className)}
+                  className={cn("font-mono text-[11px]", style.className)}
                   variant="outline"
                 >
                   {log.event}
@@ -297,7 +299,7 @@ export function AuditLogDetailSheet({
             </div>
 
             <div className="py-4">
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+              <h3 className="text-muted-foreground mb-2 text-xs font-semibold tracking-wider uppercase">
                 Actor
               </h3>
               <DetailRow label="Type">
@@ -317,7 +319,7 @@ export function AuditLogDetailSheet({
             </div>
 
             <div className="py-4">
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+              <h3 className="text-muted-foreground mb-2 text-xs font-semibold tracking-wider uppercase">
                 Target
               </h3>
               <DetailRow label="Type">
@@ -343,7 +345,7 @@ export function AuditLogDetailSheet({
             </div>
 
             <div className="py-4">
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+              <h3 className="text-muted-foreground mb-2 text-xs font-semibold tracking-wider uppercase">
                 Network
               </h3>
               <DetailRow label="IP Address">
@@ -369,12 +371,12 @@ export function AuditLogDetailSheet({
                 <DetailRow label="User Agent">
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <span className="text-muted-foreground max-w-[200px] truncate text-[10px] font-mono cursor-help">
+                      <span className="text-muted-foreground max-w-[200px] cursor-help truncate font-mono text-[10px]">
                         {log.userAgent.slice(0, 40)}...
                       </span>
                     </TooltipTrigger>
                     <TooltipContent className="max-w-xs">
-                      <span className="text-[10px] break-all font-mono">
+                      <span className="font-mono text-[10px] break-all">
                         {log.userAgent}
                       </span>
                     </TooltipContent>
@@ -385,25 +387,25 @@ export function AuditLogDetailSheet({
 
             {log.metadata && Object.keys(log.metadata).length > 0 && (
               <div className="py-4">
-                <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+                <h3 className="text-muted-foreground mb-2 text-xs font-semibold tracking-wider uppercase">
                   Metadata
                 </h3>
                 <MetadataSection metadata={log.metadata} />
               </div>
             )}
 
-            <div className="py-4 pb-6 w-full max-w-full">
+            <div className="w-full max-w-full py-4 pb-6">
               <details className="group w-full max-w-full">
-                <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wider text-muted-foreground select-none hover:text-foreground transition-colors outline-none list-none [&::-webkit-details-marker]:hidden">
-                  <div className="flex items-center gap-1.5 focus-visible:ring-2 focus-visible:ring-ring outline-none rounded-sm w-fit group-open:mb-3">
-                    <span className="inline-flex size-4 items-center justify-center transition-transform group-open:rotate-90 text-[10px]">
+                <summary className="text-muted-foreground hover:text-foreground cursor-pointer list-none text-xs font-semibold tracking-wider uppercase transition-colors outline-none select-none [&::-webkit-details-marker]:hidden">
+                  <div className="focus-visible:ring-ring flex w-fit items-center gap-1.5 rounded-sm outline-none group-open:mb-3 focus-visible:ring-2">
+                    <span className="inline-flex size-4 items-center justify-center text-[10px] transition-transform group-open:rotate-90">
                       &#9654;
                     </span>
                     Raw JSON
                   </div>
                 </summary>
-                <div className="w-full relative">
-                  <pre className="bg-muted overflow-x-auto rounded-lg border p-3.5 text-[11px] leading-relaxed font-mono w-full max-w-full scrollbar-thin">
+                <div className="relative w-full">
+                  <pre className="bg-muted w-full max-w-full scrollbar-thin overflow-x-auto rounded-lg border p-3.5 font-mono text-[11px] leading-relaxed">
                     {JSON.stringify(
                       {
                         ...log,
@@ -424,4 +426,4 @@ export function AuditLogDetailSheet({
       </SheetContent>
     </Sheet>
   );
-}
+};

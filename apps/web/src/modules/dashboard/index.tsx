@@ -13,77 +13,10 @@ import {
   CardTitle,
 } from "@/modules/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/modules/ui/tabs";
+
 import { Analytics } from "./components/analytics";
 import { LazyOverview } from "./components/overview-lazy";
 import { RecentSales } from "./components/recent-sales";
-
-export function Dashboard() {
-  return (
-    <>
-      <Header>
-        <TopNav links={topNav} />
-        <div className="ms-auto flex items-center space-x-4">
-          <Search />
-          <ThemeSwitch />
-          <ProfileDropdown />
-        </div>
-      </Header>
-
-      <Main>
-        <div className="mb-2 flex items-center justify-between space-y-2">
-          <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
-          <div className="flex items-center space-x-2">
-            <Button>Download</Button>
-          </div>
-        </div>
-        <Tabs
-          className="space-y-4"
-          defaultValue="overview"
-          orientation="vertical"
-        >
-          <div className="w-full overflow-x-auto pb-2">
-            <TabsList>
-              <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="analytics">Analytics</TabsTrigger>
-              <TabsTrigger disabled value="reports">
-                Reports
-              </TabsTrigger>
-              <TabsTrigger disabled value="notifications">
-                Notifications
-              </TabsTrigger>
-            </TabsList>
-          </div>
-          <TabsContent className="space-y-4" value="overview">
-            <div className="grid grid-cols-1 gap-4 lg:grid-cols-7">
-              <Card className="col-span-1 lg:col-span-4">
-                <CardHeader>
-                  <CardTitle>Overview</CardTitle>
-                </CardHeader>
-                <CardContent className="ps-2">
-                  <LazyOverview />
-                </CardContent>
-              </Card>
-              <Card className="col-span-1 lg:col-span-3">
-                <CardHeader>
-                  <CardTitle>Recent Activity</CardTitle>
-                  <CardDescription>
-                    Recent activity in your application.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <RecentSales />
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-          <TabsContent className="space-y-4" value="analytics">
-            <Analytics />
-          </TabsContent>
-        </Tabs>
-      </Main>
-    </>
-  );
-}
 
 const topNav = [
   {
@@ -111,3 +44,69 @@ const topNav = [
     title: "Settings",
   },
 ];
+
+export const Dashboard = () => (
+  <>
+    <Header>
+      <TopNav links={topNav} />
+      <div className="ms-auto flex items-center space-x-4">
+        <Search />
+        <ThemeSwitch />
+        <ProfileDropdown />
+      </div>
+    </Header>
+
+    <Main>
+      <div className="mb-2 flex items-center justify-between space-y-2">
+        <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
+        <div className="flex items-center space-x-2">
+          <Button>Download</Button>
+        </div>
+      </div>
+      <Tabs
+        className="space-y-4"
+        defaultValue="overview"
+        orientation="vertical"
+      >
+        <div className="w-full overflow-x-auto pb-2">
+          <TabsList>
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="analytics">Analytics</TabsTrigger>
+            <TabsTrigger disabled value="reports">
+              Reports
+            </TabsTrigger>
+            <TabsTrigger disabled value="notifications">
+              Notifications
+            </TabsTrigger>
+          </TabsList>
+        </div>
+        <TabsContent className="space-y-4" value="overview">
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-7">
+            <Card className="col-span-1 lg:col-span-4">
+              <CardHeader>
+                <CardTitle>Overview</CardTitle>
+              </CardHeader>
+              <CardContent className="ps-2">
+                <LazyOverview />
+              </CardContent>
+            </Card>
+            <Card className="col-span-1 lg:col-span-3">
+              <CardHeader>
+                <CardTitle>Recent Activity</CardTitle>
+                <CardDescription>
+                  Recent activity in your application.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <RecentSales />
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+        <TabsContent className="space-y-4" value="analytics">
+          <Analytics />
+        </TabsContent>
+      </Tabs>
+    </Main>
+  </>
+);

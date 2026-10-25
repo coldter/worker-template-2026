@@ -4,31 +4,33 @@ import type {
   CriticalAuditEvent,
   TargetType,
 } from "@repo/shared/audit";
+
 import type { AuditContext } from "@/lib/audit-context";
+
 import { auditLogService } from "./service";
 import type { AuditLogMetadata } from "./types";
 
-export type { AuditContext };
+export { type AuditContext } from "@/lib/audit-context";
 
-export type AuditLogEntry = {
+export interface AuditLogEntry {
   event: CriticalAuditEvent;
   actorId: string;
   actorType?: ActorType;
   targetId: string;
   targetType?: TargetType;
   metadata?: AuditLogMetadata;
-};
+}
 
-export type AuditBuffer = {
+export interface AuditBuffer {
   record: (entry: AuditLogEntry) => void;
-};
+}
 
-export async function auditTransaction<T>(
+export const auditTransaction = <T>(
   db: DrizzleClient,
   auditContext: AuditContext,
-  callback: (tx: Executor, audit: AuditBuffer) => Promise<T>
-): Promise<T> {
-  return db.transaction(async (tx) => {
+  run: (tx: Executor, audit: AuditBuffer) => Promise<T>
+): Promise<T> =>
+  db.transaction(async (tx) => {
     const entries: AuditLogEntry[] = [];
 
     const audit: AuditBuffer = {
@@ -37,7 +39,7 @@ export async function auditTransaction<T>(
       },
     };
 
-    const result = await callback(tx, audit);
+    const result = await run(tx, audit);
 
     await auditLogService.createMany(
       entries.map((entry) => ({
@@ -55,4 +57,3 @@ export async function auditTransaction<T>(
 
     return result;
   });
-}

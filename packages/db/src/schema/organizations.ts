@@ -5,6 +5,7 @@ import {
   timestamp,
   uniqueIndex,
 } from "drizzle-orm/pg-core";
+
 import { createdAt, timestamps } from "../helpers";
 import { users } from "./auth";
 

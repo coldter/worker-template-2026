@@ -1,15 +1,17 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import { fn } from "storybook/test";
+
 import { WelcomeBackCard } from "./welcome-back-card";
 
 const meta = {
   args: {
-    onContinue: () => undefined,
-    onSwitchAccount: () => undefined,
+    onContinue: fn(),
+    onSwitchAccount: fn(),
   },
   component: WelcomeBackCard,
   decorators: [
     (Story) => (
-      <div className="w-96 rounded-md border bg-card p-6">
+      <div className="bg-card w-96 rounded-md border p-6">
         <Story />
       </div>
     ),

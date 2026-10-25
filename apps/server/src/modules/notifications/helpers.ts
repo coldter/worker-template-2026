@@ -13,9 +13,9 @@ import type {
   PushTokenSummary,
 } from "./types";
 
-export function formatNotificationSummary(
+export const formatNotificationSummary = (
   notification: NotificationRecord
-): NotificationSummary {
+): NotificationSummary => {
   const isReadTrackable = notification.channel === "push";
 
   return {
@@ -35,40 +35,42 @@ export function formatNotificationSummary(
     subject: notification.subject,
     type: notification.type,
   };
-}
+};
 
-export function formatPushTokenSummary(
+export const formatPushTokenSummary = (
   token: PushTokenRecord
-): PushTokenSummary {
-  return {
-    createdAt: token.createdAt.toISOString(),
-    deviceId: token.deviceId,
-    deviceName: token.deviceName,
-    id: token.id,
-    isActive: token.isActive,
-    lastUsedAt: token.lastUsedAt?.toISOString() ?? null,
-    platform: token.platform,
-    sessionId: token.sessionId,
-  };
-}
+): PushTokenSummary => ({
+  createdAt: token.createdAt.toISOString(),
+  deviceId: token.deviceId,
+  deviceName: token.deviceName,
+  id: token.id,
+  isActive: token.isActive,
+  lastUsedAt: token.lastUsedAt?.toISOString() ?? null,
+  platform: token.platform,
+  sessionId: token.sessionId,
+});
 
-export function formatPreferencesSummary(
+export const formatPreferencesSummary = (
   preferences: PreferencesRecord[]
-): PreferencesSummary {
+): PreferencesSummary => {
   const globalPrefs = preferences.find(
     (p) => p.typePattern === "*" || p.typePattern === "global"
   );
 
   const typeOverrides: PreferencesSummary["typeOverrides"] = {};
+
   for (const pref of preferences) {
     if (pref.typePattern !== "*" && pref.typePattern !== "global") {
       const channels: ("email" | "sms" | "push")[] = [];
+
       if (pref.emailEnabled) {
         channels.push("email");
       }
+
       if (pref.smsEnabled) {
         channels.push("sms");
       }
+
       if (pref.pushEnabled) {
         channels.push("push");
       }
@@ -86,32 +88,37 @@ export function formatPreferencesSummary(
     smsEnabled: globalPrefs?.smsEnabled ?? false,
     typeOverrides: Object.keys(typeOverrides).length > 0 ? typeOverrides : null,
   };
-}
+};
 
-export function requireUserId(c: Context<Env>): string {
+export const requireUserId = (c: Context<Env>): string => {
   const user = c.get("user");
+
   if (!user) {
     throw new HTTPException(401, { message: "Authentication required" });
   }
-  return user.id;
-}
 
-export function requireSessionId(c: Context<Env>): string {
+  return user.id;
+};
+
+export const requireSessionId = (c: Context<Env>): string => {
   const session = c.get("session");
+
   if (!session) {
     throw new HTTPException(401, { message: "Session not available" });
   }
-  return session.id;
-}
 
-export function resolveEnabledChannels(
+  return session.id;
+};
+
+export const resolveEnabledChannels = (
   preferences: PreferencesRecord[],
   notificationType: string,
   requestedChannels: NotificationChannel[]
-): NotificationChannel[] {
+): NotificationChannel[] => {
   const exactMatch = preferences.find(
     (p) => p.typePattern === notificationType
   );
+
   const wildcardMatch = preferences.find((p) => p.typePattern === "*");
   const prefs = exactMatch ?? wildcardMatch;
 
@@ -126,4 +133,4 @@ export function resolveEnabledChannels(
   };
 
   return requestedChannels.filter((channel) => channelEnabled[channel]);
-}
+};

@@ -5,6 +5,7 @@ import {
   createRouter,
   RouterProvider,
 } from "@tanstack/react-router";
+
 import { TopNav } from "./top-nav";
 
 const links = [
@@ -14,20 +15,22 @@ const links = [
   { disabled: true, href: "/settings", isActive: false, title: "Settings" },
 ];
 
-function renderWithRouter() {
+const renderWithRouter = () => {
   const rootRoute = createRootRoute({
     component: () => (
-      <div className="flex items-center gap-4 border-b bg-background p-4">
+      <div className="bg-background flex items-center gap-4 border-b p-4">
         <TopNav links={links} />
       </div>
     ),
   });
+
   const router = createRouter({
     history: createMemoryHistory({ initialEntries: ["/"] }),
     routeTree: rootRoute,
   });
+
   return <RouterProvider router={router} />;
-}
+};
 
 const meta = {
   args: {

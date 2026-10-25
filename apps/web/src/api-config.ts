@@ -1,11 +1,13 @@
 import type { CreateClientConfig } from "@/api.gen/client.gen";
 import { ApiError, clientConfig } from "@/lib/api";
 
-function getResponsePath(response: Response): string | undefined {
+const getResponsePath = (response: Response): string | undefined => {
   try {
     return new URL(response.url).pathname;
-  } catch {}
-}
+  } catch {
+    return undefined;
+  }
+};
 
 export const createClientConfig: CreateClientConfig = (baseConfig) => ({
   ...baseConfig,

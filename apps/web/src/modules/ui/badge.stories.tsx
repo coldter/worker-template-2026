@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { BadgeCheck, Star } from "lucide-react";
+
 import { Badge } from "./badge";
 
 const meta = {

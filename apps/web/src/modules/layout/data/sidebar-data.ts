@@ -8,6 +8,7 @@ import {
   UserCog,
   Users,
 } from "lucide-react";
+
 import type { SidebarData } from "@/modules/layout/types";
 
 export const sidebarData: SidebarData = {

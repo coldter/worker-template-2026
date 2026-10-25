@@ -1,5 +1,5 @@
-/** biome-ignore-all lint/suspicious/noConsole: script file */
 import { readFileSync } from "node:fs";
+
 import { confirm, input, select } from "@inquirer/prompts";
 import { createDrizzleClient } from "@repo/db/client";
 import {
@@ -13,66 +13,80 @@ import chalk from "chalk";
 import { highlight } from "cli-highlight";
 import { and, desc, eq } from "drizzle-orm";
 import { Client } from "pg";
+
 import { getPushProvider } from "@/lib/firebase";
 import {
   NOTIFICATION_TYPE_CONFIG,
   NOTIFICATION_TYPES,
-  type NotificationType,
 } from "@/modules/notifications/constants";
+import type { NotificationType } from "@/modules/notifications/constants";
 import { notificationDispatch } from "@/modules/notifications/dispatch";
 import { notificationService } from "@/modules/notifications/service";
 
 const client = new Client({ connectionString: process.env.DATABASE_URL });
+
 await client.connect();
+
 const db = createDrizzleClient(
   client,
   process.env.NODE_ENV === "development" ? new DrizzleLogger() : undefined
 );
 
-if (process.env.NODE_ENV === "production") {
+const nodeEnv: string = process.env.NODE_ENV;
+
+if (nodeEnv === "production") {
   console.error(chalk.red("push-debug cannot run in production."));
   process.exit(1);
 }
 
-function prettyJson(data: Record<string, string>): string {
+const prettyJson = (data: Record<string, string>): string => {
   const json = JSON.stringify(data, null, 2);
+
   return highlight(json, { ignoreIllegals: true, language: "json" });
-}
+};
 
-function isNotificationType(value: string): value is NotificationType {
-  return Object.values(NOTIFICATION_TYPES).some((type) => type === value);
-}
+const isNotificationType = (value: string): value is NotificationType =>
+  Object.values(NOTIFICATION_TYPES).some((type) => type === value);
 
-function printHeader(): void {
+const printHeader = (): void => {
   const configured = String(process.env.FCM_PROVIDER).toLowerCase();
+
   const provider =
     configured === "fcm" || configured === "firebase" ? "fcm" : "console";
+
   console.log(
     chalk.bold("\nPush Debug Tool") + chalk.dim(" (development only)")
   );
   console.log(chalk.dim(`Provider: ${provider}\n`));
-}
+};
 
-function timeAgo(date: Date): string {
+const timeAgo = (date: Date): string => {
   const seconds = Math.floor((Date.now() - date.getTime()) / 1000);
+
   if (seconds < 60) {
     return `${seconds}s ago`;
   }
+
   const minutes = Math.floor(seconds / 60);
+
   if (minutes < 60) {
     return `${minutes}m ago`;
   }
+
   const hours = Math.floor(minutes / 60);
+
   if (hours < 24) {
     return `${hours}h ago`;
   }
-  const days = Math.floor(hours / 24);
-  return `${days}d ago`;
-}
 
-async function resolveUser(
+  const days = Math.floor(hours / 24);
+
+  return `${days}d ago`;
+};
+
+const resolveUser = async (
   identifier: string
-): Promise<{ id: string; email: string; name: string }> {
+): Promise<{ id: string; email: string; name: string }> => {
   const isUserId = identifier.startsWith("usr_");
 
   const [user] = await db
@@ -91,9 +105,9 @@ async function resolveUser(
   }
 
   return user;
-}
+};
 
-async function inspectCommand(identifier: string): Promise<void> {
+const inspectCommand = async (identifier: string): Promise<void> => {
   const user = await resolveUser(identifier);
 
   console.log(chalk.bold.cyan("\n--- User ---"));
@@ -154,11 +168,13 @@ async function inspectCommand(identifier: string): Promise<void> {
   for (const n of recentNotifications) {
     const age = timeAgo(n.createdAt);
     let statusColor = chalk.yellow;
+
     if (n.status === "delivered") {
       statusColor = chalk.green;
     } else if (n.status === "failed") {
       statusColor = chalk.red;
     }
+
     const error = n.errorMessage ? chalk.red(` (${n.errorMessage})`) : "";
     console.log(
       chalk.dim(
@@ -189,12 +205,12 @@ async function inspectCommand(identifier: string): Promise<void> {
       )
     );
   }
-}
+};
 
-async function sendCommand(
+const sendCommand = async (
   identifier: string,
   notificationType?: string
-): Promise<void> {
+): Promise<void> => {
   const user = await resolveUser(identifier);
 
   let type: NotificationType;
@@ -209,8 +225,10 @@ async function sendCommand(
           `Available types:\n  ${Object.values(NOTIFICATION_TYPES).join("\n  ")}`
         )
       );
+
       return;
     }
+
     type = notificationType;
   } else {
     const allTypes = Object.values(NOTIFICATION_TYPES);
@@ -225,7 +243,7 @@ async function sendCommand(
   }
 
   const config = NOTIFICATION_TYPE_CONFIG[type];
-  const typeName = type.replace(/[._]/g, " ");
+  const typeName = type.replaceAll(/[._]/gu, " ");
 
   console.log(
     chalk.dim(`\nSending ${chalk.bold(type)} to ${user.email} (${user.id})...`)
@@ -270,9 +288,9 @@ async function sendCommand(
       )
     );
   }
-}
+};
 
-async function sendDirectCommand(identifier: string): Promise<void> {
+const sendDirectCommand = async (identifier: string): Promise<void> => {
   const user = await resolveUser(identifier);
 
   const tokens = await db
@@ -282,6 +300,7 @@ async function sendDirectCommand(identifier: string): Promise<void> {
 
   if (tokens.length === 0) {
     console.error(chalk.red(`No active push tokens for ${user.email}`));
+
     return;
   }
 
@@ -330,9 +349,11 @@ async function sendDirectCommand(identifier: string): Promise<void> {
       );
     } else {
       failedCount += 1;
+
       const invalidNote = result.invalidToken
         ? chalk.red(" (token removed)")
         : "";
+
       console.log(
         chalk.dim(
           `  Token ${token.id} (${token.platform}, ${device}):  ${chalk.red("FAILED")}  ${result.error}${invalidNote}`
@@ -346,12 +367,12 @@ async function sendDirectCommand(identifier: string): Promise<void> {
       `\nResult: ${deliveredCount}/${tokens.length} delivered, ${failedCount} failed`
     )
   );
-}
+};
 
-async function sendRawCommand(
+const sendRawCommand = async (
   identifier: string,
   jsonInput?: string
-): Promise<void> {
+): Promise<void> => {
   const user = await resolveUser(identifier);
 
   let data: Record<string, string>;
@@ -359,12 +380,13 @@ async function sendRawCommand(
   if (jsonInput) {
     try {
       data = JSON.parse(jsonInput);
-    } catch (e) {
+    } catch (error) {
       console.error(
         chalk.red(
-          `Invalid JSON: ${e instanceof Error ? e.message : "parse error"}`
+          `Invalid JSON: ${error instanceof Error ? error.message : "parse error"}`
         )
       );
+
       return;
     }
   } else {
@@ -373,16 +395,19 @@ async function sendRawCommand(
       validate: (val) => {
         try {
           JSON.parse(val);
+
           return true;
         } catch {
           return "Must be valid JSON";
         }
       },
     });
+
     data = JSON.parse(raw);
   }
 
   const stringData: Record<string, string> = {};
+
   for (const [key, value] of Object.entries(data)) {
     stringData[key] = String(value);
   }
@@ -397,6 +422,7 @@ async function sendRawCommand(
 
   if (tokens.length === 0) {
     console.error(chalk.red(`No active push tokens for ${user.email}`));
+
     return;
   }
 
@@ -407,6 +433,7 @@ async function sendRawCommand(
 
   if (!proceed) {
     console.log(chalk.yellow("Aborted."));
+
     return;
   }
 
@@ -441,9 +468,11 @@ async function sendRawCommand(
       );
     } else {
       failedCount += 1;
+
       const invalidNote = result.invalidToken
         ? chalk.red(" (token removed)")
         : "";
+
       console.log(
         chalk.dim(
           `  Token ${token.id} (${token.platform}, ${device}):  ${chalk.red("FAILED")}  ${result.error}${invalidNote}`
@@ -457,9 +486,9 @@ async function sendRawCommand(
       `\nResult: ${deliveredCount}/${tokens.length} delivered, ${failedCount} failed`
     )
   );
-}
+};
 
-async function sendAllTypesCommand(identifier: string): Promise<void> {
+const sendAllTypesCommand = async (identifier: string): Promise<void> => {
   const user = await resolveUser(identifier);
 
   const pushTypes = Object.entries(NOTIFICATION_TYPE_CONFIG).flatMap(
@@ -480,6 +509,7 @@ async function sendAllTypesCommand(identifier: string): Promise<void> {
 
   if (!proceed) {
     console.log(chalk.yellow("Aborted."));
+
     return;
   }
 
@@ -488,7 +518,8 @@ async function sendAllTypesCommand(identifier: string): Promise<void> {
 
   const results = await Promise.all(
     pushTypes.map(async (type) => {
-      const typeName = type.replace(/[._]/g, " ");
+      const typeName = type.replaceAll(/[._]/gu, " ");
+
       try {
         const result = await notificationDispatch.send(db, {
           body: `Test notification for ${type} triggered via push-debug CLI.`,
@@ -499,9 +530,11 @@ async function sendAllTypesCommand(identifier: string): Promise<void> {
         });
 
         const sent = result.sentChannels.length > 0;
+
         return { sent, type };
       } catch (error) {
         const msg = error instanceof Error ? error.message : "unknown error";
+
         return { error: msg, sent: false, type };
       }
     })
@@ -529,9 +562,9 @@ async function sendAllTypesCommand(identifier: string): Promise<void> {
       `\nResult: ${successCount} sent, ${failCount} filtered/failed out of ${pushTypes.length} types`
     )
   );
-}
+};
 
-async function cleanupCommand(identifier: string): Promise<void> {
+const cleanupCommand = async (identifier: string): Promise<void> => {
   const user = await resolveUser(identifier);
 
   const tokens = await db
@@ -547,6 +580,7 @@ async function cleanupCommand(identifier: string): Promise<void> {
         `\nNo inactive tokens for ${user.email}. Nothing to clean up.`
       )
     );
+
     return;
   }
 
@@ -573,6 +607,7 @@ async function cleanupCommand(identifier: string): Promise<void> {
 
   if (!proceed) {
     console.log(chalk.yellow("Aborted."));
+
     return;
   }
 
@@ -585,13 +620,13 @@ async function cleanupCommand(identifier: string): Promise<void> {
   console.log(
     chalk.green(`\nDeleted ${inactiveTokens.length} inactive token(s).`)
   );
-}
+};
 
-async function interactiveMenu(): Promise<void> {
+const interactiveMenu = async (): Promise<void> => {
   printHeader();
 
   while (true) {
-    // biome-ignore lint/performance/noAwaitInLoops: each prompt must be answered before the next one
+    // oxlint-disable-next-line no-await-in-loop -- the menu prompt must be answered before the next iteration
     const action = await select({
       choices: [
         {
@@ -636,33 +671,52 @@ async function interactiveMenu(): Promise<void> {
     }
 
     try {
+      // oxlint-disable-next-line no-await-in-loop -- the identifier prompt must be answered before dispatching
       const identifier = await input({
         message: "User (ID or email):",
         validate: (val) => (val.length > 0 ? true : "Required"),
       });
 
       switch (action) {
-        case "inspect":
+        case "inspect": {
+          // oxlint-disable-next-line no-await-in-loop -- menu actions run one at a time
           await inspectCommand(identifier);
           break;
+        }
+
         case "send": {
+          // oxlint-disable-next-line no-await-in-loop -- menu actions run one at a time
           await sendCommand(identifier);
           break;
         }
-        case "send-direct":
+
+        case "send-direct": {
+          // oxlint-disable-next-line no-await-in-loop -- menu actions run one at a time
           await sendDirectCommand(identifier);
           break;
-        case "send-raw":
+        }
+
+        case "send-raw": {
+          // oxlint-disable-next-line no-await-in-loop -- menu actions run one at a time
           await sendRawCommand(identifier);
           break;
-        case "send-all-types":
+        }
+
+        case "send-all-types": {
+          // oxlint-disable-next-line no-await-in-loop -- menu actions run one at a time
           await sendAllTypesCommand(identifier);
           break;
-        case "cleanup":
+        }
+
+        case "cleanup": {
+          // oxlint-disable-next-line no-await-in-loop -- menu actions run one at a time
           await cleanupCommand(identifier);
           break;
-        default:
+        }
+
+        default: {
           break;
+        }
       }
     } catch (error) {
       console.error(
@@ -674,14 +728,15 @@ async function interactiveMenu(): Promise<void> {
 
     console.log("");
   }
-}
+};
 
-async function main(): Promise<void> {
+const main = async (): Promise<void> => {
   const args = process.argv.slice(2);
   const [command, identifier, typeArg] = args;
 
   if (!command) {
     await interactiveMenu();
+
     return;
   }
 
@@ -693,9 +748,11 @@ async function main(): Promise<void> {
         console.error(chalk.red("Usage: push:debug inspect <userId|email>"));
         process.exit(1);
       }
+
       await inspectCommand(identifier);
       break;
     }
+
     case "send": {
       if (!identifier) {
         console.error(
@@ -703,9 +760,11 @@ async function main(): Promise<void> {
         );
         process.exit(1);
       }
+
       await sendCommand(identifier, typeArg);
       break;
     }
+
     case "send-direct": {
       if (!identifier) {
         console.error(
@@ -713,9 +772,11 @@ async function main(): Promise<void> {
         );
         process.exit(1);
       }
+
       await sendDirectCommand(identifier);
       break;
     }
+
     case "send-raw": {
       if (!identifier) {
         console.error(
@@ -725,19 +786,23 @@ async function main(): Promise<void> {
         );
         process.exit(1);
       }
+
       let jsonInput: string | undefined;
       const jsonFlag = args.indexOf("--json");
       const fileFlag = args.indexOf("--file");
       const jsonValue = jsonFlag === -1 ? undefined : args[jsonFlag + 1];
       const fileValue = fileFlag === -1 ? undefined : args[fileFlag + 1];
+
       if (jsonValue) {
         jsonInput = jsonValue;
       } else if (fileValue) {
-        jsonInput = readFileSync(fileValue, "utf8");
+        jsonInput = readFileSync(fileValue, "utf-8");
       }
+
       await sendRawCommand(identifier, jsonInput);
       break;
     }
+
     case "send-all-types": {
       if (!identifier) {
         console.error(
@@ -745,17 +810,21 @@ async function main(): Promise<void> {
         );
         process.exit(1);
       }
+
       await sendAllTypesCommand(identifier);
       break;
     }
+
     case "cleanup": {
       if (!identifier) {
         console.error(chalk.red("Usage: push:debug cleanup <userId|email>"));
         process.exit(1);
       }
+
       await cleanupCommand(identifier);
       break;
     }
+
     case "help":
     case "--help": {
       console.log("Usage: push:debug [command] [args]");
@@ -780,22 +849,26 @@ async function main(): Promise<void> {
       );
       break;
     }
-    default:
+
+    default: {
       console.error(chalk.red(`Unknown command: ${command}`));
       console.log(
         "Available commands: inspect, send, send-direct, send-raw, send-all-types, cleanup"
       );
       process.exit(1);
+    }
   }
-}
+};
 
-main()
-  .catch((error) => {
-    console.error(
-      chalk.red(
-        `Fatal: ${error instanceof Error ? error.message : "Unknown error"}`
-      )
-    );
-    process.exit(1);
-  })
-  .finally(() => process.exit(0));
+try {
+  await main();
+} catch (error) {
+  console.error(
+    chalk.red(
+      `Fatal: ${error instanceof Error ? error.message : "Unknown error"}`
+    )
+  );
+  process.exit(1);
+} finally {
+  process.exit(0);
+}

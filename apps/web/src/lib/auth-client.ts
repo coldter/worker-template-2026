@@ -9,6 +9,7 @@ import { createAuthClient } from "better-auth/react";
 const parsedUrl = new URL(
   import.meta.env.VITE_SERVER_URL || "http://localhost:8787"
 );
+
 const { pathname } = parsedUrl;
 
 export const authClient = createAuthClient({
@@ -40,5 +41,7 @@ export const authClient = createAuthClient({
 });
 
 export type Session = typeof authClient.$Infer.Session;
+
 export type SessionUser = Session["user"];
+
 export type SessionData = Session["session"];

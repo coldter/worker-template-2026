@@ -1,58 +1,62 @@
 import { describe, expect, it } from "vitest";
+
 import { createOrgRoleCondition } from "../conditions";
 import type { AnyResourceDef } from "../schema";
 import { createAuthSchema } from "../schema";
 import type { Condition, PolicyRule } from "../types";
 import { validateRegistry } from "../validation";
 
-const KEY_MISMATCH_PATTERN = /does not match resource name/i;
+const KEY_MISMATCH_PATTERN = /does not match resource name/iu;
+
 const ORG_ROLE_WITHOUT_RESOLVE_PATTERN =
-  /uses withOrgRole.*but resolveOrganization is not defined/i;
-const UNKNOWN_ROLE_PATTERN = /references role "ghost" not in schema/i;
-const UNKNOWN_ORG_ROLE_PATTERN = /references org role "ghost" not in schema/i;
+  /uses withOrgRole.*but resolveOrganization is not defined/iu;
+
+const UNKNOWN_ROLE_PATTERN = /references role "ghost" not in schema/iu;
+const UNKNOWN_ORG_ROLE_PATTERN = /references org role "ghost" not in schema/iu;
+
 const UNKNOWN_ACTION_PATTERN =
-  /references action "fly" not in resource actions/i;
+  /references action "fly" not in resource actions/iu;
+
 const UNKNOWN_SYSTEM_ADMIN_PATTERN =
-  /systemAdminRoles references role "ghost" not in schema/i;
-const GLOBAL_ALLOW_PATTERN = /must use deny\(\)/i;
-const NO_ACTIONS_PATTERN = /has no actions/i;
-const NO_ROLES_PATTERN = /has no roles/i;
-const GLOBAL_RESOURCE_CONDITION_PATTERN = /uses a resource condition/i;
-const NO_ORG_ROLES_PATTERN = /uses withOrgRole\(\) with no org roles/i;
+  /systemAdminRoles references role "ghost" not in schema/iu;
+
+const GLOBAL_ALLOW_PATTERN = /must use deny\(\)/iu;
+const NO_ACTIONS_PATTERN = /has no actions/iu;
+const NO_ROLES_PATTERN = /has no roles/iu;
+const GLOBAL_RESOURCE_CONDITION_PATTERN = /uses a resource condition/iu;
+const NO_ORG_ROLES_PATTERN = /uses withOrgRole\(\) with no org roles/iu;
 
 type ValidateOptions = Parameters<typeof validateRegistry>[1];
 
-function options(overrides: Partial<ValidateOptions> = {}): ValidateOptions {
-  return {
-    globalPolicies: [],
-    orgRoleValues: [],
-    schemaRoles: ["admin", "user"],
-    systemAdminRoles: [],
-    ...overrides,
-  };
-}
+const options = (
+  overrides: Partial<ValidateOptions> = {}
+): ValidateOptions => ({
+  globalPolicies: [],
+  orgRoleValues: [],
+  schemaRoles: ["admin", "user"],
+  systemAdminRoles: [],
+  ...overrides,
+});
 
-function policy(overrides: Partial<PolicyRule> = {}): PolicyRule {
-  return {
-    actions: ["read"],
-    conditions: [],
-    effect: "allow",
-    label: "allow:user:read",
-    roles: ["user"],
-    ...overrides,
-  };
-}
+const policy = (overrides: Partial<PolicyRule> = {}): PolicyRule => ({
+  actions: ["read"],
+  conditions: [],
+  effect: "allow",
+  label: "allow:user:read",
+  roles: ["user"],
+  ...overrides,
+});
 
-function docResource(overrides: Partial<AnyResourceDef> = {}): AnyResourceDef {
-  return {
-    actions: ["read"],
-    name: "doc",
-    policies: [],
-    ...overrides,
-  };
-}
+const docResource = (
+  overrides: Partial<AnyResourceDef> = {}
+): AnyResourceDef => ({
+  actions: ["read"],
+  name: "doc",
+  policies: [],
+  ...overrides,
+});
 
-describe("validateRegistry", () => {
+describe(validateRegistry, () => {
   it("throws when registry key does not match resource name", () => {
     const auth = createAuthSchema({
       globalPolicies: () => [],
@@ -178,6 +182,7 @@ describe("validateRegistry", () => {
 
   it("throws when withOrgRole references an org role not in the schema", () => {
     const badOrgRole = createOrgRoleCondition(["ghost"]);
+
     const res = docResource({
       policies: [
         policy({
@@ -207,6 +212,7 @@ describe("validateRegistry", () => {
       params: { orgRoles: [] },
       type: "withOrgRole",
     };
+
     const res = docResource({
       policies: [policy({ conditions: [emptyOrgRoleCondition] })],
       resolveOrganization: () => "org_1",
@@ -222,6 +228,7 @@ describe("validateRegistry", () => {
 
   it("throws when a resource uses withOrgRole but lacks resolveOrganization", () => {
     const orgRoleCondition = createOrgRoleCondition(["owner"]);
+
     const res = docResource({
       policies: [
         policy({

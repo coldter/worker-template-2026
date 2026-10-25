@@ -1,19 +1,20 @@
 import type * as React from "react";
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
+
 import { CommandMenu } from "@/modules/common/command-menu";
 
-type SearchContextType = {
+interface SearchContextType {
   open: boolean;
   setOpen: React.Dispatch<React.SetStateAction<boolean>>;
-};
+}
 
 const SearchContext = createContext<SearchContextType | null>(null);
 
-type SearchProviderProps = {
+interface SearchProviderProps {
   children: React.ReactNode;
-};
+}
 
-export function SearchProvider({ children }: SearchProviderProps) {
+export const SearchProvider = ({ children }: SearchProviderProps) => {
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
@@ -23,17 +24,21 @@ export function SearchProvider({ children }: SearchProviderProps) {
         setOpen((prev) => !prev);
       }
     };
+
     document.addEventListener("keydown", down);
+
     return () => document.removeEventListener("keydown", down);
   }, []);
 
+  const value = useMemo(() => ({ open, setOpen }), [open]);
+
   return (
-    <SearchContext value={{ open, setOpen }}>
+    <SearchContext value={value}>
       {children}
-      <CommandMenu />
+      <CommandMenu onOpenChange={setOpen} open={open} />
     </SearchContext>
   );
-}
+};
 
 export const useSearchBar = () => {
   const searchContext = useContext(SearchContext);

@@ -1,11 +1,12 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+
 import { Overview } from "./overview";
 
 const meta = {
   component: Overview,
   decorators: [
     (Story) => (
-      <div className="w-[700px] rounded-md border bg-card p-4">
+      <div className="bg-card w-[700px] rounded-md border p-4">
         <Story />
       </div>
     ),

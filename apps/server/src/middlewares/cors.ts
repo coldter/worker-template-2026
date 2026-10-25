@@ -1,6 +1,6 @@
 import { cors } from "hono/cors";
 
-export function createCorsMiddleware() {
+export const createCorsMiddleware = () => {
   let cachedRaw: string | undefined;
   let allowedOrigins = new Set<string>();
 
@@ -12,14 +12,17 @@ export function createCorsMiddleware() {
     maxAge: 86_400,
     origin: (origin, c) => {
       const raw = c.env.CORS_ORIGINS ?? "";
+
       if (raw !== cachedRaw) {
         cachedRaw = raw;
         allowedOrigins = new Set(raw.split(",").map((s: string) => s.trim()));
       }
+
       if (allowedOrigins.has(origin)) {
         return origin;
       }
+
       return "";
     },
   });
-}
+};

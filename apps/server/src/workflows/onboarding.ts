@@ -1,8 +1,6 @@
-import {
-  WorkflowEntrypoint,
-  type WorkflowEvent,
-  type WorkflowStep,
-} from "cloudflare:workers";
+import { WorkflowEntrypoint } from "cloudflare:workers";
+import type { WorkflowEvent, WorkflowStep } from "cloudflare:workers";
+
 import { getBrandConfigFromBindings } from "@/lib/brand";
 import { runWithWorkflowMetrics } from "@/lib/workflow-metrics";
 

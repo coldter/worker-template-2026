@@ -1,6 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
+
 import { useMutationForm } from "@/hooks/use-mutation-form";
 import { FormDialog } from "@/modules/common/form-dialog";
 import { PasswordInput } from "@/modules/common/password-input";
@@ -12,6 +13,7 @@ import {
   FormMessage,
 } from "@/modules/ui/form";
 import { Input } from "@/modules/ui/input";
+
 import { RoleMultiSelect } from "../components/role-multi-select";
 import { useCreateUserMutation } from "../query";
 
@@ -29,10 +31,10 @@ interface CreateUserDialogProps {
   open: boolean;
 }
 
-export function CreateUserDialog({
+export const CreateUserDialog = ({
   open,
   onOpenChange,
-}: CreateUserDialogProps) {
+}: CreateUserDialogProps) => {
   const createMutation = useCreateUserMutation();
 
   const form = useForm<CreateUserFormValues>({
@@ -114,7 +116,10 @@ export function CreateUserDialog({
           <FormItem>
             <FormLabel>Roles</FormLabel>
             <FormControl>
-              <RoleMultiSelect onChange={field.onChange} value={field.value} />
+              <RoleMultiSelect
+                onChange={(value) => field.onChange(value)}
+                value={field.value}
+              />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -122,4 +127,4 @@ export function CreateUserDialog({
       />
     </FormDialog>
   );
-}
+};

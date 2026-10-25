@@ -3,6 +3,7 @@ import * as schema from "@repo/db/schema";
 import type { Session } from "better-auth";
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
+
 import { tolerateMissingOrgTables } from "../lib/org-tables";
 import { SESSION_CONFIG } from "../lib/platform";
 
@@ -41,7 +42,7 @@ export type SessionUpdatePayload = Partial<Session> & {
   platform?: "mobile" | "web";
 };
 
-export type SessionUpdateHookContext = {
+export interface SessionUpdateHookContext {
   headers?: Headers;
   context?: {
     session?: {
@@ -49,20 +50,23 @@ export type SessionUpdateHookContext = {
       user?: { email?: string; id?: string };
     } | null;
   };
-};
+}
 
-export function createSessionUpdateBeforeHook(db: DrizzleClient) {
-  return async (
+export const createSessionUpdateBeforeHook =
+  (db: DrizzleClient) =>
+  async (
     session: SessionUpdatePayload,
     context: SessionUpdateHookContext | null | undefined
   ) => {
     const updateParse = sessionUpdatePayloadSchema.safeParse(session);
+
     const activeOrganizationIdUpdate =
       updateParse.success && updateParse.data.activeOrganizationId !== undefined
         ? updateParse.data.activeOrganizationId
         : undefined;
 
     const endpointParse = endpointContextWithSessionSchema.safeParse(context);
+
     const endpointSession = endpointParse.success
       ? endpointParse.data.context?.session
       : undefined;
@@ -129,4 +133,3 @@ export function createSessionUpdateBeforeHook(db: DrizzleClient) {
       },
     };
   };
-}

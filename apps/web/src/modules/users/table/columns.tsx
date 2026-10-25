@@ -15,6 +15,7 @@ export const usersColumns: ColumnDef<DataTableFeatures, User>[] = [
     accessorKey: "name",
     cell: ({ row }) => {
       const user = row.original;
+
       const initials = user.name
         .split(" ")
         .map((n) => n[0])
@@ -24,7 +25,7 @@ export const usersColumns: ColumnDef<DataTableFeatures, User>[] = [
 
       return (
         <Link
-          className="flex items-center gap-3 transition-colors hover:text-primary"
+          className="hover:text-primary flex items-center gap-3 transition-colors"
           params={{ userId: user.id }}
           to="/users/$userId"
         >
@@ -62,6 +63,7 @@ export const usersColumns: ColumnDef<DataTableFeatures, User>[] = [
     accessorKey: "createdAt",
     cell: ({ row }) => {
       const date = row.getValue<string>("createdAt");
+
       return (
         <span className="text-muted-foreground">
           {format(new Date(date), "MMM dd, yyyy")}

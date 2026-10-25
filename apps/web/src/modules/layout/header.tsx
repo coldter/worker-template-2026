@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+
 import { cn } from "@/lib/utils";
 import { Separator } from "@/modules/ui/separator";
 import { SidebarTrigger } from "@/modules/ui/sidebar";
@@ -8,13 +9,19 @@ type HeaderProps = React.HTMLAttributes<HTMLElement> & {
   ref?: React.Ref<HTMLElement>;
 };
 
-export function Header({ className, fixed, children, ...props }: HeaderProps) {
+export const Header = ({
+  className,
+  fixed,
+  children,
+  ...props
+}: HeaderProps) => {
   const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
     const onScroll = () => {
       const offset =
         document.body.scrollTop || document.documentElement.scrollTop;
+
       setIsScrolled(offset > 10);
     };
 
@@ -47,4 +54,4 @@ export function Header({ className, fixed, children, ...props }: HeaderProps) {
       </div>
     </header>
   );
-}
+};

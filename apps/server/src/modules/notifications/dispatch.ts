@@ -1,7 +1,9 @@
-import { type DrizzleClient, firstOrThrow } from "@repo/db";
+import { firstOrThrow } from "@repo/db";
+import type { DrizzleClient } from "@repo/db";
 import { notifications } from "@repo/db/schema";
 import { logger } from "@repo/shared/logger";
 import { eq } from "drizzle-orm";
+
 import { dispatchEvent, triggerWorkflow } from "@/lib/events";
 
 import { NOTIFICATION_TYPE_CONFIG } from "./constants";
@@ -19,12 +21,13 @@ export interface DispatchOptions {
   waitUntil?: WaitUntil;
 }
 
-async function markNotificationFailed(
+const markNotificationFailed = async (
   db: DrizzleClient,
   notificationId: string,
   cause: unknown
-): Promise<void> {
+): Promise<void> => {
   const errorMessage = cause instanceof Error ? cause.message : "Unknown error";
+
   try {
     await db
       .update(notifications)
@@ -40,23 +43,24 @@ async function markNotificationFailed(
           : String(updateError),
     });
   }
-}
+};
 
-function buildWorkflowEvent(
+const buildWorkflowEvent = (
   channel: NotificationChannel,
   notificationId: string
-) {
+) => {
   if (channel === "email") {
     return {
       payload: { notificationId },
       type: "notification.email" as const,
     };
   }
+
   return {
     payload: { notificationId },
     type: "notification.push" as const,
   };
-}
+};
 
 export const notificationDispatch = {
   async send(
@@ -65,14 +69,17 @@ export const notificationDispatch = {
     options: DispatchOptions = {}
   ): Promise<SendResult> {
     const typeConfig = NOTIFICATION_TYPE_CONFIG[input.type];
+
     const requestedChannels = input.channels ??
       typeConfig?.channels ?? ["push"];
+
     const priority = input.priority ?? typeConfig?.priority ?? "medium";
 
     const preferences = await notificationService.getPreferences(
       db,
       input.userId
     );
+
     const channels = resolveEnabledChannels(
       preferences,
       input.type,
@@ -96,6 +103,7 @@ export const notificationDispatch = {
     const results = await Promise.all(
       channels.map(async (channel) => {
         let notificationId: string | undefined;
+
         try {
           const notification = await firstOrThrow(
             db
@@ -113,6 +121,7 @@ export const notificationDispatch = {
               .returning(),
             "Failed to create notification record"
           );
+
           notificationId = notification.id;
 
           const event = buildWorkflowEvent(channel, notification.id);
@@ -127,16 +136,21 @@ export const notificationDispatch = {
                   markNotificationFailed(db, deferredId, error),
               }
             );
+
             return { channel, notificationId, sent: true as const };
           }
+
           await triggerWorkflow(event);
+
           return { channel, notificationId, sent: true as const };
         } catch (error) {
           const errorMessage =
             error instanceof Error ? error.message : "Unknown error";
+
           if (notificationId) {
             await markNotificationFailed(db, notificationId, error);
           }
+
           return { channel, error: errorMessage, sent: false as const };
         }
       })
@@ -145,6 +159,7 @@ export const notificationDispatch = {
     for (const result of results) {
       if (result.sent) {
         sentChannels.push(result.channel);
+
         if (result.notificationId) {
           notificationIds.push(result.notificationId);
         }

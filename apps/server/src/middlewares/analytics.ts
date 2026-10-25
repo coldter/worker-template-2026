@@ -1,6 +1,7 @@
 import { logger } from "@repo/shared/logger";
 import { createMiddleware } from "hono/factory";
 import { z } from "zod";
+
 import type { AppEnv } from "@/lib/context";
 
 const cfPropertiesSchema = z.object({
@@ -10,6 +11,7 @@ const cfPropertiesSchema = z.object({
 
 export const analyticsMiddleware = createMiddleware<AppEnv>(async (c, next) => {
   const start = Date.now();
+  // oxlint-disable-next-line node/callback-return -- Hono's next() must be awaited, not returned, because analytics reads the final response.
   await next();
   const duration = Date.now() - start;
 
@@ -29,9 +31,9 @@ export const analyticsMiddleware = createMiddleware<AppEnv>(async (c, next) => {
       doubles: [c.res.status, duration],
       indexes: [path],
     });
-  } catch (err) {
+  } catch (error) {
     logger.debug("Analytics writeDataPoint failed", {
-      error: err,
+      error,
     });
   }
 });

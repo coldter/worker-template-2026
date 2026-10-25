@@ -2,6 +2,7 @@ import { CheckIcon, PlusCircledIcon } from "@radix-ui/react-icons";
 import type { Column, RowData } from "@tanstack/react-table";
 import type * as React from "react";
 import { z } from "zod";
+
 import { cn } from "@/lib/utils";
 import { Badge } from "@/modules/ui/badge";
 import { Button } from "@/modules/ui/button";
@@ -16,11 +17,12 @@ import {
 } from "@/modules/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/modules/ui/popover";
 import { Separator } from "@/modules/ui/separator";
+
 import type { DataTableFeatures } from "./features";
 
 const filterValuesSchema = z.array(z.string());
 
-type DataTableFacetedFilterProps<TData extends RowData, TValue> = {
+interface DataTableFacetedFilterProps<TData extends RowData, TValue> {
   column?: Column<DataTableFeatures, TData, TValue>;
   title?: string;
   options: {
@@ -28,17 +30,19 @@ type DataTableFacetedFilterProps<TData extends RowData, TValue> = {
     value: string;
     icon?: React.ComponentType<{ className?: string }>;
   }[];
-};
+}
 
-export function DataTableFacetedFilter<TData extends RowData, TValue>({
+export const DataTableFacetedFilter = <TData extends RowData, TValue>({
   column,
   title,
   options,
-}: DataTableFacetedFilterProps<TData, TValue>) {
+}: DataTableFacetedFilterProps<TData, TValue>) => {
   const facets = column?.getFacetedUniqueValues();
+
   const parsedFilterValues = filterValuesSchema.safeParse(
     column?.getFilterValue()
   );
+
   const selectedValues = new Set(
     parsedFilterValues.success ? parsedFilterValues.data : []
   );
@@ -92,6 +96,7 @@ export function DataTableFacetedFilter<TData extends RowData, TValue>({
             <CommandGroup>
               {options.map((option) => {
                 const isSelected = selectedValues.has(option.value);
+
                 return (
                   <CommandItem
                     key={option.value}
@@ -101,7 +106,8 @@ export function DataTableFacetedFilter<TData extends RowData, TValue>({
                       } else {
                         selectedValues.add(option.value);
                       }
-                      const filterValues = Array.from(selectedValues);
+
+                      const filterValues = [...selectedValues];
                       column?.setFilterValue(
                         filterValues.length ? filterValues : undefined
                       );
@@ -148,4 +154,4 @@ export function DataTableFacetedFilter<TData extends RowData, TValue>({
       </PopoverContent>
     </Popover>
   );
-}
+};

@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+
 import { Button } from "./button";
 import { Input } from "./input";
 import { Label } from "./label";
@@ -32,45 +33,43 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-function EditProfileSheet({
+const EditProfileSheet = ({
   side = "right",
   defaultOpen = false,
 }: {
   side?: "top" | "right" | "bottom" | "left";
   defaultOpen?: boolean;
-}) {
-  return (
-    <Sheet defaultOpen={defaultOpen}>
-      <SheetTrigger asChild>
-        <Button variant="outline">Open {side} sheet</Button>
-      </SheetTrigger>
-      <SheetContent side={side}>
-        <SheetHeader>
-          <SheetTitle>Edit profile</SheetTitle>
-          <SheetDescription>
-            Update your details here. Click save when you are done.
-          </SheetDescription>
-        </SheetHeader>
-        <div className="grid gap-4 px-4">
-          <div className="grid gap-2">
-            <Label htmlFor={`${side}-name`}>Name</Label>
-            <Input defaultValue="Ada Lovelace" id={`${side}-name`} />
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor={`${side}-username`}>Username</Label>
-            <Input defaultValue="@ada" id={`${side}-username`} />
-          </div>
+}) => (
+  <Sheet defaultOpen={defaultOpen}>
+    <SheetTrigger asChild>
+      <Button variant="outline">Open {side} sheet</Button>
+    </SheetTrigger>
+    <SheetContent side={side}>
+      <SheetHeader>
+        <SheetTitle>Edit profile</SheetTitle>
+        <SheetDescription>
+          Update your details here. Click save when you are done.
+        </SheetDescription>
+      </SheetHeader>
+      <div className="grid gap-4 px-4">
+        <div className="grid gap-2">
+          <Label htmlFor={`${side}-name`}>Name</Label>
+          <Input defaultValue="Ada Lovelace" id={`${side}-name`} />
         </div>
-        <SheetFooter>
-          <Button type="submit">Save changes</Button>
-          <SheetClose asChild>
-            <Button variant="outline">Cancel</Button>
-          </SheetClose>
-        </SheetFooter>
-      </SheetContent>
-    </Sheet>
-  );
-}
+        <div className="grid gap-2">
+          <Label htmlFor={`${side}-username`}>Username</Label>
+          <Input defaultValue="@ada" id={`${side}-username`} />
+        </div>
+      </div>
+      <SheetFooter>
+        <Button type="submit">Save changes</Button>
+        <SheetClose asChild>
+          <Button variant="outline">Cancel</Button>
+        </SheetClose>
+      </SheetFooter>
+    </SheetContent>
+  </Sheet>
+);
 
 export const Right: Story = {
   render: () => <EditProfileSheet defaultOpen side="right" />,

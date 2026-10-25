@@ -12,6 +12,7 @@ const auditLogsHandler = app.openapi(
   auditLogsRoutes.listAuditLogs,
   async (c) => {
     const query = c.req.valid("query");
+    // oxlint-disable-next-line unicorn/no-array-method-this-argument -- auditLogService.find takes the db executor, not an Array thisArg
     const result = await auditLogService.find(c.var.db, query);
 
     return c.json(

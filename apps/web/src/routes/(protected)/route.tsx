@@ -1,11 +1,13 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { authorizationCapabilitiesQueryOptions } from "@/hooks/use-authorization";
 
+import { authorizationCapabilitiesQueryOptions } from "@/hooks/use-authorization";
 import { clearSession } from "@/modules/auth/helpers";
 import { AuthenticatedLayout } from "@/modules/layout/authenticated-layout";
 import { sessionQueryOptions } from "@/query/session-query";
 import { useAlertStore } from "@/store/alert";
 import { useUserStore } from "@/store/user";
+
+const ProtectedLayout = () => <AuthenticatedLayout />;
 
 export const Route = createFileRoute("/(protected)")({
   beforeLoad: async ({ context, location }) => {
@@ -40,7 +42,3 @@ export const Route = createFileRoute("/(protected)")({
   },
   component: ProtectedLayout,
 });
-
-function ProtectedLayout() {
-  return <AuthenticatedLayout />;
-}

@@ -1,19 +1,19 @@
 import type { DrizzleClient } from "@repo/db";
 import { auditLogs } from "@repo/db/schema";
+import type { AuditLogMetadata } from "@repo/shared/audit";
 import { logger } from "@repo/shared/logger";
-import {
-  type AuditLogQueueMessage,
-  parseAuditLogMessage,
-} from "./queue-message";
+
+import { parseAuditLogMessage } from "./queue-message";
+import type { AuditLogQueueMessage } from "./queue-message";
 
 export const AUDIT_LOG_QUEUE_NAME = "audit-log-queue";
 export const AUDIT_LOG_DLQ_NAME = "audit-log-dlq";
 
-export function handleAuditLogDlq(
+export const handleAuditLogDlq = (
   batch: MessageBatch,
   _env: CloudflareBindings,
   _ctx: ExecutionContext
-): Promise<void> {
+): Promise<void> => {
   for (const message of batch.messages) {
     const data = parseAuditLogMessage(message.body);
     logger.error("Audit log message dead-lettered", {
@@ -27,38 +27,39 @@ export function handleAuditLogDlq(
       targetType: data?.targetType,
     });
   }
-  batch.ackAll();
-  return Promise.resolve();
-}
 
-type PendingAuditRow = {
-  message: MessageBatch["messages"][number];
-  row: typeof auditLogs.$inferInsert;
+  batch.ackAll();
+
+  return Promise.resolve();
 };
 
-function toInsertRow(
-  message: AuditLogQueueMessage
-): typeof auditLogs.$inferInsert {
-  return {
-    actorId: message.actorId,
-    actorType: message.actorType,
-    createdAt: new Date(message.occurredAt),
-    event: message.event,
-    ipAddress: message.ipAddress,
-
-    metadata: message.metadata,
-    targetId: message.targetId,
-    targetType: message.targetType,
-    userAgent: message.userAgent,
-  };
+interface PendingAuditRow {
+  message: MessageBatch["messages"][number];
+  row: typeof auditLogs.$inferInsert;
 }
 
-async function flushAuditRows(
+const toInsertRow = (
+  message: AuditLogQueueMessage
+): typeof auditLogs.$inferInsert => ({
+  actorId: message.actorId,
+  actorType: message.actorType,
+  createdAt: new Date(message.occurredAt),
+  event: message.event,
+  ipAddress: message.ipAddress,
+  // SAFETY: queue messages are produced from AuditLogMetadata; Zod has already validated the record shape at the queue boundary.
+  metadata: message.metadata as AuditLogMetadata | undefined,
+  targetId: message.targetId,
+  targetType: message.targetType,
+  userAgent: message.userAgent,
+});
+
+const flushAuditRows = async (
   db: DrizzleClient,
   pending: PendingAuditRow[]
-): Promise<void> {
+): Promise<void> => {
   try {
     await db.insert(auditLogs).values(pending.map((entry) => entry.row));
+
     for (const { message } of pending) {
       message.ack();
     }
@@ -82,18 +83,19 @@ async function flushAuditRows(
       })
     );
   }
-}
+};
 
-export async function handleAuditLogQueue(
+export const handleAuditLogQueue = async (
   batch: MessageBatch,
   env: CloudflareBindings,
   ctx: ExecutionContext
-): Promise<void> {
+): Promise<void> => {
   const pending: PendingAuditRow[] = [];
   let malformed = 0;
 
   for (const message of batch.messages) {
     const data = parseAuditLogMessage(message.body);
+
     if (data) {
       pending.push({ message, row: toInsertRow(data) });
     } else {
@@ -124,8 +126,9 @@ export async function handleAuditLogQueue(
       count: pending.length,
       error,
     });
+
     for (const { message } of pending) {
       message.retry();
     }
   }
-}
+};

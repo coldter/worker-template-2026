@@ -5,8 +5,8 @@ import {
   useSearch,
 } from "@tanstack/react-router";
 import { useState } from "react";
-
 import * as z from "zod/mini";
+
 import { Logo } from "@/assets/logo";
 import {
   AuthStepTransition,
@@ -22,39 +22,22 @@ import { Skeleton } from "@/modules/ui/skeleton";
 import { sessionQueryOptions } from "@/query/session-query";
 import { useLastUserStore } from "@/store";
 
-export const Route = createFileRoute("/login")({
-  beforeLoad: async ({ context, search }) => {
-    const session = await context.queryClient
-      .ensureQueryData(sessionQueryOptions)
-      .catch(() => null);
-    if (session) {
-      throw redirect({
-        to: getSafeRedirectPath(search.redirect) ?? "/dashboard",
-      });
-    }
-  },
-  component: RouteComponent,
-  pendingComponent: () => <Skeleton className="h-full w-full" />,
-  validateSearch: z.object({
-    redirect: z.optional(z.string()),
-  }),
-});
-
 type LoginStep = "welcome" | "password" | "fresh" | "verify-otp";
 
-function RouteComponent() {
+const RouteComponent = () => {
   const navigate = useNavigate();
-  const { redirect } = useSearch({ strict: false });
+  const { redirect: redirectTo } = useSearch({ strict: false });
   const { clearLastUser, lastUser } = useLastUserStore();
 
   const [step, setStep] = useState<LoginStep>(() =>
     lastUser ? "welcome" : "fresh"
   );
+
   const [twoFactorEmail, setTwoFactorEmail] = useState("");
 
   const handleSuccess = () => {
     resetSessionQuery();
-    navigate({ to: getSafeRedirectPath(redirect) ?? "/dashboard" });
+    navigate({ to: getSafeRedirectPath(redirectTo) ?? "/dashboard" });
   };
 
   const handleTwoFactorRequired = (email: string) => {
@@ -72,7 +55,7 @@ function RouteComponent() {
       <div className="hidden md:block">
         <LoginLeftPanel />
       </div>
-      <div className="flex w-full items-center justify-center bg-background px-4">
+      <div className="bg-background flex w-full items-center justify-center px-4">
         <div className="w-full max-w-md space-y-8 text-left">
           <Logo className="mb-8 size-12 md:hidden" />
 
@@ -97,7 +80,7 @@ function RouteComponent() {
             {step === "fresh" && (
               <div className="space-y-8">
                 <div>
-                  <h1 className="mb-2 font-bold text-3xl text-foreground">
+                  <h1 className="text-foreground mb-2 text-3xl font-bold">
                     Sign in
                   </h1>
                   <p className="text-muted-foreground">
@@ -123,4 +106,23 @@ function RouteComponent() {
       </div>
     </div>
   );
-}
+};
+
+export const Route = createFileRoute("/login")({
+  beforeLoad: async ({ context, search }) => {
+    const session = await context.queryClient
+      .ensureQueryData(sessionQueryOptions)
+      .catch(() => null);
+
+    if (session) {
+      throw redirect({
+        to: getSafeRedirectPath(search.redirect) ?? "/dashboard",
+      });
+    }
+  },
+  component: RouteComponent,
+  pendingComponent: () => <Skeleton className="h-full w-full" />,
+  validateSearch: z.object({
+    redirect: z.optional(z.string()),
+  }),
+});

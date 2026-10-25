@@ -1,3 +1,4 @@
+/* oxlint-disable vitest/prefer-to-be-truthy, vitest/prefer-to-be-falsy -- strict boolean assertions are intentional */
 import type { RouteConfig } from "@hono/zod-openapi";
 import { isAuthorizationGuard } from "@repo/authorization/hono";
 import { describe, expect, it } from "vitest";
@@ -7,15 +8,17 @@ import notificationsRoutes from "@/modules/notifications/routes";
 import rolesRoutes from "@/modules/roles/routes";
 import usersRoutes from "@/modules/users/routes";
 
-function hasAuthorizationGuard(route: RouteConfig): boolean {
+const hasAuthorizationGuard = (route: RouteConfig): boolean => {
   if (!route.middleware) {
     return false;
   }
+
   const middleware = Array.isArray(route.middleware)
     ? route.middleware
     : [route.middleware];
+
   return middleware.some((handler) => isAuthorizationGuard(handler));
-}
+};
 
 describe("route authorization coverage", () => {
   it("all user routes have authorization middleware", () => {

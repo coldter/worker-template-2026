@@ -1,4 +1,5 @@
-import { type createRoute, z } from "@hono/zod-openapi";
+import { z } from "@hono/zod-openapi";
+import type { createRoute } from "@hono/zod-openapi";
 
 type ResponseConfig = Parameters<typeof createRoute>[0]["responses"];
 

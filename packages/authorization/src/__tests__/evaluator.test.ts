@@ -1,4 +1,6 @@
+/* oxlint-disable vitest/prefer-to-be-truthy, vitest/prefer-to-be-falsy -- strict boolean assertions are intentional */
 import { describe, expect, it } from "vitest";
+
 import { principalNotActive } from "../conditions";
 import { evaluate, evaluateOptimistic } from "../evaluator";
 import type {
@@ -8,13 +10,14 @@ import type {
   Principal,
 } from "../types";
 
-function allowRule(
+const allowRule = (
   roles: string[] | "*",
   actions: string[] | "*",
-  conditions: Condition[] = []
-): PolicyRule {
+  conditions: Condition<never>[] = []
+): PolicyRule<never> => {
   const roleLabel = roles === "*" ? "*" : roles.join(",");
   const actionLabel = actions === "*" ? "*" : actions.join(",");
+
   return {
     actions,
     conditions,
@@ -22,15 +25,16 @@ function allowRule(
     label: `allow:${roleLabel}:${actionLabel}`,
     roles,
   };
-}
+};
 
-function denyRule(
+const denyRule = (
   roles: string[] | "*",
   actions: string[] | "*",
-  conditions: Condition[] = []
-): PolicyRule {
+  conditions: Condition<never>[] = []
+): PolicyRule<never> => {
   const roleLabel = roles === "*" ? "*" : roles.join(",");
   const actionLabel = actions === "*" ? "*" : actions.join(",");
+
   return {
     actions,
     conditions,
@@ -38,7 +42,7 @@ function denyRule(
     label: `deny:${roleLabel}:${actionLabel}`,
     roles,
   };
-}
+};
 
 const activePrincipal: Principal = {
   attributes: { status: "active" },
@@ -52,66 +56,58 @@ const inactivePrincipal: Principal = {
   roles: ["user"],
 };
 
-function ownerCondition(): Condition<{ ownerId: string }> {
-  return {
-    effect: "requires_resource",
-    evaluate(ctx: ConditionContext<{ ownerId: string }>): boolean {
-      if (!ctx.resource) {
-        return false;
-      }
-      return ctx.resource.ownerId === ctx.principal.id;
-    },
-    label: "whereOwner",
-    type: "whereOwner",
-  };
-}
+const ownerCondition = (): Condition<{ ownerId: string }> => ({
+  effect: "requires_resource",
+  evaluate(ctx: ConditionContext<{ ownerId: string }>): boolean {
+    if (!ctx.resource) {
+      return false;
+    }
 
-function selfTargetCondition(): Condition<{ id: string }> {
-  return {
-    effect: "requires_resource",
-    evaluate(ctx: ConditionContext<{ id: string }>): boolean {
-      if (!ctx.resource) {
-        return false;
-      }
-      return ctx.resource.id === ctx.principal.id;
-    },
-    label: "whereTargetIsSelf",
-    type: "whereTargetIsSelf",
-  };
-}
+    return ctx.resource.ownerId === ctx.principal.id;
+  },
+  label: "whereOwner",
+  type: "whereOwner",
+});
 
-function asyncTrueCondition(): Condition {
-  return {
-    effect: "requires_resource",
-    async evaluate(_ctx: ConditionContext): Promise<boolean> {
-      return Promise.resolve(true);
-    },
-    label: "where:asyncTrue",
-    type: "where",
-  };
-}
+const selfTargetCondition = (): Condition<{ id: string }> => ({
+  effect: "requires_resource",
+  evaluate(ctx: ConditionContext<{ id: string }>): boolean {
+    if (!ctx.resource) {
+      return false;
+    }
 
-function asyncFalseCondition(): Condition {
-  return {
-    effect: "requires_resource",
-    async evaluate(_ctx: ConditionContext): Promise<boolean> {
-      return Promise.resolve(false);
-    },
-    label: "where:asyncFalse",
-    type: "where",
-  };
-}
+    return ctx.resource.id === ctx.principal.id;
+  },
+  label: "whereTargetIsSelf",
+  type: "whereTargetIsSelf",
+});
 
-function throwingCondition(): Condition {
-  return {
-    effect: "principal_only",
-    evaluate(): boolean {
-      throw new Error("boom");
-    },
-    label: "where:throws",
-    type: "where",
-  };
-}
+const asyncTrueCondition = (): Condition => ({
+  effect: "requires_resource",
+  evaluate(_ctx: ConditionContext): Promise<boolean> {
+    return Promise.resolve(true);
+  },
+  label: "where:asyncTrue",
+  type: "where",
+});
+
+const asyncFalseCondition = (): Condition => ({
+  effect: "requires_resource",
+  evaluate(_ctx: ConditionContext): Promise<boolean> {
+    return Promise.resolve(false);
+  },
+  label: "where:asyncFalse",
+  type: "where",
+});
+
+const throwingCondition = (): Condition => ({
+  effect: "principal_only",
+  evaluate(): boolean {
+    throw new Error("boom");
+  },
+  label: "where:throws",
+  type: "where",
+});
 
 const defaults = {
   action: "read",
@@ -120,10 +116,14 @@ const defaults = {
   systemAdminRoles: [],
 };
 
-describe("evaluate", () => {
+const resolveOrganization = (
+  resource: { orgId?: string | null } | undefined
+): string | null | undefined => resource?.orgId;
+
+describe(evaluate, () => {
   it("denies with UNAUTHENTICATED when principal is null", async () => {
     const result = await evaluate({ ...defaults, principal: null });
-    expect(result).toEqual({ allowed: false, reason: "UNAUTHENTICATED" });
+    expect(result).toStrictEqual({ allowed: false, reason: "UNAUTHENTICATED" });
   });
 
   it("denies with GLOBAL_DENY when a global deny policy matches", async () => {
@@ -132,7 +132,8 @@ describe("evaluate", () => {
       globalPolicies: [denyRule("*", "*", [principalNotActive()])],
       principal: inactivePrincipal,
     });
-    expect(result).toEqual({
+
+    expect(result).toStrictEqual({
       allowed: false,
       matchedPolicy: "deny:*:*",
       reason: "GLOBAL_DENY",
@@ -146,6 +147,7 @@ describe("evaluate", () => {
       principal: activePrincipal,
       resourcePolicies: [allowRule(["user"], ["read"])],
     });
+
     expect(result.allowed).toBe(true);
   });
 
@@ -155,7 +157,8 @@ describe("evaluate", () => {
       principal: activePrincipal,
       resourcePolicies: [denyRule(["user"], ["read"])],
     });
-    expect(result).toEqual({
+
+    expect(result).toStrictEqual({
       allowed: false,
       matchedPolicy: "deny:user:read",
       reason: "EXPLICIT_DENY",
@@ -168,7 +171,8 @@ describe("evaluate", () => {
       principal: activePrincipal,
       resourcePolicies: [allowRule(["user"], ["read"])],
     });
-    expect(result).toEqual({
+
+    expect(result).toStrictEqual({
       allowed: true,
       matchedPolicy: "allow:user:read",
     });
@@ -181,7 +185,11 @@ describe("evaluate", () => {
       principal: activePrincipal,
       resourcePolicies: [allowRule(["admin"], ["delete"])],
     });
-    expect(result).toEqual({ allowed: false, reason: "NO_MATCHING_POLICY" });
+
+    expect(result).toStrictEqual({
+      allowed: false,
+      reason: "NO_MATCHING_POLICY",
+    });
   });
 
   it("deny beats allow when both match the same role and action", async () => {
@@ -193,10 +201,8 @@ describe("evaluate", () => {
         denyRule(["user"], ["read"]),
       ],
     });
-    expect(result.allowed).toBe(false);
-    if (!result.allowed) {
-      expect(result.reason).toBe("EXPLICIT_DENY");
-    }
+
+    expect(result).toMatchObject({ allowed: false, reason: "EXPLICIT_DENY" });
   });
 
   it("wildcard role matches any principal role", async () => {
@@ -205,6 +211,7 @@ describe("evaluate", () => {
       principal: activePrincipal,
       resourcePolicies: [allowRule("*", ["read"])],
     });
+
     expect(result.allowed).toBe(true);
   });
 
@@ -215,6 +222,7 @@ describe("evaluate", () => {
       principal: activePrincipal,
       resourcePolicies: [allowRule(["user"], "*")],
     });
+
     expect(result.allowed).toBe(true);
   });
 
@@ -225,7 +233,10 @@ describe("evaluate", () => {
       resourcePolicies: [allowRule(["user"], ["read"], [ownerCondition()])],
     });
 
-    expect(result).toEqual({ allowed: false, reason: "NO_MATCHING_POLICY" });
+    expect(result).toStrictEqual({
+      allowed: false,
+      reason: "NO_MATCHING_POLICY",
+    });
   });
 
   it("skips deny policy with resource condition when no resource provided", async () => {
@@ -237,6 +248,7 @@ describe("evaluate", () => {
         allowRule(["user"], ["read"]),
       ],
     });
+
     expect(result.allowed).toBe(true);
   });
 
@@ -247,6 +259,7 @@ describe("evaluate", () => {
       resource: { ownerId: "usr_1" },
       resourcePolicies: [allowRule(["user"], ["read"], [ownerCondition()])],
     });
+
     expect(result.allowed).toBe(true);
   });
 
@@ -257,7 +270,11 @@ describe("evaluate", () => {
       resource: { ownerId: "usr_other" },
       resourcePolicies: [allowRule(["user"], ["read"], [ownerCondition()])],
     });
-    expect(result).toEqual({ allowed: false, reason: "NO_MATCHING_POLICY" });
+
+    expect(result).toStrictEqual({
+      allowed: false,
+      reason: "NO_MATCHING_POLICY",
+    });
   });
 
   it("allows when target-is-self condition matches", async () => {
@@ -269,6 +286,7 @@ describe("evaluate", () => {
         allowRule(["user"], ["read"], [selfTargetCondition()]),
       ],
     });
+
     expect(result.allowed).toBe(true);
   });
 
@@ -281,7 +299,11 @@ describe("evaluate", () => {
         allowRule(["user"], ["read"], [selfTargetCondition()]),
       ],
     });
-    expect(result).toEqual({ allowed: false, reason: "NO_MATCHING_POLICY" });
+
+    expect(result).toStrictEqual({
+      allowed: false,
+      reason: "NO_MATCHING_POLICY",
+    });
   });
 
   it("resolves async condition that returns true", async () => {
@@ -291,6 +313,7 @@ describe("evaluate", () => {
       resource: { id: "x" },
       resourcePolicies: [allowRule(["user"], ["read"], [asyncTrueCondition()])],
     });
+
     expect(result.allowed).toBe(true);
   });
 
@@ -303,7 +326,11 @@ describe("evaluate", () => {
         allowRule(["user"], ["read"], [asyncFalseCondition()]),
       ],
     });
-    expect(result).toEqual({ allowed: false, reason: "NO_MATCHING_POLICY" });
+
+    expect(result).toStrictEqual({
+      allowed: false,
+      reason: "NO_MATCHING_POLICY",
+    });
   });
 
   it("returns EVALUATION_ERROR when a condition throws", async () => {
@@ -312,7 +339,11 @@ describe("evaluate", () => {
       principal: activePrincipal,
       resourcePolicies: [allowRule(["user"], ["read"], [throwingCondition()])],
     });
-    expect(result).toEqual({ allowed: false, reason: "EVALUATION_ERROR" });
+
+    expect(result).toStrictEqual({
+      allowed: false,
+      reason: "EVALUATION_ERROR",
+    });
   });
 
   it("fails closed when a global deny condition throws", async () => {
@@ -322,7 +353,11 @@ describe("evaluate", () => {
       principal: activePrincipal,
       resourcePolicies: [allowRule(["user"], ["read"])],
     });
-    expect(result).toEqual({ allowed: false, reason: "EVALUATION_ERROR" });
+
+    expect(result).toStrictEqual({
+      allowed: false,
+      reason: "EVALUATION_ERROR",
+    });
   });
 
   it("fails closed when a resource deny condition throws", async () => {
@@ -334,7 +369,11 @@ describe("evaluate", () => {
         allowRule(["user"], ["read"]),
       ],
     });
-    expect(result).toEqual({ allowed: false, reason: "EVALUATION_ERROR" });
+
+    expect(result).toStrictEqual({
+      allowed: false,
+      reason: "EVALUATION_ERROR",
+    });
   });
 
   it("returns EVALUATION_ERROR immediately when an allow condition throws before a later match", async () => {
@@ -346,7 +385,11 @@ describe("evaluate", () => {
         allowRule(["user"], ["read"]),
       ],
     });
-    expect(result).toEqual({ allowed: false, reason: "EVALUATION_ERROR" });
+
+    expect(result).toStrictEqual({
+      allowed: false,
+      reason: "EVALUATION_ERROR",
+    });
   });
 
   describe("org scoping", () => {
@@ -369,10 +412,6 @@ describe("evaluate", () => {
       roles: ["system_admin"],
     };
 
-    const resolveOrganization = (
-      resource: { orgId?: string | null } | undefined
-    ): string | null | undefined => resource?.orgId;
-
     it("allows when org IDs match", async () => {
       const result = await evaluate({
         ...defaults,
@@ -382,6 +421,7 @@ describe("evaluate", () => {
         resourcePolicies: [allowRule(["member"], ["read"])],
         systemAdminRoles: ["system_admin"],
       });
+
       expect(result.allowed).toBe(true);
     });
 
@@ -394,10 +434,11 @@ describe("evaluate", () => {
         resourcePolicies: [allowRule(["member"], ["read"])],
         systemAdminRoles: ["system_admin"],
       });
-      expect(result.allowed).toBe(false);
-      if (!result.allowed) {
-        expect(result.reason).toBe("ORG_CONTEXT_MISSING");
-      }
+
+      expect(result).toMatchObject({
+        allowed: false,
+        reason: "ORG_CONTEXT_MISSING",
+      });
     });
 
     it("denies with ORG_RESOLUTION_FAILED when resolveOrganization returns null", async () => {
@@ -409,10 +450,11 @@ describe("evaluate", () => {
         resourcePolicies: [allowRule(["member"], ["read"])],
         systemAdminRoles: ["system_admin"],
       });
-      expect(result.allowed).toBe(false);
-      if (!result.allowed) {
-        expect(result.reason).toBe("ORG_RESOLUTION_FAILED");
-      }
+
+      expect(result).toMatchObject({
+        allowed: false,
+        reason: "ORG_RESOLUTION_FAILED",
+      });
     });
 
     it("denies with TENANT_MISMATCH when org IDs do not match", async () => {
@@ -424,10 +466,11 @@ describe("evaluate", () => {
         resourcePolicies: [allowRule(["member"], ["read"])],
         systemAdminRoles: ["system_admin"],
       });
-      expect(result.allowed).toBe(false);
-      if (!result.allowed) {
-        expect(result.reason).toBe("TENANT_MISMATCH");
-      }
+
+      expect(result).toMatchObject({
+        allowed: false,
+        reason: "TENANT_MISMATCH",
+      });
     });
 
     it("system admin bypasses org scoping", async () => {
@@ -439,6 +482,7 @@ describe("evaluate", () => {
         resourcePolicies: [allowRule(["system_admin"], ["read"])],
         systemAdminRoles: ["system_admin"],
       });
+
       expect(result.allowed).toBe(true);
     });
 
@@ -451,6 +495,7 @@ describe("evaluate", () => {
         resourcePolicies: [allowRule("*", ["read"])],
         systemAdminRoles: ["system_admin"],
       });
+
       expect(result.allowed).toBe(true);
     });
 
@@ -463,6 +508,7 @@ describe("evaluate", () => {
         resourcePolicies: [allowRule(["member"], ["read"])],
         systemAdminRoles: [],
       });
+
       expect(result.allowed).toBe(true);
     });
 
@@ -475,6 +521,7 @@ describe("evaluate", () => {
         resourcePolicies: [allowRule(["member"], ["read"])],
         systemAdminRoles: [],
       });
+
       expect(result.allowed).toBe(true);
     });
   });
@@ -488,10 +535,7 @@ describe("evaluate", () => {
         resourcePolicies: [denyRule(["user"], ["read"])],
       });
 
-      expect(result.allowed).toBe(false);
-      if (!result.allowed) {
-        expect(result.reason).toBe("GLOBAL_DENY");
-      }
+      expect(result).toMatchObject({ allowed: false, reason: "GLOBAL_DENY" });
     });
   });
 
@@ -509,6 +553,7 @@ describe("evaluate", () => {
           ),
         ],
       });
+
       expect(result.allowed).toBe(true);
     });
 
@@ -525,19 +570,24 @@ describe("evaluate", () => {
           ),
         ],
       });
-      expect(result).toEqual({ allowed: false, reason: "NO_MATCHING_POLICY" });
+
+      expect(result).toStrictEqual({
+        allowed: false,
+        reason: "NO_MATCHING_POLICY",
+      });
     });
   });
 });
 
-describe("evaluateOptimistic", () => {
+describe(evaluateOptimistic, () => {
   it("skips requires_resource conditions so conditional allows match", async () => {
     const result = await evaluateOptimistic({
       ...defaults,
       principal: activePrincipal,
       resourcePolicies: [allowRule(["user"], ["read"], [ownerCondition()])],
     });
-    expect(result).toEqual({
+
+    expect(result).toStrictEqual({
       allowed: true,
       matchedPolicy: "allow:user:read",
     });
@@ -550,7 +600,8 @@ describe("evaluateOptimistic", () => {
       principal: inactivePrincipal,
       resourcePolicies: [allowRule(["user"], ["read"], [ownerCondition()])],
     });
-    expect(result).toEqual({
+
+    expect(result).toStrictEqual({
       allowed: false,
       matchedPolicy: "deny:*:*",
       reason: "GLOBAL_DENY",

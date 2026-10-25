@@ -28,11 +28,11 @@ interface EditUserDialogProps {
   user: User | UserDetail;
 }
 
-export function EditUserDialog({
+export const EditUserDialog = ({
   user,
   open,
   onOpenChange,
-}: EditUserDialogProps) {
+}: EditUserDialogProps) => {
   const updateMutation = useUpdateUserMutation();
 
   const form = useForm<EditUserFormValues>({
@@ -81,4 +81,4 @@ export function EditUserDialog({
       />
     </FormDialog>
   );
-}
+};

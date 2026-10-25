@@ -7,11 +7,13 @@ import {
   uniqueIndex,
   varchar,
 } from "drizzle-orm/pg-core";
+
 import { createdAt, updatedAt } from "../helpers";
 import { generatePrefixedCuid, ID_PREFIXES } from "../ids";
 import { sessions, users } from "./auth";
 
 export const PUSH_PLATFORM = ["ios", "android", "web"] as const;
+
 export type PushPlatform = (typeof PUSH_PLATFORM)[number];
 
 export const pushTokens = pgTable(
@@ -50,4 +52,5 @@ export const pushTokens = pgTable(
 );
 
 export type PushToken = typeof pushTokens.$inferSelect;
+
 export type NewPushToken = typeof pushTokens.$inferInsert;

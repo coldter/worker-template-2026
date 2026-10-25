@@ -1,4 +1,5 @@
 import type { FieldValues, UseFormReturn } from "react-hook-form";
+
 import { Button } from "@/modules/ui/button";
 import {
   Dialog,
@@ -25,7 +26,7 @@ interface FormDialogProps<TValues extends FieldValues> {
   title: React.ReactNode;
 }
 
-export function FormDialog<TValues extends FieldValues>({
+export const FormDialog = <TValues extends FieldValues>({
   open,
   onOpenChange,
   title,
@@ -38,36 +39,34 @@ export function FormDialog<TValues extends FieldValues>({
   cancelLabel = "Cancel",
   contentClassName = "sm:max-w-[425px]",
   children,
-}: FormDialogProps<TValues>) {
-  return (
-    <Dialog onOpenChange={onOpenChange} open={open}>
-      <DialogContent className={contentClassName}>
-        <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
-          {description ? (
-            <DialogDescription>{description}</DialogDescription>
-          ) : null}
-        </DialogHeader>
+}: FormDialogProps<TValues>) => (
+  <Dialog onOpenChange={onOpenChange} open={open}>
+    <DialogContent className={contentClassName}>
+      <DialogHeader>
+        <DialogTitle>{title}</DialogTitle>
+        {description ? (
+          <DialogDescription>{description}</DialogDescription>
+        ) : null}
+      </DialogHeader>
 
-        <Form {...form}>
-          <form className="space-y-4" onSubmit={onSubmit}>
-            {children}
+      <Form {...form}>
+        <form className="space-y-4" onSubmit={onSubmit}>
+          {children}
 
-            <DialogFooter>
-              <Button
-                onClick={() => onOpenChange(false)}
-                type="button"
-                variant="outline"
-              >
-                {cancelLabel}
-              </Button>
-              <Button disabled={isPending} type="submit">
-                {isPending ? pendingLabel : submitLabel}
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
-  );
-}
+          <DialogFooter>
+            <Button
+              onClick={() => onOpenChange(false)}
+              type="button"
+              variant="outline"
+            >
+              {cancelLabel}
+            </Button>
+            <Button disabled={isPending} type="submit">
+              {isPending ? pendingLabel : submitLabel}
+            </Button>
+          </DialogFooter>
+        </form>
+      </Form>
+    </DialogContent>
+  </Dialog>
+);

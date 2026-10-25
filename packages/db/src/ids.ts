@@ -19,28 +19,32 @@ export const ID_PREFIXES = {
 } as const;
 
 declare const __brand: unique symbol;
+
 export type Brand<T, B extends string> = T & { readonly [__brand]: B };
 
 export type UserId = Brand<string, "UserId">;
+
 export type SessionId = Brand<string, "SessionId">;
+
 export type AccountId = Brand<string, "AccountId">;
+
 export type VerificationId = Brand<string, "VerificationId">;
 
-export function generatePrefixedCuid<P extends string>(
+export const generatePrefixedCuid = <P extends string>(
   prefix: P
-): `${P}_${string}` {
+): `${P}_${string}` => {
   const timestampMs = Date.now();
   const timestampHex = timestampMs.toString(16).toLowerCase();
 
   const randomBytes = new Uint8Array(8);
   crypto.getRandomValues(randomBytes);
 
-  const randomHex = Array.from(randomBytes)
+  const randomHex = [...randomBytes]
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("");
 
   return `${prefix}_${timestampHex}${randomHex}`;
-}
+};
 
 // SAFETY: generatePrefixedCuid namespaces the value with ID_PREFIXES.user, which is the invariant the UserId brand encodes.
 export const createUserId = (): UserId =>
@@ -58,20 +62,22 @@ export const createAccountId = (): AccountId =>
 export const createVerificationId = (): VerificationId =>
   generatePrefixedCuid(ID_PREFIXES.verification) as VerificationId;
 
-function isIdModel(model: string): model is keyof typeof ID_PREFIXES {
-  return Object.hasOwn(ID_PREFIXES, model);
-}
+const isIdModel = (model: string): model is keyof typeof ID_PREFIXES =>
+  Object.hasOwn(ID_PREFIXES, model);
 
 export const generateIdForModel = (model: string): string => {
   if (isIdModel(model)) {
     const prefix = ID_PREFIXES[model];
+
     return generatePrefixedCuid(prefix);
   }
+
   logger.warn(
     "generateIdForModel: unknown model, falling back to 'ent' prefix",
     {
       model,
     }
   );
+
   return generatePrefixedCuid("ent");
 };

@@ -14,9 +14,8 @@ const USER_STATUS_SET: ReadonlySet<string> = new Set<string>(
   USER_STATUS_VALUES
 );
 
-export function isUserStatus(value: string): value is UserStatus {
-  return USER_STATUS_SET.has(value);
-}
+export const isUserStatus = (value: string): value is UserStatus =>
+  USER_STATUS_SET.has(value);
 
 export const USER_STATUS_CONFIG = {
   [USER_STATUS.ACTIVE]: {

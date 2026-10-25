@@ -1,12 +1,15 @@
-import { type DrizzleClient, firstOrThrow } from "@repo/db";
+import { firstOrThrow } from "@repo/db";
+import type { DrizzleClient } from "@repo/db";
 import {
   NOTIFICATION_CHANNEL,
   notificationPreferences,
   notifications,
   pushTokens,
 } from "@repo/db/schema";
-import { and, asc, count, desc, eq, type SQL, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, sql } from "drizzle-orm";
+import type { SQL } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
+
 import {
   buildOrderBy,
   createPaginatedResponse,
@@ -42,6 +45,7 @@ export const notificationService = {
       .set({ isActive: false })
       .where(and(eq(pushTokens.id, tokenId), eq(pushTokens.userId, userId)))
       .returning({ id: pushTokens.id });
+
     return result.length > 0;
   },
 
@@ -53,6 +57,7 @@ export const notificationService = {
       .delete(pushTokens)
       .where(eq(pushTokens.token, token))
       .returning({ id: pushTokens.id });
+
     return result.length > 0;
   },
 
@@ -61,6 +66,7 @@ export const notificationService = {
     userId: string
   ): Promise<PreferencesRecord[]> {
     const existing = await this.getPreferences(db, userId);
+
     if (existing.length === 0) {
       return this.updatePreferences(db, userId, {
         emailEnabled: true,
@@ -68,6 +74,7 @@ export const notificationService = {
         smsEnabled: false,
       });
     }
+
     return existing;
   },
 
@@ -80,6 +87,7 @@ export const notificationService = {
       .from(notifications)
       .where(eq(notifications.id, notificationId))
       .limit(1);
+
     return notification ?? null;
   },
 
@@ -98,10 +106,11 @@ export const notificationService = {
         )
       )
       .limit(1);
+
     return notification ?? null;
   },
 
-  async getPreferences(
+  getPreferences(
     db: DrizzleClient,
     userId: string
   ): Promise<PreferencesRecord[]> {
@@ -124,6 +133,7 @@ export const notificationService = {
           sql`${notifications.status} IN ('sent', 'delivered')`
         )
       );
+
     return result?.count ?? 0;
   },
   async listByUser(
@@ -142,9 +152,11 @@ export const notificationService = {
     if (query.status) {
       conditions.push(eq(notifications.status, query.status));
     } else if (query.unreadOnly) {
-      conditions.push(eq(notifications.channel, "push"));
-      conditions.push(sql`${notifications.readAt} IS NULL`);
-      conditions.push(sql`${notifications.status} IN ('sent', 'delivered')`);
+      conditions.push(
+        eq(notifications.channel, "push"),
+        sql`${notifications.readAt} IS NULL`,
+        sql`${notifications.status} IN ('sent', 'delivered')`
+      );
     }
 
     if (query.channel) {
@@ -173,7 +185,7 @@ export const notificationService = {
     });
   },
 
-  async listPushTokens(
+  listPushTokens(
     db: DrizzleClient,
     userId: string
   ): Promise<PushTokenRecord[]> {
@@ -199,6 +211,7 @@ export const notificationService = {
         )
       )
       .returning({ id: notifications.id });
+
     return result.length;
   },
 
@@ -221,6 +234,7 @@ export const notificationService = {
         )
       )
       .returning();
+
     return updated ?? null;
   },
 
@@ -256,6 +270,7 @@ export const notificationService = {
         })
         .where(eq(pushTokens.id, existing.id))
         .returning();
+
       return updated ?? existing;
     }
 
@@ -278,7 +293,7 @@ export const notificationService = {
     return newToken;
   },
 
-  async updatePreferences(
+  updatePreferences(
     db: DrizzleClient,
     userId: string,
     input: UpdatePreferencesInput
@@ -330,7 +345,9 @@ export const notificationService = {
             const channels =
               override.channels ??
               (override.enabled ? [...NOTIFICATION_CHANNEL] : []);
+
             const enabledChannels = override.enabled === false ? [] : channels;
+
             const typeValues = {
               emailEnabled: enabledChannels.includes("email"),
               pushEnabled: enabledChannels.includes("push"),

@@ -1,6 +1,8 @@
 import React from "react";
 import { Button, Heading, Section, Text } from "react-email";
-import { BaseLayout, type EmailBrandProps } from "../components/base-layout";
+
+import { BaseLayout } from "../components/base-layout";
+import type { EmailBrandProps } from "../components/base-layout";
 
 interface NotificationEmailProps {
   actionLabel?: string;
@@ -10,36 +12,34 @@ interface NotificationEmailProps {
   subject: string;
 }
 
-export function NotificationEmail({
+export const NotificationEmail = ({
   subject,
   body,
   actionUrl,
   actionLabel,
   brand,
-}: NotificationEmailProps) {
-  return (
-    <BaseLayout previewText={body.slice(0, 140)} {...brand}>
-      <Section>
-        <Heading className="text-[24px] font-bold text-slate-900 m-0 mb-4 leading-tight">
-          {subject}
-        </Heading>
-        <Text className="text-[16px] text-slate-600 leading-relaxed m-0 mb-6 whitespace-pre-line">
-          {body}
-        </Text>
-        {actionUrl ? (
-          <Section className="text-center mb-4">
-            <Button
-              className="bg-brand-primary text-white text-[16px] font-bold no-underline text-center px-8 py-3 rounded-lg inline-block"
-              href={actionUrl}
-            >
-              {actionLabel ?? "View Details"}
-            </Button>
-          </Section>
-        ) : null}
-      </Section>
-    </BaseLayout>
-  );
-}
+}: NotificationEmailProps) => (
+  <BaseLayout previewText={body.slice(0, 140)} {...brand}>
+    <Section>
+      <Heading className="m-0 mb-4 text-[24px] leading-tight font-bold text-slate-900">
+        {subject}
+      </Heading>
+      <Text className="m-0 mb-6 text-[16px] leading-relaxed whitespace-pre-line text-slate-600">
+        {body}
+      </Text>
+      {actionUrl ? (
+        <Section className="mb-4 text-center">
+          <Button
+            className="bg-brand-primary inline-block rounded-lg px-8 py-3 text-center text-[16px] font-bold text-white no-underline"
+            href={actionUrl}
+          >
+            {actionLabel ?? "View Details"}
+          </Button>
+        </Section>
+      ) : null}
+    </Section>
+  </BaseLayout>
+);
 
 NotificationEmail.PreviewProps = {
   actionLabel: "View Invitation",

@@ -1,4 +1,5 @@
 import { Cross2Icon } from "@radix-ui/react-icons";
+
 import type { NavigateFn } from "@/hooks/use-table-url-state";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/modules/ui/badge";
@@ -12,6 +13,7 @@ import {
 } from "@/modules/ui/select";
 import { Separator } from "@/modules/ui/separator";
 import type { AuditLogsSearch } from "@/routes/(protected)/audit-logs/index";
+
 import {
   ALL_EVENT_TYPES,
   ALL_TARGET_TYPES,
@@ -21,10 +23,10 @@ import {
   getTargetTypeLabel,
 } from "../event-utils";
 
-type AuditLogsFiltersProps = {
+interface AuditLogsFiltersProps {
   search: AuditLogsSearch;
   navigate: NavigateFn;
-};
+}
 
 const eventCategories = [
   {
@@ -41,17 +43,20 @@ const eventCategories = [
   },
 ];
 
-export function AuditLogsFilters({ search, navigate }: AuditLogsFiltersProps) {
+export const AuditLogsFilters = ({
+  search,
+  navigate,
+}: AuditLogsFiltersProps) => {
   const hasActiveFilters = search.event || search.targetType;
 
-  function updateFilter(updates: Partial<AuditLogsSearch>) {
+  const updateFilter = (updates: Partial<AuditLogsSearch>) => {
     navigate({
       replace: true,
       search: (prev) => ({ ...prev, ...updates, page: 1 }),
     });
-  }
+  };
 
-  function clearFilters() {
+  const clearFilters = () => {
     navigate({
       replace: true,
       search: (prev) => ({
@@ -62,7 +67,7 @@ export function AuditLogsFilters({ search, navigate }: AuditLogsFiltersProps) {
         targetType: undefined,
       }),
     });
-  }
+  };
 
   return (
     <div className="flex flex-col gap-3">
@@ -80,7 +85,7 @@ export function AuditLogsFilters({ search, navigate }: AuditLogsFiltersProps) {
             <SelectItem value="__all__">All events</SelectItem>
             {eventCategories.map((category) => (
               <div key={category.label}>
-                <div className="text-muted-foreground px-2 py-1.5 text-[10px] font-semibold uppercase tracking-wider">
+                <div className="text-muted-foreground px-2 py-1.5 text-[10px] font-semibold tracking-wider uppercase">
                   {category.label}
                 </div>
                 {category.events.map((event) => (
@@ -88,7 +93,7 @@ export function AuditLogsFilters({ search, navigate }: AuditLogsFiltersProps) {
                     <span className="flex items-center gap-2">
                       <span
                         className={cn(
-                          "size-2 rounded-full shrink-0",
+                          "size-2 shrink-0 rounded-full",
                           getEventBadgeDotClassName(event)
                         )}
                       />
@@ -143,7 +148,7 @@ export function AuditLogsFilters({ search, navigate }: AuditLogsFiltersProps) {
           {search.event && (
             <Badge
               className={cn(
-                "text-[11px] gap-1",
+                "gap-1 text-[11px]",
                 getEventBadgeStyle(search.event).className
               )}
               variant="outline"
@@ -160,7 +165,7 @@ export function AuditLogsFilters({ search, navigate }: AuditLogsFiltersProps) {
             </Badge>
           )}
           {search.targetType && (
-            <Badge className="text-[11px] gap-1" variant="secondary">
+            <Badge className="gap-1 text-[11px]" variant="secondary">
               Target: {getTargetTypeLabel(search.targetType)}
               <button
                 aria-label="Remove target type filter"
@@ -176,4 +181,4 @@ export function AuditLogsFilters({ search, navigate }: AuditLogsFiltersProps) {
       )}
     </div>
   );
-}
+};

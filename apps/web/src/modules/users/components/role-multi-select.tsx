@@ -22,12 +22,13 @@ interface RoleMultiSelectProps {
   value: string[];
 }
 
-export function RoleMultiSelect({ value, onChange }: RoleMultiSelectProps) {
+export const RoleMultiSelect = ({ value, onChange }: RoleMultiSelectProps) => {
   const [open, setOpen] = useState(false);
 
   const { data: rolesData, isLoading } = useQuery({
     queryFn: async ({ signal }) => {
       const response = await listRoles({ signal });
+
       return response.roles;
     },
     queryKey: rolesKeys.lists(),
@@ -99,4 +100,4 @@ export function RoleMultiSelect({ value, onChange }: RoleMultiSelectProps) {
       </PopoverContent>
     </Popover>
   );
-}
+};

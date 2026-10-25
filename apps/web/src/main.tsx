@@ -1,16 +1,18 @@
-if (import.meta.env.DEV) {
-  import("react-grab");
-}
-
 import "@fontsource-variable/inter/index.css";
 import "@fontsource-variable/inter/wght-italic.css";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { createRouter, RouterProvider } from "@tanstack/react-router";
 import ReactDOM from "react-dom/client";
+
 import AppError from "@/modules/common/app-error";
 import { FullPageLoadingState } from "@/modules/common/full-page-loading-state";
 import { queryClient } from "@/query/query-client";
+
 import { routeTree } from "./routeTree.gen";
+
+if (import.meta.env.DEV) {
+  import("react-grab");
+}
 
 const router = createRouter({
   context: {
@@ -34,7 +36,7 @@ declare module "@tanstack/react-router" {
   }
 }
 
-const rootElement = document.getElementById("app");
+const rootElement = document.querySelector("#app");
 
 if (!rootElement) {
   throw new Error("Root element not found");

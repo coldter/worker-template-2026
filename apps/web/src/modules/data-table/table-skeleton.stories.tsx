@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+
 import {
   Table,
   TableBody,
@@ -6,31 +7,30 @@ import {
   TableHeader,
   TableRow,
 } from "@/modules/ui/table";
+
 import { TableSkeleton } from "./table-skeleton";
 
-type SkeletonHostProps = {
+interface SkeletonHostProps {
   columnCount: number;
   rowCount?: number;
-};
-
-function SkeletonHost({ columnCount, rowCount }: SkeletonHostProps) {
-  return (
-    <div className="rounded-md border">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            {Array.from({ length: columnCount }).map((_, i) => (
-              <TableHead key={`head-${i}`}>Column {i + 1}</TableHead>
-            ))}
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          <TableSkeleton columnCount={columnCount} rowCount={rowCount} />
-        </TableBody>
-      </Table>
-    </div>
-  );
 }
+
+const SkeletonHost = ({ columnCount, rowCount }: SkeletonHostProps) => (
+  <div className="rounded-md border">
+    <Table>
+      <TableHeader>
+        <TableRow>
+          {Array.from({ length: columnCount }).map((_, i) => (
+            <TableHead key={`head-${i}`}>Column {i + 1}</TableHead>
+          ))}
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        <TableSkeleton columnCount={columnCount} rowCount={rowCount} />
+      </TableBody>
+    </Table>
+  </div>
+);
 
 const meta = {
   component: SkeletonHost,

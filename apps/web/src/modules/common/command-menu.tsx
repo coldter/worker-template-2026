@@ -1,7 +1,7 @@
 import { useNavigate } from "@tanstack/react-router";
 import { ArrowRight, ChevronRight, Laptop, Moon, Sun } from "lucide-react";
 import React from "react";
-import { useSearchBar } from "@/context/search-provider";
+
 import { useTheme } from "@/context/theme-provider";
 import { sidebarData } from "@/modules/layout/data/sidebar-data";
 import {
@@ -15,21 +15,25 @@ import {
 } from "@/modules/ui/command";
 import { ScrollArea } from "@/modules/ui/scroll-area";
 
-export function CommandMenu() {
+interface CommandMenuProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}
+
+export const CommandMenu = ({ open, onOpenChange }: CommandMenuProps) => {
   const navigate = useNavigate();
   const { setTheme } = useTheme();
-  const { open, setOpen } = useSearchBar();
 
   const runCommand = React.useCallback(
     (command: () => void) => {
-      setOpen(false);
+      onOpenChange(false);
       command();
     },
-    [setOpen]
+    [onOpenChange]
   );
 
   return (
-    <CommandDialog modal onOpenChange={setOpen} open={open}>
+    <CommandDialog modal onOpenChange={onOpenChange} open={open}>
       <CommandInput placeholder="Type a command or search..." />
       <CommandList>
         <ScrollArea className="h-72 pe-1" type="hover">
@@ -89,4 +93,4 @@ export function CommandMenu() {
       </CommandList>
     </CommandDialog>
   );
-}
+};

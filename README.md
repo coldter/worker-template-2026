@@ -49,11 +49,11 @@ A production-ready monorepo template with authentication, RBAC, user management,
 
    Services:
 
-   | App           | URL                     |
-   | ------------- | ----------------------- |
-   | `apps/web`    | http://localhost:3001   |
-   | `apps/server` | http://localhost:8787   |
-   | `apps/auth`   | http://localhost:8788   |
+   | App           | URL                   |
+   | ------------- | --------------------- |
+   | `apps/web`    | http://localhost:3001 |
+   | `apps/server` | http://localhost:8787 |
+   | `apps/auth`   | http://localhost:8788 |
 
 ### Prerequisites
 
@@ -69,7 +69,7 @@ bun install                          # Install dependencies
 bun run build                        # Build all workspaces
 bun run check                        # Lint + static checks
 bun run fix                          # Auto-fix lint/format issues
-bun run check-types                  # Type-check all workspaces
+bun run typecheck                    # Type-check all workspaces
 bun run test                         # Run tests (Vitest)
 bun run test:coverage                # Run tests with coverage
 ```
@@ -101,15 +101,15 @@ Non-secret deploy values live in each `wrangler.jsonc` `vars` and default to loc
 
 ## Structure
 
-| Path                      | Purpose                                      |
-| ------------------------- | -------------------------------------------- |
-| `apps/auth`               | Better-Auth worker (sessions, orgs, 2FA)      |
-| `apps/server`             | Main Hono API with OpenAPI + Drizzle/Postgres |
-| `apps/web`                | React SPA (TanStack Router/Query, Zustand)    |
-| `packages/authorization`  | Policy/RBAC evaluation engine                 |
-| `packages/db`             | Drizzle schema, client, IDs, and migrations   |
-| `packages/shared`         | Shared runtime constants, types, and helpers  |
-| `packages/email`          | React Email templates + transport utilities   |
+| Path                     | Purpose                                       |
+| ------------------------ | --------------------------------------------- |
+| `apps/auth`              | Better-Auth worker (sessions, orgs, 2FA)      |
+| `apps/server`            | Main Hono API with OpenAPI + Drizzle/Postgres |
+| `apps/web`               | React SPA (TanStack Router/Query, Zustand)    |
+| `packages/authorization` | Policy/RBAC evaluation engine                 |
+| `packages/db`            | Drizzle schema, client, IDs, and migrations   |
+| `packages/shared`        | Shared runtime constants, types, and helpers  |
+| `packages/email`         | React Email templates + transport utilities   |
 
 ## Tech Stack
 

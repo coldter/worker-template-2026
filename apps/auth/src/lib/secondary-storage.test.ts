@@ -1,4 +1,6 @@
-import { describe, expect, test } from "vitest";
+/* oxlint-disable vitest/prefer-to-be-truthy, vitest/prefer-to-be-falsy -- strict boolean assertions are intentional */
+import { describe, expect, it } from "vitest";
+
 import { createSecondaryStorage } from "./secondary-storage";
 
 interface PutRecord {
@@ -7,27 +9,28 @@ interface PutRecord {
   value: string;
 }
 
-function createFakeKv() {
+const createFakeKv = () => {
   const store = new Map<string, string>();
   const puts: PutRecord[] = [];
   let putError: Error | null = null;
 
   // SAFETY: createSecondaryStorage only calls get/put/delete and this stub implements all three with KV-compatible signatures.
   const cache = {
-    delete: async (key: string) => {
+    delete: (key: string) => {
       store.delete(key);
+
+      return Promise.resolve();
     },
-    get: async (key: string) => store.get(key) ?? null,
-    put: async (
-      key: string,
-      value: string,
-      options?: { expirationTtl?: number }
-    ) => {
+    get: (key: string) => Promise.resolve(store.get(key) ?? null),
+    put: (key: string, value: string, options?: { expirationTtl?: number }) => {
       if (putError) {
         throw putError;
       }
+
       store.set(key, value);
       puts.push({ expirationTtl: options?.expirationTtl, key, value });
+
+      return Promise.resolve();
     },
   } as KVNamespace;
 
@@ -39,21 +42,21 @@ function createFakeKv() {
     },
     store,
   };
-}
+};
 
-describe("createSecondaryStorage", () => {
-  test("increment creates the counter with a ttl", async () => {
+describe(createSecondaryStorage, () => {
+  it("increment creates the counter with a ttl", async () => {
     const { cache, puts } = createFakeKv();
     const storage = createSecondaryStorage(cache);
 
     await expect(storage.increment("rate-limit:key", 60)).resolves.toBe(1);
 
-    expect(puts).toEqual([
+    expect(puts).toStrictEqual([
       { expirationTtl: 60, key: "rate-limit:key", value: "1" },
     ]);
   });
 
-  test("increment refreshes the ttl on later increments", async () => {
+  it("increment refreshes the ttl on later increments", async () => {
     const { cache, puts } = createFakeKv();
     const storage = createSecondaryStorage(cache);
 
@@ -66,7 +69,7 @@ describe("createSecondaryStorage", () => {
     expect(puts[1]?.value).toBe("2");
   });
 
-  test("increment clamps the ttl to the kv minimum", async () => {
+  it("increment clamps the ttl to the kv minimum", async () => {
     const { cache, puts } = createFakeKv();
     const storage = createSecondaryStorage(cache);
 
@@ -75,7 +78,7 @@ describe("createSecondaryStorage", () => {
     expect(puts[0]?.expirationTtl).toBe(60);
   });
 
-  test("increment keeps counting when the kv write is rate limited", async () => {
+  it("increment keeps counting when the kv write is rate limited", async () => {
     const { cache, puts, setPutError, store } = createFakeKv();
     const storage = createSecondaryStorage(cache);
 
@@ -86,7 +89,7 @@ describe("createSecondaryStorage", () => {
     expect(puts).toHaveLength(0);
   });
 
-  test("getAndDelete returns and removes the stored value", async () => {
+  it("getAndDelete returns and removes the stored value", async () => {
     const { cache, store } = createFakeKv();
     const storage = createSecondaryStorage(cache);
 
@@ -96,13 +99,13 @@ describe("createSecondaryStorage", () => {
     await expect(storage.getAndDelete("otp:key")).resolves.toBeNull();
   });
 
-  test("set stores a value with the requested ttl", async () => {
+  it("set stores a value with the requested ttl", async () => {
     const { cache, puts } = createFakeKv();
     const storage = createSecondaryStorage(cache);
 
     await storage.set("session:key", { token: "abc" }, 3600);
 
-    expect(puts).toEqual([
+    expect(puts).toStrictEqual([
       {
         expirationTtl: 3600,
         key: "session:key",

@@ -1,5 +1,6 @@
 import { render } from "@react-email/render";
-import { describe, expect, test } from "vitest";
+import { describe, expect, it } from "vitest";
+
 import { NotificationEmail } from "../templates/notification";
 import { PasswordResetEmail } from "../templates/password-reset";
 import { TwoFactorOtpEmail } from "../templates/two-factor-otp";
@@ -7,7 +8,7 @@ import { VerificationOtpEmail } from "../templates/verification-otp";
 import { WelcomeEmail } from "../templates/welcome";
 
 describe("Email templates", () => {
-  test("NotificationEmail renders with brand overrides", async () => {
+  it("NotificationEmail renders with brand overrides", async () => {
     const html = await render(
       <NotificationEmail
         actionLabel="View"
@@ -29,7 +30,7 @@ describe("Email templates", () => {
     expect(html).toContain("rgb(18,52,86)");
   });
 
-  test("PasswordResetEmail renders the user name and reset link", async () => {
+  it("PasswordResetEmail renders the user name and reset link", async () => {
     const html = await render(
       <PasswordResetEmail
         expiresIn="60 minutes"
@@ -42,7 +43,7 @@ describe("Email templates", () => {
     expect(html).toContain("https://example.com/reset?token=abc123");
   });
 
-  test("TwoFactorOtpEmail renders the code and device metadata", async () => {
+  it("TwoFactorOtpEmail renders the code and device metadata", async () => {
     const html = await render(
       <TwoFactorOtpEmail
         expiresIn="3 minutes"
@@ -57,7 +58,7 @@ describe("Email templates", () => {
     expect(html).toContain("Chrome on macOS");
   });
 
-  test("VerificationOtpEmail renders the type-specific title and code", async () => {
+  it("VerificationOtpEmail renders the type-specific title and code", async () => {
     const html = await render(
       <VerificationOtpEmail
         expiresIn="10 minutes"
@@ -71,7 +72,7 @@ describe("Email templates", () => {
     expect(html).toContain("123456");
   });
 
-  test("WelcomeEmail renders the user name and login link", async () => {
+  it("WelcomeEmail renders the user name and login link", async () => {
     const html = await render(
       <WelcomeEmail loginUrl="https://example.com/login" userName="Ada" />
     );

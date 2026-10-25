@@ -1,5 +1,7 @@
-import { cva, type VariantProps } from "class-variance-authority";
+import { cva } from "class-variance-authority";
+import type { VariantProps } from "class-variance-authority";
 import type * as React from "react";
+
 import { cn } from "@/lib/utils";
 
 const spinnerVariants = cva("", {
@@ -31,7 +33,8 @@ const spinnerVariants = cva("", {
 });
 
 export interface SpinnerProps
-  extends Omit<React.SVGProps<SVGSVGElement>, "size" | "speed">,
+  extends
+    Omit<React.SVGProps<SVGSVGElement>, "size" | "speed">,
     VariantProps<typeof spinnerVariants> {
   className?: string;
   type?: "circle" | "dots" | "pulse" | "bars" | "ring";
@@ -50,7 +53,7 @@ const Spinner = ({
   const spinnerClasses = cn(baseClasses, animationClass, className);
 
   switch (type) {
-    case "circle":
+    case "circle": {
       return (
         <svg
           className={spinnerClasses}
@@ -75,8 +78,9 @@ const Spinner = ({
           />
         </svg>
       );
+    }
 
-    case "dots":
+    case "dots": {
       return (
         <svg
           className={baseClasses}
@@ -115,20 +119,22 @@ const Spinner = ({
           </circle>
         </svg>
       );
+    }
 
-    case "pulse":
+    case "pulse": {
       // SAFETY: The pulse variant renders an HTML div while SpinnerProps carries SVG attributes; React forwards the shared DOM, ARIA, and event-handler attributes this spread passes, and callers use no SVG-only attributes on this variant.
       return (
         <div
           className={cn(
-            "rounded-full bg-current animate-pulse",
+            "animate-pulse rounded-full bg-current",
             spinnerClasses
           )}
           {...(props as React.HTMLAttributes<HTMLDivElement>)}
         />
       );
+    }
 
-    case "bars":
+    case "bars": {
       return (
         <svg
           className={spinnerClasses}
@@ -220,8 +226,9 @@ const Spinner = ({
           </rect>
         </svg>
       );
+    }
 
-    case "ring":
+    case "ring": {
       return (
         <svg
           className={spinnerClasses}
@@ -264,8 +271,9 @@ const Spinner = ({
           </circle>
         </svg>
       );
+    }
 
-    default:
+    default: {
       return (
         <svg
           className={spinnerClasses}
@@ -290,6 +298,7 @@ const Spinner = ({
           />
         </svg>
       );
+    }
   }
 };
 

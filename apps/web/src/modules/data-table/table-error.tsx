@@ -1,22 +1,17 @@
 import { TableCell, TableRow } from "@/modules/ui/table";
 
-type TableErrorProps = {
+interface TableErrorProps {
   message?: string;
   colSpan: number;
-};
+}
 
-export function TableError({
+export const TableError = ({
   message = "Failed to load data.",
   colSpan,
-}: TableErrorProps) {
-  return (
-    <TableRow>
-      <TableCell
-        className="h-24 text-center text-destructive"
-        colSpan={colSpan}
-      >
-        {message}
-      </TableCell>
-    </TableRow>
-  );
-}
+}: TableErrorProps) => (
+  <TableRow>
+    <TableCell className="text-destructive h-24 text-center" colSpan={colSpan}>
+      {message}
+    </TableCell>
+  </TableRow>
+);

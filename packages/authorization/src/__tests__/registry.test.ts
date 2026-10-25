@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+
 import { principalNotActive } from "../conditions";
 import { createAuthSchema } from "../schema";
 import type { Principal } from "../types";
@@ -39,13 +40,19 @@ describe("buildRegistry runtime safety", () => {
   it("denies unknown actions at runtime instead of matching wildcard policies", async () => {
     // @ts-expect-error -- "fly" is not a declared action on test
     const decision = await registry.can(adminPrincipal, "test", "fly");
-    expect(decision).toEqual({ allowed: false, reason: "NO_MATCHING_POLICY" });
+    expect(decision).toStrictEqual({
+      allowed: false,
+      reason: "NO_MATCHING_POLICY",
+    });
   });
 
   it("denies unknown resource names without throwing", async () => {
     // @ts-expect-error -- "ghost" is not a registry resource
     const decision = await registry.can(adminPrincipal, "ghost", "list");
-    expect(decision).toEqual({ allowed: false, reason: "NO_MATCHING_POLICY" });
+    expect(decision).toStrictEqual({
+      allowed: false,
+      reason: "NO_MATCHING_POLICY",
+    });
   });
 
   it("denies prototype property names without throwing", async () => {
@@ -55,7 +62,8 @@ describe("buildRegistry runtime safety", () => {
       "toString",
       "list"
     );
-    expect(resourceDecision).toEqual({
+
+    expect(resourceDecision).toStrictEqual({
       allowed: false,
       reason: "NO_MATCHING_POLICY",
     });
@@ -66,7 +74,8 @@ describe("buildRegistry runtime safety", () => {
       // @ts-expect-error -- "toString" is not a declared action on test
       "toString"
     );
-    expect(actionDecision).toEqual({
+
+    expect(actionDecision).toStrictEqual({
       allowed: false,
       reason: "NO_MATCHING_POLICY",
     });

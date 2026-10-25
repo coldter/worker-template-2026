@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { ChevronsUpDown } from "lucide-react";
+
 import { Button } from "./button";
 import {
   Collapsible,
@@ -30,7 +31,7 @@ export const Default: Story = {
   render: () => (
     <Collapsible className="w-[380px] space-y-2">
       <div className="flex items-center justify-between rounded-md border px-4 py-2">
-        <p className="font-medium text-sm">Starred repositories</p>
+        <p className="text-sm font-medium">Starred repositories</p>
         <CollapsibleTrigger asChild>
           <Button aria-label="Toggle" size="icon" variant="ghost">
             <ChevronsUpDown />
@@ -56,7 +57,7 @@ export const OpenByDefault: Story = {
   render: () => (
     <Collapsible className="w-[380px] space-y-2" defaultOpen>
       <div className="flex items-center justify-between rounded-md border px-4 py-2">
-        <p className="font-medium text-sm">Advanced options</p>
+        <p className="text-sm font-medium">Advanced options</p>
         <CollapsibleTrigger asChild>
           <Button aria-label="Toggle" size="icon" variant="ghost">
             <ChevronsUpDown />

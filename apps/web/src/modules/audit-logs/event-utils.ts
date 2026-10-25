@@ -1,10 +1,11 @@
 import { z } from "zod";
+
 import type { ListAuditLogsResponse } from "@/api.gen/types.gen";
 
-type BadgeStyle = {
+interface BadgeStyle {
   variant: "default" | "secondary" | "destructive" | "outline";
   className: string;
-};
+}
 
 export type AuditLogMetadataValue =
   | { kind: "null" }
@@ -19,11 +20,10 @@ export type AuditLogMetadata = Record<string, AuditLogMetadataValue>;
 const metadataValueSchema: z.ZodType<AuditLogMetadataValue> = z.lazy(() =>
   z.union([
     z.null().transform((): AuditLogMetadataValue => ({ kind: "null" })),
-    z
-      .boolean()
-      .transform(
-        (value): AuditLogMetadataValue => ({ kind: "boolean", value })
-      ),
+    z.boolean().transform((value): AuditLogMetadataValue => ({
+      kind: "boolean",
+      value,
+    })),
     z
       .number()
       .transform((value): AuditLogMetadataValue => ({ kind: "number", value })),
@@ -35,9 +35,10 @@ const metadataValueSchema: z.ZodType<AuditLogMetadataValue> = z.lazy(() =>
       .transform((items): AuditLogMetadataValue => ({ items, kind: "array" })),
     z
       .record(z.string(), metadataValueSchema)
-      .transform(
-        (fields): AuditLogMetadataValue => ({ fields, kind: "object" })
-      ),
+      .transform((fields): AuditLogMetadataValue => ({
+        fields,
+        kind: "object",
+      })),
   ])
 );
 
@@ -45,16 +46,17 @@ const auditLogMetadataSchema = z.record(z.string(), metadataValueSchema);
 
 type RawAuditLogMetadata = ListAuditLogsResponse["data"][number]["metadata"];
 
-export function decodeAuditLogMetadata(
+export const decodeAuditLogMetadata = (
   metadata: RawAuditLogMetadata
-): AuditLogMetadata | null {
+): AuditLogMetadata | null => {
   if (metadata === null) {
     return null;
   }
 
   const parsed = auditLogMetadataSchema.safeParse(metadata);
+
   return parsed.success ? parsed.data : null;
-}
+};
 
 export type AuditLogMetadataRawValue =
   | null
@@ -64,12 +66,13 @@ export type AuditLogMetadataRawValue =
   | AuditLogMetadataRawValue[]
   | { [key: string]: AuditLogMetadataRawValue };
 
-function encodeMetadataValue(
+const encodeMetadataValue = (
   value: AuditLogMetadataValue
-): AuditLogMetadataRawValue {
+): AuditLogMetadataRawValue => {
   if (value.kind === "array") {
     return value.items.map(encodeMetadataValue);
   }
+
   if (value.kind === "object") {
     return Object.fromEntries(
       Object.entries(value.fields).map(([key, entry]) => [
@@ -78,59 +81,67 @@ function encodeMetadataValue(
       ])
     );
   }
-  return value.kind === "null" ? null : value.value;
-}
 
-export function encodeAuditLogMetadata(
+  return value.kind === "null" ? null : value.value;
+};
+
+export const encodeAuditLogMetadata = (
   metadata: AuditLogMetadata
-): Record<string, AuditLogMetadataRawValue> {
-  return Object.fromEntries(
+): Record<string, AuditLogMetadataRawValue> =>
+  Object.fromEntries(
     Object.entries(metadata).map(([key, value]) => [
       key,
       encodeMetadataValue(value),
     ])
   );
-}
 
-export function formatMetadataValue(value: AuditLogMetadataValue): string {
+export const formatMetadataValue = (value: AuditLogMetadataValue): string => {
   if (value.kind === "null") {
     return "null";
   }
+
   if (value.kind === "array") {
     return value.items.map(formatMetadataValue).join(",");
   }
+
   if (value.kind === "object") {
     return "[object Object]";
   }
-  return String(value.value);
-}
 
-function isPresentMetadataValue(
+  return String(value.value);
+};
+
+const isPresentMetadataValue = (
   value: AuditLogMetadataValue | undefined
-): boolean {
+): boolean => {
   if (value === undefined || value.kind === "null") {
     return false;
   }
+
   if (value.kind === "boolean") {
     return value.value;
   }
+
   if (value.kind === "number") {
     return value.value !== 0;
   }
+
   if (value.kind === "string") {
     return value.value.length > 0;
   }
-  return true;
-}
 
-function presentMetadataValueText(
+  return true;
+};
+
+const presentMetadataValueText = (
   value: AuditLogMetadataValue | undefined
-): string | null {
+): string | null => {
   if (value === undefined || !isPresentMetadataValue(value)) {
     return null;
   }
+
   return formatMetadataValue(value);
-}
+};
 
 const eventDisplayNames = {
   "auth.login.failed": "Login Failed",
@@ -155,9 +166,8 @@ const eventDisplayNames = {
 
 export type KnownEventKey = keyof typeof eventDisplayNames;
 
-export function isKnownEvent(event: string): event is KnownEventKey {
-  return Object.hasOwn(eventDisplayNames, event);
-}
+export const isKnownEvent = (event: string): event is KnownEventKey =>
+  Object.hasOwn(eventDisplayNames, event);
 
 const eventBadgeStyles = {
   "auth.login.failed": {
@@ -297,15 +307,13 @@ export type KnownEventIconName =
   | (typeof eventIconNames)[KnownEventKey]
   | "Activity";
 
-export function getEventDisplayName(event: string): string {
-  return isKnownEvent(event) ? eventDisplayNames[event] : event;
-}
+export const getEventDisplayName = (event: string): string =>
+  isKnownEvent(event) ? eventDisplayNames[event] : event;
 
-export function getEventBadgeStyle(event: string): BadgeStyle {
-  return isKnownEvent(event) ? eventBadgeStyles[event] : defaultBadgeStyle;
-}
+export const getEventBadgeStyle = (event: string): BadgeStyle =>
+  isKnownEvent(event) ? eventBadgeStyles[event] : defaultBadgeStyle;
 
-export function getEventBadgeDotClassName(event: string): string {
+export const getEventBadgeDotClassName = (event: string): string => {
   const badgeClassName = getEventBadgeStyle(event).className;
 
   for (const [token, dotClassName] of eventBadgeDotClassNames) {
@@ -315,13 +323,12 @@ export function getEventBadgeDotClassName(event: string): string {
   }
 
   return "bg-slate-500";
-}
+};
 
-export function getEventIconName(event: string): KnownEventIconName {
-  return isKnownEvent(event) ? eventIconNames[event] : "Activity";
-}
+export const getEventIconName = (event: string): KnownEventIconName =>
+  isKnownEvent(event) ? eventIconNames[event] : "Activity";
 
-function getActorDescription(actorType: string): string {
+const getActorDescription = (actorType: string): string => {
   if (actorType === "system") {
     return "The system";
   }
@@ -331,99 +338,109 @@ function getActorDescription(actorType: string): string {
   }
 
   return "A user";
-}
+};
 
-export function getActorTypeLabel(actorType: string): string {
+export const getActorTypeLabel = (actorType: string): string => {
   switch (actorType) {
-    case "user":
+    case "user": {
       return "User";
-    case "system":
-      return "System";
-    case "api":
-      return "API";
-    default:
-      return actorType;
-  }
-}
+    }
 
-export function getTargetTypeLabel(targetType: string | null): string {
+    case "system": {
+      return "System";
+    }
+
+    case "api": {
+      return "API";
+    }
+
+    default: {
+      return actorType;
+    }
+  }
+};
+
+export const getTargetTypeLabel = (targetType: string | null): string => {
   if (!targetType) {
     return "N/A";
   }
-  switch (targetType) {
-    case "user":
-      return "User";
-    case "role":
-      return "Role";
-    case "session":
-      return "Session";
-    default:
-      return targetType;
-  }
-}
 
-export function getEventDescription(
+  switch (targetType) {
+    case "user": {
+      return "User";
+    }
+
+    case "role": {
+      return "Role";
+    }
+
+    case "session": {
+      return "Session";
+    }
+
+    default: {
+      return targetType;
+    }
+  }
+};
+
+type EventDescriptionBuilder = (
+  actor: string,
+  metadata: AuditLogMetadata | null
+) => string;
+
+const eventDescriptionBuilders = {
+  "auth.login.failed": (actor, metadata) => {
+    const reason = presentMetadataValueText(metadata?.reason);
+    const attempts = presentMetadataValueText(metadata?.attempts);
+    const parts = [`${actor} failed to log in`];
+
+    if (reason !== null) {
+      parts[0] += ` (${reason.replaceAll("_", " ")})`;
+    }
+
+    if (attempts !== null) {
+      parts.push(`Attempt #${attempts}`);
+    }
+
+    return `${parts.join(". ")}.`;
+  },
+  "auth.login.success": (actor) => `${actor} successfully logged in.`,
+  "auth.logout": (actor) => `${actor} logged out.`,
+  "auth.password.changed": (actor) => `${actor} changed the password.`,
+  "auth.session.revoked": (actor) => `${actor} revoked a session.`,
+  "role.assigned": (actor) => `${actor} changed role assignments.`,
+  "role.created": (actor) => `${actor} created a new role.`,
+  "role.deleted": (actor) => `${actor} deleted a role.`,
+  "role.unassigned": (actor) => `${actor} removed role assignments.`,
+  "role.updated": (actor) => `${actor} updated a role.`,
+  "user.activated": (actor) => `${actor} activated the user.`,
+  "user.created": (actor) => `${actor} created a new user account.`,
+  "user.deactivated": (actor, metadata) => {
+    const reason = presentMetadataValueText(metadata?.reason);
+
+    return reason === null
+      ? `${actor} deactivated the user.`
+      : `${actor} deactivated the user. Reason: ${reason}`;
+  },
+  "user.deleted": (actor) => `${actor} deleted a user account.`,
+  "user.listed": (actor) => `${actor} listed users.`,
+  "user.unlocked": (actor) => `${actor} unlocked the user account.`,
+  "user.updated": (actor) => `${actor} updated user details.`,
+  "user.viewed": (actor) => `${actor} viewed user details.`,
+} satisfies Record<KnownEventKey, EventDescriptionBuilder>;
+
+export const getEventDescription = (
   event: string,
   actorType: string,
   metadata: AuditLogMetadata | null
-): string {
+): string => {
   const actor = getActorDescription(actorType);
 
-  switch (event) {
-    case "auth.login.success":
-      return `${actor} successfully logged in.`;
-    case "auth.login.failed": {
-      const reason = presentMetadataValueText(metadata?.reason);
-      const attempts = presentMetadataValueText(metadata?.attempts);
-      const parts = [`${actor} failed to log in`];
-      if (reason !== null) {
-        parts[0] += ` (${reason.replace(/_/g, " ")})`;
-      }
-      if (attempts !== null) {
-        parts.push(`Attempt #${attempts}`);
-      }
-      return `${parts.join(". ")}.`;
-    }
-    case "auth.logout":
-      return `${actor} logged out.`;
-    case "auth.password.changed":
-      return `${actor} changed the password.`;
-    case "auth.session.revoked":
-      return `${actor} revoked a session.`;
-    case "user.created":
-      return `${actor} created a new user account.`;
-    case "user.updated":
-      return `${actor} updated user details.`;
-    case "user.deleted":
-      return `${actor} deleted a user account.`;
-    case "user.deactivated": {
-      const reason = presentMetadataValueText(metadata?.reason);
-      return reason === null
-        ? `${actor} deactivated the user.`
-        : `${actor} deactivated the user. Reason: ${reason}`;
-    }
-    case "user.activated":
-      return `${actor} activated the user.`;
-    case "user.unlocked":
-      return `${actor} unlocked the user account.`;
-    case "user.viewed":
-      return `${actor} viewed user details.`;
-    case "user.listed":
-      return `${actor} listed users.`;
-    case "role.created":
-      return `${actor} created a new role.`;
-    case "role.updated":
-      return `${actor} updated a role.`;
-    case "role.deleted":
-      return `${actor} deleted a role.`;
-    case "role.assigned":
-      return `${actor} changed role assignments.`;
-    case "role.unassigned":
-      return `${actor} removed role assignments.`;
-    default:
-      return `${actor} performed "${event}".`;
-  }
-}
+  return isKnownEvent(event)
+    ? eventDescriptionBuilders[event](actor, metadata)
+    : `${actor} performed "${event}".`;
+};
 
 export const ALL_EVENT_TYPES = Object.keys(eventDisplayNames);
 

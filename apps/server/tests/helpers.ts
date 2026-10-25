@@ -1,32 +1,30 @@
-export async function parseResponse<T>(response: {
+export const parseResponse = <T>(response: {
   json: () => Promise<T>;
-}): Promise<T> {
-  return response.json();
-}
+}): Promise<T> => response.json();
 
-export type ErrorResponse = {
+export interface ErrorResponse {
   success: false;
   error: {
     code: string;
     message: string;
   };
-};
+}
 
-export function expectError(
+export const expectError = (
   response: ErrorResponse,
   expectedCode: string
-): void {
+): void => {
   if (response.success !== false) {
     throw new Error("Expected error response but got success");
   }
+
   if (response.error.code !== expectedCode) {
     throw new Error(
       `Expected error code "${expectedCode}" but got "${response.error.code}"`
     );
   }
-}
+};
 
-export function testBindings<T>(bindings: T): CloudflareBindings & T {
-  // SAFETY: tests supply only the bindings exercised by their code path; the remaining CloudflareBindings members are never read.
-  return bindings as CloudflareBindings & T;
-}
+// SAFETY: tests supply only the bindings exercised by their code path; the remaining CloudflareBindings members are never read.
+export const testBindings = <T>(bindings: T): CloudflareBindings & T =>
+  bindings as CloudflareBindings & T;

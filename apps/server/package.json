@@ -6,7 +6,7 @@
   "scripts": {
     "cf-typegen": "wrangler types --env-interface CloudflareBindings",
     "cf-typegen:check": "wrangler types --check --env-interface CloudflareBindings",
-    "check-types": "tsc --noEmit",
+    "typecheck": "tsc --noEmit",
     "db:seed": "tsx scripts/seeds/index.ts",
     "deploy": "set -a && . ../../.env && set +a && wrangler deploy --var NODE_ENV:production --var \"APP_URL:${APP_URL:?APP_URL must be set in the root .env}\" --var \"CORS_ORIGINS:${CORS_ORIGINS:?CORS_ORIGINS must be set in the root .env}\"",
     "dev": "wrangler types --env-interface CloudflareBindings && wrangler dev --inspector-port 9229",
@@ -24,28 +24,28 @@
     "@repo/db": "workspace:*",
     "@repo/email": "workspace:*",
     "@repo/shared": "workspace:*",
-    "@scalar/hono-api-reference": "^0.12.1",
-    "better-auth": "^1.7.3",
+    "@scalar/hono-api-reference": "^0.12.14",
+    "better-auth": "^1.7.12",
     "drizzle-orm": "1.0.0-rc.5-5935859",
-    "hono": "^4.13.7",
-    "pg": "^8.23.0",
+    "hono": "^4.13.14",
+    "pg": "^8.23.1",
     "pg-error-enum": "^2.0.1",
-    "react": "^19.3.0",
-    "react-dom": "^19.3.0",
-    "zod": "^4.6.1"
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
-    "@cloudflare/vitest-plugin": "^1.1.6",
+    "@cloudflare/vitest-plugin": "^1.4.7",
     "@faker-js/faker": "^10.6.0",
-    "@inquirer/prompts": "^8.7.2",
+    "@inquirer/prompts": "^8.7.4",
     "@types/pg": "^8.23.1",
-    "@vitest/coverage-v8": "^4.1.11",
-    "chalk": "^6.0.0",
+    "@vitest/coverage-v8": "^5.0.5",
+    "chalk": "^6.0.1",
     "cli-highlight": "^2.1.11",
     "drizzle-kit": "1.0.0-rc.5-5935859",
-    "type-fest": "^5.9.0",
+    "type-fest": "^5.10.0",
     "typescript": "^7.0.2",
-    "vitest": "^4.1.11",
-    "wrangler": "^4.130.0"
+    "vitest": "^5.0.5",
+    "wrangler": "^4.152.0"
   }
 }

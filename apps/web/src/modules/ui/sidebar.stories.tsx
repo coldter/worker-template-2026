@@ -1,12 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import {
-  Home,
-  Inbox,
-  type LucideIcon,
-  Search,
-  Settings,
-  Users,
-} from "lucide-react";
+import { Home, Inbox, Search, Settings, Users } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+
 import {
   Sidebar,
   SidebarContent,
@@ -42,7 +37,10 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-type NavItem = { title: string; icon: LucideIcon };
+interface NavItem {
+  title: string;
+  icon: LucideIcon;
+}
 
 const navItems: NavItem[] = [
   { icon: Home, title: "Home" },
@@ -52,59 +50,57 @@ const navItems: NavItem[] = [
   { icon: Settings, title: "Settings" },
 ];
 
-function DemoSidebar({
+const DemoSidebar = ({
   variant = "sidebar",
   collapsible = "offcanvas",
 }: {
   variant?: "sidebar" | "floating" | "inset";
   collapsible?: "offcanvas" | "icon" | "none";
-}) {
-  return (
-    <div className="h-screen">
-      <SidebarProvider>
-        <Sidebar collapsible={collapsible} variant={variant}>
-          <SidebarHeader>
-            <div className="px-2 py-1.5 font-semibold text-sm">Acme Inc.</div>
-          </SidebarHeader>
-          <SidebarContent>
-            <SidebarGroup>
-              <SidebarGroupLabel>Navigation</SidebarGroupLabel>
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  {navItems.map((item) => (
-                    <SidebarMenuItem key={item.title}>
-                      <SidebarMenuButton tooltip={item.title}>
-                        <item.icon />
-                        <span>{item.title}</span>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  ))}
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
-          </SidebarContent>
-          <SidebarFooter>
-            <div className="px-2 py-1.5 text-muted-foreground text-xs">
-              v1.0.0
-            </div>
-          </SidebarFooter>
-        </Sidebar>
-        <SidebarInset>
-          <header className="flex h-14 items-center gap-2 border-b px-4">
-            <SidebarTrigger />
-            <div className="font-medium text-sm">Dashboard</div>
-          </header>
-          <main className="p-6">
-            <h1 className="font-semibold text-xl">Welcome back</h1>
-            <p className="text-muted-foreground text-sm">
-              Use the trigger to toggle the sidebar, or press Ctrl/Cmd+B.
-            </p>
-          </main>
-        </SidebarInset>
-      </SidebarProvider>
-    </div>
-  );
-}
+}) => (
+  <div className="h-screen">
+    <SidebarProvider>
+      <Sidebar collapsible={collapsible} variant={variant}>
+        <SidebarHeader>
+          <div className="px-2 py-1.5 text-sm font-semibold">Acme Inc.</div>
+        </SidebarHeader>
+        <SidebarContent>
+          <SidebarGroup>
+            <SidebarGroupLabel>Navigation</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {navItems.map((item) => (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton tooltip={item.title}>
+                      <item.icon />
+                      <span>{item.title}</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        </SidebarContent>
+        <SidebarFooter>
+          <div className="text-muted-foreground px-2 py-1.5 text-xs">
+            v1.0.0
+          </div>
+        </SidebarFooter>
+      </Sidebar>
+      <SidebarInset>
+        <header className="flex h-14 items-center gap-2 border-b px-4">
+          <SidebarTrigger />
+          <div className="text-sm font-medium">Dashboard</div>
+        </header>
+        <main className="p-6">
+          <h1 className="text-xl font-semibold">Welcome back</h1>
+          <p className="text-muted-foreground text-sm">
+            Use the trigger to toggle the sidebar, or press Ctrl/Cmd+B.
+          </p>
+        </main>
+      </SidebarInset>
+    </SidebarProvider>
+  </div>
+);
 
 export const Default: Story = {
   render: () => <DemoSidebar />,

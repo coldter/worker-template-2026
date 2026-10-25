@@ -1,10 +1,13 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useTable } from "@tanstack/react-table";
+
 import { DataTable } from "@/modules/data-table/data-table";
 import { dataTableFeatures } from "@/modules/data-table/features";
 import { DataTablePagination } from "@/modules/data-table/pagination";
 import { DataTableToolbar } from "@/modules/data-table/toolbar";
-import { type AuditLog, auditLogsColumns } from "./columns";
+
+import { auditLogsColumns } from "./columns";
+import type { AuditLog } from "./columns";
 
 const mockAuditLogs: AuditLog[] = [
   {
@@ -156,17 +159,17 @@ const mockAuditLogs: AuditLog[] = [
   },
 ];
 
-type AuditLogsTableStoryProps = {
+interface AuditLogsTableStoryProps {
   data: AuditLog[];
   isLoading?: boolean;
   isError?: boolean;
-};
+}
 
-function AuditLogsTableStory({
+const AuditLogsTableStory = ({
   data,
   isLoading,
   isError,
-}: AuditLogsTableStoryProps) {
+}: AuditLogsTableStoryProps) => {
   const table = useTable({
     columns: auditLogsColumns,
     data,
@@ -188,7 +191,7 @@ function AuditLogsTableStory({
       <DataTablePagination table={table} />
     </div>
   );
-}
+};
 
 const meta = {
   component: AuditLogsTableStory,

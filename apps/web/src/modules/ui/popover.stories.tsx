@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { Settings2 } from "lucide-react";
+
 import { Button } from "./button";
 import { Input } from "./input";
 import { Label } from "./label";
@@ -32,7 +33,7 @@ export const Default: Story = {
       </PopoverTrigger>
       <PopoverContent>
         <div className="grid gap-2">
-          <p className="font-medium text-sm">Quick note</p>
+          <p className="text-sm font-medium">Quick note</p>
           <p className="text-muted-foreground text-sm">
             Popovers show contextual content without leaving the page.
           </p>
@@ -53,7 +54,7 @@ export const OpenByDefault: Story = {
       </PopoverTrigger>
       <PopoverContent>
         <div className="grid gap-3">
-          <p className="font-medium text-sm">Dimensions</p>
+          <p className="text-sm font-medium">Dimensions</p>
           <div className="grid gap-2">
             <Label htmlFor="width">Width</Label>
             <Input defaultValue="100%" id="width" />

@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { createJSONStorage, devtools, persist } from "zustand/middleware";
+
 import type { SessionUser } from "@/modules/auth";
 
 export interface LastUser {

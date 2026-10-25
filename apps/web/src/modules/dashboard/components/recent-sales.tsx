@@ -2,7 +2,7 @@ import { Avatar, AvatarFallback } from "@/modules/ui/avatar";
 
 const recentActivity: { name: string; email: string; initials: string }[] = [];
 
-export function RecentSales() {
+export const RecentSales = () => {
   if (recentActivity.length === 0) {
     return <p className="text-muted-foreground text-sm">No recent activity.</p>;
   }
@@ -24,4 +24,4 @@ export function RecentSales() {
       ))}
     </div>
   );
-}
+};

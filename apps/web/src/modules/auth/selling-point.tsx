@@ -7,16 +7,16 @@ interface SellingPointProps {
   title: string;
 }
 
-export function SellingPoint({
+export const SellingPoint = ({
   title,
   description,
   bgImage,
   bgGradient = "from-indigo-600 via-purple-600 to-pink-500",
-}: SellingPointProps) {
+}: SellingPointProps) => {
   const shouldReduceMotion = useReducedMotion();
 
   return (
-    <div className="relative flex h-full select-none flex-col justify-center p-8">
+    <div className="relative flex h-full flex-col justify-center p-8 select-none">
       {bgImage ? (
         <img
           alt=""
@@ -37,7 +37,7 @@ export function SellingPoint({
           initial={shouldReduceMotion ? false : { opacity: 0, y: 20 }}
           transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.6 }}
         >
-          <h2 className="mb-2 text-center font-bold text-5xl text-white drop-shadow-2xl">
+          <h2 className="mb-2 text-center text-5xl font-bold text-white drop-shadow-2xl">
             {title}
           </h2>
         </motion.div>
@@ -48,11 +48,11 @@ export function SellingPoint({
             shouldReduceMotion ? { duration: 0 } : { delay: 0.1, duration: 0.6 }
           }
         >
-          <p className="text-center text-lg text-white/80 leading-relaxed">
+          <p className="text-center text-lg leading-relaxed text-white/80">
             {description}
           </p>
         </motion.div>
       </div>
     </div>
   );
-}
+};

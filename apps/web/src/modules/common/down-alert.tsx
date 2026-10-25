@@ -1,3 +1,4 @@
+import { onlineManager } from "@tanstack/react-query";
 import {
   CloudOff,
   Construction,
@@ -7,6 +8,7 @@ import {
   X,
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+
 import { useOnlineManager } from "@/hooks/use-online-manager";
 import { Alert, AlertDescription } from "@/modules/ui/alert";
 import { Button } from "@/modules/ui/button";
@@ -56,48 +58,56 @@ export type AlertKeys = keyof typeof downAlertConfig;
 export const DownAlert = () => {
   const { isOnline } = useOnlineManager();
   const { downAlert, setDownAlert } = useAlertStore();
+
   const [dismissedAlerts, setDismissedAlerts] = useState<
     Record<string, boolean>
   >({});
 
+  useEffect(
+    () =>
+      onlineManager.subscribe((online) => {
+        if (!online) {
+          return;
+        }
+
+        const { downAlert: storedAlert, setDownAlert: setStoredAlert } =
+          useAlertStore.getState();
+
+        if (storedAlert === "offline") {
+          setStoredAlert(null);
+        }
+
+        setDismissedAlerts((prev) =>
+          prev.offline ? { ...prev, offline: false } : prev
+        );
+      }),
+    []
+  );
+
+  const onlineAlert = downAlert === "offline" ? null : downAlert;
+  const activeAlert = isOnline ? onlineAlert : "offline";
+
   const dismissAlert = useCallback(() => {
-    if (!downAlert) {
+    if (!activeAlert) {
       return;
     }
-    setDismissedAlerts((prev) => ({ ...prev, [downAlert]: true }));
+
+    setDismissedAlerts((prev) => ({ ...prev, [activeAlert]: true }));
     setDownAlert(null);
-  }, [downAlert, setDownAlert]);
+  }, [activeAlert, setDownAlert]);
 
-  const resetDismiss = useCallback((key: AlertKeys) => {
-    setDismissedAlerts((prev) => ({ ...prev, [key]: false }));
-  }, []);
-
-  useEffect(() => {
-    if (isOnline) {
-      if (downAlert === "offline") {
-        setDownAlert(null);
-      }
-      resetDismiss("offline");
-    } else {
-      setDownAlert("offline");
-    }
-  }, [downAlert, isOnline, setDownAlert, resetDismiss]);
-
-  if (!downAlert || dismissedAlerts[downAlert]) {
+  if (!activeAlert || dismissedAlerts[activeAlert]) {
     return null;
   }
 
-  const config = downAlertConfig[downAlert];
-  if (!config) {
-    return null;
-  }
+  const config = downAlertConfig[activeAlert];
 
   const { title, content, icon: Icon, variant } = config;
 
   return (
-    <div className="fixed top-4 left-4 right-4 z-50 flex pointer-events-auto justify-center">
+    <div className="pointer-events-auto fixed top-4 right-4 left-4 z-50 flex justify-center">
       <Alert
-        className="w-auto shadow-lg bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60"
+        className="bg-background/95 supports-backdrop-filter:bg-background/60 w-auto shadow-lg backdrop-blur"
         variant={variant}
       >
         <Button

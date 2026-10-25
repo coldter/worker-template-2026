@@ -1,7 +1,9 @@
-import { Toaster as Sonner, type ToasterProps } from "sonner";
+import { Toaster as Sonner } from "sonner";
+import type { ToasterProps } from "sonner";
+
 import { useTheme } from "@/context/theme-provider";
 
-export function Toaster({ ...props }: ToasterProps) {
+export const Toaster = ({ ...props }: ToasterProps) => {
   const { theme = "system" } = useTheme();
 
   // SAFETY: React's CSSProperties has no index signature for CSS custom properties, so the cast supplies only the `--*` variables Sonner reads at runtime.
@@ -19,4 +21,4 @@ export function Toaster({ ...props }: ToasterProps) {
       {...props}
     />
   );
-}
+};

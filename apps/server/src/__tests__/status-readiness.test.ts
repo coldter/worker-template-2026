@@ -1,14 +1,16 @@
 import type { DrizzleClient } from "@repo/db";
 import { describe, expect, it } from "vitest";
 
-import { checkReadiness, type ReadinessCache } from "@/modules/status/service";
+import { checkReadiness } from "@/modules/status/service";
+import type { ReadinessCache } from "@/modules/status/service";
 
-function fakeDb(execute: (query: string) => Promise<unknown[]>): DrizzleClient {
+const fakeDb = (
+  execute: (query: string) => Promise<unknown[]>
+): DrizzleClient =>
   // SAFETY: readiness probes only read db.execute, so a proxy that answers every member with the probe is a complete double for that call path.
-  return new Proxy({} as DrizzleClient, {
+  new Proxy({} as DrizzleClient, {
     get: () => execute,
   });
-}
 
 const healthyCache: ReadinessCache = { get: () => Promise.resolve(null) };
 
@@ -18,7 +20,8 @@ describe("readiness checks", () => {
       fakeDb(() => Promise.resolve([])),
       healthyCache
     );
-    expect(checks).toEqual({ cache: true, database: true });
+
+    expect(checks).toStrictEqual({ cache: true, database: true });
   });
 
   it("reports database unavailable when the probe rejects", async () => {
@@ -26,16 +29,19 @@ describe("readiness checks", () => {
       fakeDb(() => Promise.reject(new Error("connection refused"))),
       healthyCache
     );
-    expect(checks).toEqual({ cache: true, database: false });
+
+    expect(checks).toStrictEqual({ cache: true, database: false });
   });
 
   it("reports database unavailable when the probe hangs past the timeout", async () => {
     const checks = await checkReadiness(
-      fakeDb(() => new Promise<never>(() => undefined)),
+      // oxlint-disable-next-line promise/avoid-new -- the timeout branch can only be reached with a promise that never settles.
+      fakeDb(() => new Promise<never>(() => {})),
       healthyCache,
       20
     );
-    expect(checks).toEqual({ cache: true, database: false });
+
+    expect(checks).toStrictEqual({ cache: true, database: false });
   });
 
   it("reports cache unavailable when the KV probe rejects", async () => {
@@ -45,6 +51,7 @@ describe("readiness checks", () => {
         get: () => Promise.reject(new Error("kv unavailable")),
       }
     );
-    expect(checks).toEqual({ cache: false, database: true });
+
+    expect(checks).toStrictEqual({ cache: false, database: true });
   });
 });

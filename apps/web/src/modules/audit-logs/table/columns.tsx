@@ -1,21 +1,23 @@
 import type { ColumnDef } from "@tanstack/react-table";
 import { format, formatDistanceToNow } from "date-fns";
 import { Bot, Globe, User } from "lucide-react";
+
 import type { ListAuditLogsResponse } from "@/api.gen/types.gen";
 import { cn } from "@/lib/utils";
 import { DataTableColumnHeader } from "@/modules/data-table/column-header";
 import type { DataTableFeatures } from "@/modules/data-table/features";
 import { Badge } from "@/modules/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/modules/ui/tooltip";
+
 import { EventIcon } from "../event-icon";
 import {
-  type AuditLogMetadata,
   getActorTypeLabel,
   getEventBadgeStyle,
   getEventDescription,
   getEventDisplayName,
   getTargetTypeLabel,
 } from "../event-utils";
+import type { AuditLogMetadata } from "../event-utils";
 
 export type AuditLog = Omit<
   ListAuditLogsResponse["data"][number],
@@ -36,6 +38,7 @@ export const auditLogsColumns: ColumnDef<DataTableFeatures, AuditLog>[] = [
     cell: ({ row }) => {
       const event = row.getValue<string>("event");
       const style = getEventBadgeStyle(event);
+
       return (
         <div className="flex items-center gap-2">
           <span
@@ -79,6 +82,7 @@ export const auditLogsColumns: ColumnDef<DataTableFeatures, AuditLog>[] = [
       const { actorType } = row.original;
       const { actorId } = row.original;
       const ActorIcon = actorTypeIcons[actorType] ?? User;
+
       return (
         <div className="flex items-center gap-2">
           <span className="bg-muted flex size-6 shrink-0 items-center justify-center rounded-full">
@@ -91,7 +95,7 @@ export const auditLogsColumns: ColumnDef<DataTableFeatures, AuditLog>[] = [
             {actorId ? (
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <code className="text-muted-foreground text-[10px] font-mono">
+                  <code className="text-muted-foreground font-mono text-[10px]">
                     {actorId.slice(0, 12)}...
                   </code>
                 </TooltipTrigger>
@@ -119,6 +123,7 @@ export const auditLogsColumns: ColumnDef<DataTableFeatures, AuditLog>[] = [
     cell: ({ row }) => {
       const { targetType } = row.original;
       const { targetId } = row.original;
+
       return (
         <div className="flex flex-col">
           <span className="text-xs font-medium">
@@ -127,7 +132,7 @@ export const auditLogsColumns: ColumnDef<DataTableFeatures, AuditLog>[] = [
           {targetId ? (
             <Tooltip>
               <TooltipTrigger asChild>
-                <code className="text-muted-foreground text-[10px] font-mono">
+                <code className="text-muted-foreground font-mono text-[10px]">
                   {targetId.slice(0, 12)}...
                 </code>
               </TooltipTrigger>
@@ -151,8 +156,9 @@ export const auditLogsColumns: ColumnDef<DataTableFeatures, AuditLog>[] = [
     accessorKey: "ipAddress",
     cell: ({ row }) => {
       const ip = row.getValue<string | null>("ipAddress");
+
       return ip ? (
-        <code className="bg-muted rounded-md px-1.5 py-0.5 text-[11px] font-mono">
+        <code className="bg-muted rounded-md px-1.5 py-0.5 font-mono text-[11px]">
           {ip}
         </code>
       ) : (
@@ -170,6 +176,7 @@ export const auditLogsColumns: ColumnDef<DataTableFeatures, AuditLog>[] = [
     cell: ({ row }) => {
       const date = row.getValue<string>("createdAt");
       const dateObj = new Date(date);
+
       return (
         <Tooltip>
           <TooltipTrigger asChild>

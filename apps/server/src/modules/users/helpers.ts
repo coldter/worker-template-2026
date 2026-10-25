@@ -1,10 +1,10 @@
 import type { AuditLogMetadata, FieldChange } from "@/modules/audit-logs/types";
 
-export function createChangeMetadata<T extends Record<string, unknown>>(
+export const createChangeMetadata = <T extends Record<string, unknown>>(
   before: T,
   after: Partial<T>,
   fields: (keyof T & string)[]
-): AuditLogMetadata {
+): AuditLogMetadata => {
   const changes: Record<string, FieldChange> = {};
   const changedFields: string[] = [];
 
@@ -22,4 +22,4 @@ export function createChangeMetadata<T extends Record<string, unknown>>(
   }
 
   return { changedFields, changes };
-}
+};

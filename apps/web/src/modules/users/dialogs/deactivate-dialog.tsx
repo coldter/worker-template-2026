@@ -36,11 +36,11 @@ interface DeactivateDialogProps {
   user: User | UserDetail;
 }
 
-export function DeactivateDialog({
+export const DeactivateDialog = ({
   user,
   open,
   onOpenChange,
-}: DeactivateDialogProps) {
+}: DeactivateDialogProps) => {
   const deactivateMutation = useDeactivateUserMutation();
 
   const form = useForm<DeactivateFormValues>({
@@ -56,9 +56,12 @@ export function DeactivateDialog({
         reason: values.reason,
         userId: user.id,
       });
-      form.reset();
-      onOpenChange(false);
-    } catch {}
+    } catch {
+      return;
+    }
+
+    form.reset();
+    onOpenChange(false);
   };
 
   return (
@@ -114,4 +117,4 @@ export function DeactivateDialog({
       </DialogContent>
     </Dialog>
   );
-}
+};

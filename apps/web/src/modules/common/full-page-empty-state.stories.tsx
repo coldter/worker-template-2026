@@ -1,6 +1,8 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { Inbox, Plus, Users } from "lucide-react";
+
 import { Button } from "@/modules/ui/button";
+
 import { FullPageEmptyState } from "./full-page-empty-state";
 
 const meta = {

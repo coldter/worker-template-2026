@@ -3,24 +3,24 @@ import * as schema from "@repo/db/schema";
 import { getClientIpFromHeaders } from "@repo/shared/client-ip";
 import type { Session } from "better-auth";
 import { desc, eq } from "drizzle-orm";
+
 import type { AuthBindings } from "../instance";
 import type { MinimalExecutionContext } from "../lib/execution-context";
 import { tolerateMissingOrgTables } from "../lib/org-tables";
 import { detectPlatform, SESSION_CONFIG } from "../lib/platform";
 
-export function createSessionCreateBeforeHook(
-  db: DrizzleClient,
-  env: AuthBindings,
-  ctx: MinimalExecutionContext
-) {
-  return async (
+export const createSessionCreateBeforeHook =
+  (db: DrizzleClient, env: AuthBindings, ctx: MinimalExecutionContext) =>
+  async (
     session: Session,
     context: { headers?: Headers } | null | undefined
   ) => {
     const userAgent = context?.headers?.get("user-agent") ?? null;
+
     const ipAddress = context?.headers
       ? (getClientIpFromHeaders(context.headers) ?? null)
       : null;
+
     const platform = detectPlatform(userAgent);
     const config = SESSION_CONFIG[platform];
 
@@ -35,6 +35,7 @@ export function createSessionCreateBeforeHook(
           .where(eq(schema.members.userId, session.userId))
           .orderBy(desc(schema.members.createdAt))
           .limit(1);
+
         return row;
       },
       {
@@ -52,9 +53,16 @@ export function createSessionCreateBeforeHook(
         userAgent: schema.sessions.userAgent,
       });
 
-    const [previousSession] = revokedSessions.sort(
-      (a, b) => b.createdAt.getTime() - a.createdAt.getTime()
-    );
+    let previousSession: (typeof revokedSessions)[number] | undefined;
+
+    for (const candidate of revokedSessions) {
+      if (
+        previousSession === undefined ||
+        candidate.createdAt > previousSession.createdAt
+      ) {
+        previousSession = candidate;
+      }
+    }
 
     if (previousSession) {
       const isNewDevice =
@@ -63,14 +71,21 @@ export function createSessionCreateBeforeHook(
 
       if (isNewDevice) {
         ctx.waitUntil(
-          env.API.onNewDeviceLogin({
-            ipAddress: ipAddress ?? "",
-            platform,
-            userAgent: userAgent ?? "",
-            userId: session.userId,
-          }).catch((cause: unknown) => {
-            console.error("Failed to trigger new device notification:", cause);
-          })
+          (async () => {
+            try {
+              await env.API.onNewDeviceLogin({
+                ipAddress: ipAddress ?? "",
+                platform,
+                userAgent: userAgent ?? "",
+                userId: session.userId,
+              });
+            } catch (error) {
+              console.error(
+                "Failed to trigger new device notification:",
+                error
+              );
+            }
+          })()
         );
       }
     }
@@ -95,4 +110,3 @@ export function createSessionCreateBeforeHook(
       },
     };
   };
-}

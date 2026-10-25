@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
+
 import { authClient } from "@/lib/auth-client";
 import { Button } from "@/modules/ui/button";
 import {
@@ -42,7 +43,7 @@ const changePasswordSchema = z
 
 type ChangePasswordValues = z.infer<typeof changePasswordSchema>;
 
-export function ChangePasswordDialog() {
+export const ChangePasswordDialog = () => {
   const [open, setOpen] = useState(false);
   const queryClient = useQueryClient();
 
@@ -55,7 +56,7 @@ export function ChangePasswordDialog() {
     resolver: zodResolver(changePasswordSchema),
   });
 
-  async function onSubmit(data: ChangePasswordValues) {
+  const onSubmit = async (data: ChangePasswordValues) => {
     const { error } = await authClient.changePassword({
       currentPassword: data.currentPassword,
       newPassword: data.newPassword,
@@ -63,6 +64,7 @@ export function ChangePasswordDialog() {
 
     if (error) {
       toast.error(error.message || "Failed to change password");
+
       return;
     }
 
@@ -72,14 +74,15 @@ export function ChangePasswordDialog() {
     toast.success("Password changed successfully");
     form.reset();
     setOpen(false);
-  }
+  };
 
-  function handleOpenChange(value: boolean) {
+  const handleOpenChange = (value: boolean) => {
     setOpen(value);
+
     if (!value) {
       form.reset();
     }
-  }
+  };
 
   return (
     <Dialog onOpenChange={handleOpenChange} open={open}>
@@ -174,4 +177,4 @@ export function ChangePasswordDialog() {
       </DialogContent>
     </Dialog>
   );
-}
+};

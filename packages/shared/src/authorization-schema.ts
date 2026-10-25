@@ -1,10 +1,9 @@
-import {
-  createAuthSchema,
-  type Principal,
-  principalNotActive,
-} from "@repo/authorization";
+import { createAuthSchema, principalNotActive } from "@repo/authorization";
+import type { Principal, PrincipalAttributeValue } from "@repo/authorization";
+
 import { SYSTEM_ROLE_SLUG_VALUES } from "./roles";
-import { USER_STATUS_VALUES, type UserStatus } from "./users";
+import { USER_STATUS_VALUES } from "./users";
+import type { UserStatus } from "./users";
 
 export const auth = createAuthSchema({
   globalPolicies: (p) => [
@@ -16,10 +15,14 @@ export const auth = createAuthSchema({
 });
 
 export type AuthorizationRole = (typeof auth)["roleValues"][number];
+
 export type AuthorizationOrgRole = (typeof auth)["orgRoleValues"][number];
-export type AuthorizationAttributes = {
+
+export interface AuthorizationAttributes {
+  [attribute: string]: PrincipalAttributeValue;
   status: UserStatus;
-};
+}
+
 export type AuthorizationPrincipal = Principal<
   AuthorizationRole,
   AuthorizationAttributes,
@@ -32,15 +35,12 @@ const VALID_ORG_ROLES: Record<AuthorizationOrgRole, true> = {
   owner: true,
 };
 
-export function isAuthorizationRole(slug: string): slug is AuthorizationRole {
-  return SYSTEM_ROLE_SLUG_VALUES.some((role) => role === slug);
-}
+export const isAuthorizationRole = (slug: string): slug is AuthorizationRole =>
+  SYSTEM_ROLE_SLUG_VALUES.some((role) => role === slug);
 
-export function isAuthorizationOrgRole(
+export const isAuthorizationOrgRole = (
   role: string
-): role is AuthorizationOrgRole {
-  return Object.hasOwn(VALID_ORG_ROLES, role);
-}
+): role is AuthorizationOrgRole => Object.hasOwn(VALID_ORG_ROLES, role);
 
 export const VALID_STATUSES = new Set<AuthorizationAttributes["status"]>(
   USER_STATUS_VALUES

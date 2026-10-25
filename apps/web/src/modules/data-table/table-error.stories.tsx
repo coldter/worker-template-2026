@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+
 import {
   Table,
   TableBody,
@@ -6,31 +7,30 @@ import {
   TableHeader,
   TableRow,
 } from "@/modules/ui/table";
+
 import { TableError } from "./table-error";
 
-type ErrorHostProps = {
+interface ErrorHostProps {
   message?: string;
   colSpan: number;
-};
-
-function ErrorHost({ message, colSpan }: ErrorHostProps) {
-  return (
-    <div className="rounded-md border">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            {Array.from({ length: colSpan }).map((_, i) => (
-              <TableHead key={`head-${i}`}>Column {i + 1}</TableHead>
-            ))}
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          <TableError colSpan={colSpan} message={message} />
-        </TableBody>
-      </Table>
-    </div>
-  );
 }
+
+const ErrorHost = ({ message, colSpan }: ErrorHostProps) => (
+  <div className="rounded-md border">
+    <Table>
+      <TableHeader>
+        <TableRow>
+          {Array.from({ length: colSpan }).map((_, i) => (
+            <TableHead key={`head-${i}`}>Column {i + 1}</TableHead>
+          ))}
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        <TableError colSpan={colSpan} message={message} />
+      </TableBody>
+    </Table>
+  </div>
+);
 
 const meta = {
   component: ErrorHost,

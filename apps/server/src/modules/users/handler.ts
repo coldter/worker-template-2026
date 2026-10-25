@@ -10,6 +10,7 @@ import { recordBufferableAuditEvent } from "@/modules/audit-logs/buffer";
 import { AUDIT_EVENTS, TARGET_TYPES } from "@/modules/audit-logs/constants";
 import { notificationService } from "@/modules/notifications";
 import { defaultHook } from "@/utils/default-hook";
+
 import { requireAuthorizedUserId } from "./auth-loader";
 import {
   toMyAccountResponse,
@@ -20,19 +21,23 @@ import usersRoutes from "./routes";
 import { userService } from "./service";
 
 const app = new OpenAPIHono<AppEnv>({ defaultHook });
-function requireCurrentUser(
+
+const requireCurrentUser = (
   c: Context<AppEnv>
-): NonNullable<AppEnv["Variables"]["user"]> {
+): NonNullable<AppEnv["Variables"]["user"]> => {
   const currentUser = c.get("user");
+
   if (!currentUser) {
     throw new HTTPException(401, { message: "Unauthorized" });
   }
+
   return currentUser;
-}
+};
 
 const usersHandler = app
   .openapi(usersRoutes.listUsers, async (c) => {
     const query = c.req.valid("query");
+    // oxlint-disable-next-line unicorn/no-array-method-this-argument -- userService.find takes the db executor, not an Array thisArg
     const result = await userService.find(c.var.db, query);
 
     recordBufferableAuditEvent(c, {
@@ -96,6 +101,7 @@ const usersHandler = app
     const currentUser = requireCurrentUser(c);
 
     const invalidRoles = body.roleSlugs.filter((r) => !isValidRole(r));
+
     if (invalidRoles.length > 0) {
       throw new HTTPException(400, {
         message: `Invalid roles: ${invalidRoles.join(", ")}. Valid: ${auth.roleValues.join(", ")}`,
@@ -132,6 +138,7 @@ const usersHandler = app
       currentUser.id,
       c.var.auditContext
     );
+
     return c.json({ user: toUserSummaryResponse(user) }, 200);
   })
 
@@ -141,6 +148,7 @@ const usersHandler = app
     const currentUser = requireCurrentUser(c);
 
     const invalidRoles = body.roleSlugs.filter((r) => !isValidRole(r));
+
     if (invalidRoles.length > 0) {
       throw new HTTPException(400, {
         message: `Invalid roles: ${invalidRoles.join(", ")}. Valid: ${auth.roleValues.join(", ")}`,
@@ -154,6 +162,7 @@ const usersHandler = app
       currentUser.id,
       c.var.auditContext
     );
+
     return c.json({ user: toUserSummaryResponse(user) }, 200);
   })
 

@@ -1,5 +1,5 @@
-import { DurableObject } from "cloudflare:workers";
 import { logger } from "@repo/shared/logger";
+import { DurableObject } from "cloudflare:workers";
 import { z } from "zod";
 
 const WINDOW_MS = 60_000;
@@ -9,6 +9,7 @@ const MAX_TIMESTAMPS = 10_000;
 const storedTimestampsSchema = z.array(z.unknown()).transform((entries) =>
   entries.flatMap((entry) => {
     const parsed = z.number().safeParse(entry);
+
     return parsed.success && Number.isFinite(parsed.data) ? [parsed.data] : [];
   })
 );
@@ -26,6 +27,7 @@ export class RateLimiter extends DurableObject {
     }
 
     const effectiveLimit = Math.min(Math.floor(limit), MAX_TIMESTAMPS);
+
     if (limit > MAX_TIMESTAMPS && !this.clampWarned) {
       this.clampWarned = true;
       logger.warn("RateLimiter limit clamped to MAX_TIMESTAMPS", {
@@ -43,23 +45,29 @@ export class RateLimiter extends DurableObject {
 
     if (pruned.length >= effectiveLimit) {
       const persisted = await this.persist(pruned);
+
       if (!persisted) {
         return { allowed: false, remaining: 0 };
       }
+
       this.timestamps = pruned;
       await this.scheduleAlarm();
+
       return { allowed: false, remaining: 0 };
     }
 
     const next = [...pruned, now];
+
     if (next.length > MAX_TIMESTAMPS) {
       next.splice(0, next.length - MAX_TIMESTAMPS);
     }
 
     const persisted = await this.persist(next);
+
     if (!persisted) {
       return { allowed: false, remaining: 0 };
     }
+
     this.timestamps = next;
     await this.scheduleAlarm();
 
@@ -78,6 +86,7 @@ export class RateLimiter extends DurableObject {
       if (pruned.length === 0) {
         await this.ctx.storage.deleteAll();
         this.timestamps = [];
+
         return;
       }
 
@@ -87,9 +96,9 @@ export class RateLimiter extends DurableObject {
       }
 
       await this.ctx.storage.setAlarm(Date.now() + WINDOW_MS * 2);
-    } catch (err) {
+    } catch (error) {
       logger.error("RateLimiter alarm failed", {
-        error: err,
+        error,
       });
     }
   }
@@ -98,17 +107,20 @@ export class RateLimiter extends DurableObject {
     if (this.hydrated) {
       return;
     }
+
     try {
       const parsed = storedTimestampsSchema.safeParse(
         await this.ctx.storage.get(STORAGE_KEY)
       );
+
       if (parsed.success) {
         this.timestamps = parsed.data;
       }
+
       this.hydrated = true;
-    } catch (err) {
+    } catch (error) {
       logger.error("RateLimiter storage read failed", {
-        error: err,
+        error,
       });
       this.hydrated = true;
     }
@@ -117,11 +129,13 @@ export class RateLimiter extends DurableObject {
   private async persist(next: number[]): Promise<boolean> {
     try {
       await this.ctx.storage.put(STORAGE_KEY, next);
+
       return true;
-    } catch (err) {
+    } catch (error) {
       logger.error("RateLimiter storage write failed; failing closed", {
-        error: err,
+        error,
       });
+
       return false;
     }
   }
@@ -129,9 +143,9 @@ export class RateLimiter extends DurableObject {
   private async scheduleAlarm(): Promise<void> {
     try {
       await this.ctx.storage.setAlarm(Date.now() + WINDOW_MS * 2);
-    } catch (err) {
+    } catch (error) {
       logger.warn("RateLimiter setAlarm failed", {
-        error: err,
+        error,
       });
     }
   }

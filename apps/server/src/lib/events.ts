@@ -1,5 +1,5 @@
-import { env } from "cloudflare:workers";
 import { logger } from "@repo/shared/logger";
+import { env } from "cloudflare:workers";
 
 export type AppEvent =
   | {
@@ -17,33 +17,40 @@ export interface DispatchEventOptions {
   onFailure?: (error: Error) => void | Promise<void>;
 }
 
-export async function triggerWorkflow(
+export const triggerWorkflow = async (
   event: AppEvent
-): Promise<{ workflowId: string }> {
+): Promise<{ workflowId: string }> => {
   try {
     let workflowId: string;
+
     switch (event.type) {
       case "user.created": {
         const instance = await env.ONBOARDING_WF.create({
           params: event.payload,
         });
+
         workflowId = instance.id;
         break;
       }
+
       case "notification.email": {
         const instance = await env.EMAIL_NOTIFICATION_WF.create({
           params: event.payload,
         });
+
         workflowId = instance.id;
         break;
       }
+
       case "notification.push": {
         const instance = await env.PUSH_NOTIFICATION_WF.create({
           params: event.payload,
         });
+
         workflowId = instance.id;
         break;
       }
+
       default: {
         const exhaustive: never = event;
         throw new Error(
@@ -51,57 +58,72 @@ export async function triggerWorkflow(
         );
       }
     }
+
     logger.debug(`Workflow triggered: ${event.type}`, { workflowId });
+
     return { workflowId };
   } catch (error) {
     logger.error(`Failed to trigger workflow: ${event.type}`, {
       error,
     });
+
     throw error;
   }
-}
+};
 
-function eventContext(event: AppEvent) {
+const eventContext = (event: AppEvent) => {
   switch (event.type) {
-    case "user.created":
+    case "user.created": {
       return { userId: event.payload.userId };
+    }
+
     case "notification.email":
-    case "notification.push":
+    case "notification.push": {
       return { notificationId: event.payload.notificationId };
+    }
+
     default: {
       const exhaustive: never = event;
+
       return { event: JSON.stringify(exhaustive) };
     }
   }
-}
+};
 
-export function dispatchEvent(
+const runDispatch = async (
+  event: AppEvent,
+  options: DispatchEventOptions
+): Promise<void> => {
+  try {
+    await triggerWorkflow(event);
+  } catch (error) {
+    const failure = error instanceof Error ? error : new Error(String(error));
+
+    if (options.onFailure) {
+      try {
+        await options.onFailure(failure);
+      } catch (handlerError) {
+        logger.error(`Event onFailure handler threw: ${event.type}`, {
+          ...eventContext(event),
+          error:
+            handlerError instanceof Error
+              ? handlerError.message
+              : String(handlerError),
+        });
+      }
+    }
+
+    logger.warn(`Deferred workflow trigger failed: ${event.type}`, {
+      ...eventContext(event),
+      error: failure,
+    });
+  }
+};
+
+export const dispatchEvent = (
   event: AppEvent,
   ctx: DeferralContext,
   options: DispatchEventOptions = {}
-): void {
-  const task = triggerWorkflow(event).then(
-    () => undefined,
-    async (cause: unknown) => {
-      const error = cause instanceof Error ? cause : new Error(String(cause));
-      if (options.onFailure) {
-        try {
-          await options.onFailure(error);
-        } catch (handlerError) {
-          logger.error(`Event onFailure handler threw: ${event.type}`, {
-            ...eventContext(event),
-            error:
-              handlerError instanceof Error
-                ? handlerError.message
-                : String(handlerError),
-          });
-        }
-      }
-      logger.warn(`Deferred workflow trigger failed: ${event.type}`, {
-        ...eventContext(event),
-        error,
-      });
-    }
-  );
-  ctx.waitUntil(task);
-}
+): void => {
+  ctx.waitUntil(runDispatch(event, options));
+};

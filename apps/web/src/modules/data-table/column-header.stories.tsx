@@ -1,10 +1,14 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { type ColumnDef, useTable } from "@tanstack/react-table";
+import { useTable } from "@tanstack/react-table";
+import type { ColumnDef } from "@tanstack/react-table";
+
 import { DataTableColumnHeader } from "./column-header";
 import type { DataTableFeatures } from "./features";
 import { dataTableFeatures } from "./features";
 
-type Row = { name: string };
+interface Row {
+  name: string;
+}
 
 const rows: Row[] = [{ name: "Ada" }];
 
@@ -18,29 +22,60 @@ const columns: ColumnDef<DataTableFeatures, Row>[] = [
   },
 ];
 
-type HeaderHostProps = { title: string; canHide?: boolean };
+const hostColumns = (
+  title: string,
+  canHide: boolean
+): ColumnDef<DataTableFeatures, Row>[] => [
+  {
+    accessorKey: "name",
+    enableHiding: canHide,
+    enableSorting: true,
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title={title} />
+    ),
+  },
+];
 
-function HeaderHost({ title, canHide = true }: HeaderHostProps) {
+interface HeaderHostProps {
+  title: string;
+  canHide?: boolean;
+}
+
+const HeaderHost = ({ title, canHide = true }: HeaderHostProps) => {
   const table = useTable({
-    columns: [
-      {
-        accessorKey: "name",
-        enableHiding: canHide,
-        enableSorting: true,
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title={title} />
-        ),
-      },
-    ],
+    columns: hostColumns(title, canHide),
     data: rows,
     features: dataTableFeatures,
   });
+
   const column = table.getColumn("name");
+
   if (!column) {
     throw new Error("expected column");
   }
+
   return <DataTableColumnHeader column={column} title={title} />;
-}
+};
+
+const nonSortableColumns: ColumnDef<DataTableFeatures, Row>[] = columns.map(
+  (column) => ({ ...column, enableSorting: false })
+);
+
+const NonSortableHeader = () => {
+  const table = useTable({
+    columns: nonSortableColumns,
+    data: rows,
+    features: dataTableFeatures,
+  });
+
+  const column = table.getColumn("name");
+
+  if (!column) {
+    throw new Error("expected column");
+  }
+
+  return <DataTableColumnHeader column={column} title="Name (static)" />;
+};
 
 const meta = {
   component: HeaderHost,
@@ -71,16 +106,5 @@ export const NonHideable: Story = {
 
 export const NonSortable: Story = {
   args: { title: "Name (static)" },
-  render: () => {
-    const table = useTable({
-      columns: columns.map((c) => ({ ...c, enableSorting: false })),
-      data: rows,
-      features: dataTableFeatures,
-    });
-    const column = table.getColumn("name");
-    if (!column) {
-      throw new Error("expected column");
-    }
-    return <DataTableColumnHeader column={column} title="Name (static)" />;
-  },
+  render: NonSortableHeader,
 };

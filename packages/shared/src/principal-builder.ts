@@ -1,26 +1,26 @@
 import {
-  type AuthorizationPrincipal,
   isAuthorizationOrgRole,
   isAuthorizationRole,
 } from "./authorization-schema";
+import type { AuthorizationPrincipal } from "./authorization-schema";
 import { logger } from "./logger";
 import { isUserStatus } from "./users";
 
-export type AuthorizationUserInput = {
+export interface AuthorizationUserInput {
   id: string;
   roleSlugs?: string[] | null;
   status?: string;
-};
+}
 
-export type AuthorizationSessionInput = {
+export interface AuthorizationSessionInput {
   activeOrganizationId?: string | null;
   activeOrgRole?: string | null;
-};
+}
 
-export function buildAuthorizationPrincipal(
+export const buildAuthorizationPrincipal = (
   user: AuthorizationUserInput,
   session: AuthorizationSessionInput = {}
-): AuthorizationPrincipal {
+): AuthorizationPrincipal => {
   const allSlugs = user.roleSlugs ?? [];
   const roles = allSlugs.filter(isAuthorizationRole);
 
@@ -33,6 +33,7 @@ export function buildAuthorizationPrincipal(
   }
 
   const requestedStatus = user.status;
+
   const status =
     requestedStatus !== undefined && isUserStatus(requestedStatus)
       ? requestedStatus
@@ -56,4 +57,4 @@ export function buildAuthorizationPrincipal(
   }
 
   return principal;
-}
+};

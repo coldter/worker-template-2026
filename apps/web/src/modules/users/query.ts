@@ -24,16 +24,15 @@ import type {
 } from "@/api.gen/types.gen";
 import { authorizationKeys } from "@/hooks/use-authorization";
 
-function normaliseListParams(params: ListUsersData["query"]) {
+const normaliseListParams = (params: ListUsersData["query"]) => {
   if (!params) {
     return {};
   }
+
   return Object.fromEntries(
-    Object.entries(params)
-      .filter(([, value]) => value !== undefined)
-      .sort(([a], [b]) => a.localeCompare(b))
+    Object.entries(params).filter(([, value]) => value !== undefined)
   );
-}
+};
 
 export const usersKeys = {
   all: ["users"] as const,
@@ -49,42 +48,42 @@ export const rolesKeys = {
   lists: () => [...rolesKeys.all, "list"] as const,
 };
 
-export function usersListQueryOptions(
+export const usersListQueryOptions = (
   params: NonNullable<ListUsersData["query"]>
-) {
-  return queryOptions({
+) =>
+  queryOptions({
     queryFn: async ({ signal }) => {
       const response = await listUsers({ query: params, signal });
+
       return response;
     },
     queryKey: usersKeys.list(params),
   });
-}
 
-export function useUsersQuery(params: NonNullable<ListUsersData["query"]>) {
-  return useQuery({
+export const useUsersQuery = (params: NonNullable<ListUsersData["query"]>) =>
+  useQuery({
     ...usersListQueryOptions(params),
     placeholderData: (prev) => prev,
   });
-}
 
-export function useUserQuery(userId: string) {
-  return useQuery({
+export const useUserQuery = (userId: string) =>
+  useQuery({
     enabled: Boolean(userId),
     queryFn: async ({ signal }) => {
       const response = await getUser({ path: { userId }, signal });
+
       return response.user;
     },
     queryKey: usersKeys.detail(userId),
   });
-}
 
-export function useCreateUserMutation() {
+export const useCreateUserMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (data: CreateUserData["body"]) => {
       const response = await createUser({ body: data });
+
       return response.user;
     },
     onError: (error) => {
@@ -95,9 +94,9 @@ export function useCreateUserMutation() {
       toast.success("User created successfully");
     },
   });
-}
+};
 
-export function useUpdateUserMutation() {
+export const useUpdateUserMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -109,6 +108,7 @@ export function useUpdateUserMutation() {
       data: UpdateUserData["body"];
     }) => {
       const response = await updateUser({ body: data, path: { userId } });
+
       return response.user;
     },
     onError: (error) => {
@@ -120,9 +120,9 @@ export function useUpdateUserMutation() {
       toast.success("User updated successfully");
     },
   });
-}
+};
 
-export function useUpdateUserRolesMutation() {
+export const useUpdateUserRolesMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -134,6 +134,7 @@ export function useUpdateUserRolesMutation() {
       data: UpdateUserRolesData["body"];
     }) => {
       const response = await updateUserRoles({ body: data, path: { userId } });
+
       return response.user;
     },
     onError: (error) => {
@@ -148,9 +149,9 @@ export function useUpdateUserRolesMutation() {
       toast.success("Roles updated successfully");
     },
   });
-}
+};
 
-export function useDeactivateUserMutation() {
+export const useDeactivateUserMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -175,9 +176,9 @@ export function useDeactivateUserMutation() {
       toast.success("User deactivated");
     },
   });
-}
+};
 
-export function useActivateUserMutation() {
+export const useActivateUserMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -196,9 +197,9 @@ export function useActivateUserMutation() {
       toast.success("User activated");
     },
   });
-}
+};
 
-export function useUnlockUserMutation() {
+export const useUnlockUserMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -217,4 +218,4 @@ export function useUnlockUserMutation() {
       toast.success("User unlocked");
     },
   });
-}
+};

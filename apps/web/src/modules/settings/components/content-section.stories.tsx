@@ -1,14 +1,16 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+
 import { Button } from "@/modules/ui/button";
 import { Input } from "@/modules/ui/input";
 import { Label } from "@/modules/ui/label";
+
 import { ContentSection } from "./content-section";
 
 const meta = {
   component: ContentSection,
   decorators: [
     (Story) => (
-      <div className="h-[520px] w-[720px] rounded-md border bg-background p-6">
+      <div className="bg-background h-[520px] w-[720px] rounded-md border p-6">
         <Story />
       </div>
     ),

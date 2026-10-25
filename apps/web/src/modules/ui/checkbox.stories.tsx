@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+
 import { Checkbox } from "./checkbox";
 import { Label } from "./label";
 

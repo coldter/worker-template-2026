@@ -1,11 +1,13 @@
 import { describe, expect, it } from "vitest";
+
 import app from "@/server";
+
 import { testBindings } from "../../tests/helpers";
 
 const env = testBindings({
   CACHE: {
-    get: async () => null,
-    put: async () => undefined,
+    get: () => Promise.resolve(null),
+    put: async () => {},
   },
 });
 
@@ -15,7 +17,7 @@ describe("method not allowed middleware", () => {
 
     expect(res.status).toBe(405);
     expect(res.headers.get("Allow")).toBe("GET, HEAD");
-    expect(await res.json()).toEqual({
+    await expect(res.json()).resolves.toStrictEqual({
       error: { code: "METHOD_NOT_ALLOWED", message: "Method not allowed" },
     });
   });

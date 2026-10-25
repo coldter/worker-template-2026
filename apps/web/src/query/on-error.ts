@@ -1,11 +1,12 @@
 import { toast } from "sonner";
 import * as z from "zod/mini";
+
 import { ApiError } from "@/lib/api";
 import { authClient } from "@/lib/auth-client";
-
-import { clearSession } from "@/modules/auth/helpers";
 import { useAlertStore } from "@/store/alert";
 import { useUserStore } from "@/store/user";
+
+const catchSchema = z.catch;
 
 const FALLBACK_MESSAGES = new Map<number, string>([
   [400, "Bad request. Please check your input."],
@@ -19,11 +20,11 @@ const FALLBACK_MESSAGES = new Map<number, string>([
   [504, "Request timed out. Please try again."],
 ]);
 
-const thrownErrorSchema = z.catch(
+const thrownErrorSchema = catchSchema(
   z.object({
-    message: z.catch(z.optional(z.string()), undefined),
-    path: z.catch(z.optional(z.string()), undefined),
-    status: z.catch(z.optional(z.number()), undefined),
+    message: catchSchema(z.optional(z.string()), undefined),
+    path: catchSchema(z.optional(z.string()), undefined),
+    status: catchSchema(z.optional(z.number()), undefined),
   }),
   {}
 );
@@ -49,9 +50,11 @@ const getErrorMessage = (error: Error, details: ErrorDetails): string => {
     if (error.error.message) {
       return error.error.message;
     }
+
     if (error.message && error.message !== "Error") {
       return error.message;
     }
+
     return fallbackMessage(error.status);
   }
 
@@ -66,7 +69,9 @@ const isSessionCheckPath = (path?: string): boolean => {
   if (!path) {
     return false;
   }
+
   const sessionPaths = ["/api/auth/get-session"];
+
   return sessionPaths.some((p) => path.includes(p));
 };
 
@@ -75,9 +80,11 @@ const performAuthError = async (): Promise<void> => {
 
   try {
     await authClient.signOut();
-  } catch {}
+  } catch (error) {
+    console.error("Sign out failed while handling an auth error:", error);
+  }
 
-  clearSession();
+  useUserStore.getState().clearUser();
 
   toast.error("Session expired", {
     description: "Please sign in again to continue.",
@@ -85,6 +92,7 @@ const performAuthError = async (): Promise<void> => {
 
   if (!window.location.pathname.startsWith("/login")) {
     const currentPath = window.location.pathname + window.location.search;
+
     const redirectUrl =
       currentPath && currentPath !== "/"
         ? `/login?redirect=${encodeURIComponent(currentPath)}`
@@ -96,15 +104,19 @@ const performAuthError = async (): Promise<void> => {
 
 let authErrorInFlight: Promise<void> | null = null;
 
-const handleAuthError = (): Promise<void> => {
+const handleAuthError = async (): Promise<boolean> => {
   if (!useUserStore.getState().user) {
-    return Promise.resolve();
+    return false;
   }
+
   authErrorInFlight ??= performAuthError();
-  return authErrorInFlight;
+
+  await authErrorInFlight;
+
+  return true;
 };
 
-export const handleGlobalError = async (error: Error): Promise<void> => {
+export const handleGlobalError = async (error: Error): Promise<boolean> => {
   console.error("Global query/mutation error:", error);
 
   const details = parseErrorDetails(error);
@@ -113,52 +125,67 @@ export const handleGlobalError = async (error: Error): Promise<void> => {
   const isCasualSessionCheck = isSessionCheckPath(errorPath);
 
   switch (statusCode) {
-    case 0:
+    case 0: {
       toast.error("Network error", {
         description:
           "Unable to reach the server. Check your connection and try again.",
       });
-      return;
+
+      return false;
+    }
 
     case 502:
-    case 503:
+    case 503: {
       useAlertStore.getState().setDownAlert("maintenance");
       toast.error("Maintenance", {
         description: "The service is temporarily unavailable.",
       });
-      return;
 
-    case 504:
+      return false;
+    }
+
+    case 504: {
       useAlertStore.getState().setDownAlert("offline");
-      return;
 
-    case 500:
+      return false;
+    }
+
+    case 500: {
       if (isCasualSessionCheck) {
         useAlertStore.getState().setDownAlert("auth_unavailable");
-        return;
+
+        return false;
       }
+
       toast.error("Server Error", {
         description: getErrorMessage(error, details),
       });
-      return;
 
-    case 401:
-      await handleAuthError();
-      return;
+      return false;
+    }
 
-    case 403:
+    case 401: {
+      return await handleAuthError();
+    }
+
+    case 403: {
       useAlertStore.getState().setDownAlert("forbidden");
       toast.error("Access Denied", {
         description: getErrorMessage(error, details),
       });
-      return;
 
-    default:
+      return false;
+    }
+
+    default: {
       if (statusCode >= 400) {
         toast.error("Error", {
           description: getErrorMessage(error, details),
         });
       }
+
+      return false;
+    }
   }
 };
 

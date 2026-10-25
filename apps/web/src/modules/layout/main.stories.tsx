@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+
 import { Main } from "./main";
 
 const meta = {
@@ -21,8 +22,8 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 const placeholder = (
-  <div className="rounded-md border bg-card p-6">
-    <h2 className="font-semibold text-xl">Page heading</h2>
+  <div className="bg-card rounded-md border p-6">
+    <h2 className="text-xl font-semibold">Page heading</h2>
     <p className="text-muted-foreground text-sm">
       This is rendered inside the Main wrapper.
     </p>

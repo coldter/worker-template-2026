@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
+
 import { Button } from "./button";
 import {
   DropdownMenu,
@@ -89,48 +90,43 @@ export const WithSubmenu: Story = {
   ),
 };
 
+const CheckboxAndRadioMenu = () => {
+  const [showToolbar, setShowToolbar] = useState(true);
+  const [showStatusBar, setShowStatusBar] = useState(false);
+  const [position, setPosition] = useState("bottom");
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="outline">View options</Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent className="w-56">
+        <DropdownMenuLabel>Appearance</DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuCheckboxItem
+          checked={showToolbar}
+          onCheckedChange={setShowToolbar}
+        >
+          Toolbar
+        </DropdownMenuCheckboxItem>
+        <DropdownMenuCheckboxItem
+          checked={showStatusBar}
+          onCheckedChange={setShowStatusBar}
+        >
+          Status bar
+        </DropdownMenuCheckboxItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuLabel>Panel position</DropdownMenuLabel>
+        <DropdownMenuRadioGroup onValueChange={setPosition} value={position}>
+          <DropdownMenuRadioItem value="top">Top</DropdownMenuRadioItem>
+          <DropdownMenuRadioItem value="bottom">Bottom</DropdownMenuRadioItem>
+          <DropdownMenuRadioItem value="right">Right</DropdownMenuRadioItem>
+        </DropdownMenuRadioGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+};
+
 export const WithCheckboxAndRadio: Story = {
-  render: () => {
-    function Inner() {
-      const [showToolbar, setShowToolbar] = useState(true);
-      const [showStatusBar, setShowStatusBar] = useState(false);
-      const [position, setPosition] = useState("bottom");
-      return (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline">View options</Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-56">
-            <DropdownMenuLabel>Appearance</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuCheckboxItem
-              checked={showToolbar}
-              onCheckedChange={setShowToolbar}
-            >
-              Toolbar
-            </DropdownMenuCheckboxItem>
-            <DropdownMenuCheckboxItem
-              checked={showStatusBar}
-              onCheckedChange={setShowStatusBar}
-            >
-              Status bar
-            </DropdownMenuCheckboxItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuLabel>Panel position</DropdownMenuLabel>
-            <DropdownMenuRadioGroup
-              onValueChange={setPosition}
-              value={position}
-            >
-              <DropdownMenuRadioItem value="top">Top</DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="bottom">
-                Bottom
-              </DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="right">Right</DropdownMenuRadioItem>
-            </DropdownMenuRadioGroup>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      );
-    }
-    return <Inner />;
-  },
+  render: () => <CheckboxAndRadioMenu />,
 };

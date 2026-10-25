@@ -4,6 +4,7 @@ import type { Context, ErrorHandler } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { PostgresError } from "pg-error-enum";
 import { z } from "zod";
+
 import type { AppEnv } from "@/lib/context";
 
 const causeWithCodeSchema = z.object({ code: z.string() });
@@ -17,52 +18,70 @@ interface ErrorBody {
   error: { code: string; message: string; details?: string };
 }
 
-function correlationContext(c: Context<AppEnv>) {
-  return {
-    requestId: c.get("requestId"),
-    version: c.env.CF_VERSION_METADATA?.id,
-  };
-}
+const correlationContext = (c: Context<AppEnv>) => ({
+  requestId: c.get("requestId"),
+  version: c.env.CF_VERSION_METADATA?.id,
+});
 
-function extractCauseCode(cause: unknown): string | null {
+const extractCauseCode = (cause: unknown): string | null => {
   const parsed = causeWithCodeSchema.safeParse(cause);
-  return parsed.success ? parsed.data.code : null;
-}
 
-function errorResponse(
+  return parsed.success ? parsed.data.code : null;
+};
+
+const errorResponse = (
   code: string,
   message: string,
   details?: string
-): ErrorBody {
+): ErrorBody => {
   const error: ErrorBody["error"] = { code, message };
+
   if (details) {
     error.details = details;
   }
-  return { error };
-}
 
-function defaultErrorCode(status: number): string {
+  return { error };
+};
+
+const defaultErrorCode = (status: number): string => {
   switch (status) {
-    case 400:
+    case 400: {
       return "BAD_REQUEST";
-    case 401:
+    }
+
+    case 401: {
       return "UNAUTHORIZED";
-    case 403:
+    }
+
+    case 403: {
       return "FORBIDDEN";
-    case 404:
+    }
+
+    case 404: {
       return "NOT_FOUND";
-    case 409:
+    }
+
+    case 409: {
       return "CONFLICT";
-    case 429:
+    }
+
+    case 429: {
       return "RATE_LIMITED";
-    case 500:
+    }
+
+    case 500: {
       return "INTERNAL_SERVER_ERROR";
-    case 503:
+    }
+
+    case 503: {
       return "SERVICE_UNAVAILABLE";
-    default:
+    }
+
+    default: {
       return status >= 500 ? "INTERNAL_SERVER_ERROR" : "REQUEST_FAILED";
+    }
   }
-}
+};
 
 export const errorHandler: ErrorHandler<AppEnv> = (err, c) => {
   const isProduction = String(c.env.NODE_ENV) === "production";
@@ -101,6 +120,7 @@ export const errorHandler: ErrorHandler<AppEnv> = (err, c) => {
     });
     const { cause } = err;
     const parsed = postgresErrorSchema.safeParse(cause);
+
     if (
       cause instanceof Error &&
       parsed.success &&
@@ -109,10 +129,12 @@ export const errorHandler: ErrorHandler<AppEnv> = (err, c) => {
       const message = isProduction
         ? "Duplicate value exists"
         : parsed.data.detail || "Duplicate value exists";
+
       return c.json(errorResponse("UNIQUE_VIOLATION", message), {
         status: 409,
       });
     }
+
     return c.json(errorResponse("DATABASE_ERROR", "database error occurred"), {
       status: 500,
     });

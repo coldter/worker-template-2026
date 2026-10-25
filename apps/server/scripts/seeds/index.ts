@@ -3,7 +3,9 @@ import { rolesSeed } from "./roles/seed";
 import { userSeed } from "./users/seed";
 
 const seed = async () => {
-  if (process.env.NODE_ENV === "production") {
+  const nodeEnv: string = process.env.NODE_ENV;
+
+  if (nodeEnv === "production") {
     throw new Error("Refusing to seed a production database");
   }
 
@@ -16,9 +18,11 @@ const seed = async () => {
   console.info("\nDatabase seeding complete.");
 };
 
-seed()
-  .catch((error) => {
-    console.error("Seeding failed:", error);
-    process.exit(1);
-  })
-  .finally(() => process.exit(0));
+try {
+  await seed();
+} catch (error) {
+  console.error("Seeding failed:", error);
+  process.exit(1);
+} finally {
+  process.exit(0);
+}

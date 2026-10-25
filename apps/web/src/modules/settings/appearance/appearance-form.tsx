@@ -1,6 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
+
 import { useTheme } from "@/context/theme-provider";
 import { showSubmittedData } from "@/lib/show-submitted-data";
 import { Button } from "@/modules/ui/button";
@@ -21,7 +22,7 @@ const appearanceFormSchema = z.object({
 
 type AppearanceFormValues = z.infer<typeof appearanceFormSchema>;
 
-export function AppearanceForm() {
+export const AppearanceForm = () => {
   const { resolvedTheme, theme, setTheme } = useTheme();
 
   const defaultValues: Partial<AppearanceFormValues> = {
@@ -33,13 +34,13 @@ export function AppearanceForm() {
     resolver: zodResolver(appearanceFormSchema),
   });
 
-  function onSubmit(data: AppearanceFormValues) {
+  const onSubmit = (data: AppearanceFormValues) => {
     if (data.theme !== theme) {
       setTheme(data.theme);
     }
 
     showSubmittedData(data);
-  }
+  };
 
   return (
     <Form {...form}>
@@ -57,7 +58,7 @@ export function AppearanceForm() {
               <RadioGroup
                 className="grid max-w-md grid-cols-2 gap-8 pt-2"
                 defaultValue={field.value}
-                onValueChange={field.onChange}
+                onValueChange={(value) => field.onChange(value)}
               >
                 <FormItem>
                   <FormLabel className="[&:has([data-state=checked])>div]:border-primary">
@@ -120,4 +121,4 @@ export function AppearanceForm() {
       </form>
     </Form>
   );
-}
+};

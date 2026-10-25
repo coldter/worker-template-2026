@@ -1,6 +1,8 @@
 import React from "react";
 import { Heading, Section, Text } from "react-email";
-import { BaseLayout, type EmailBrandProps } from "../components/base-layout";
+
+import { BaseLayout } from "../components/base-layout";
+import type { EmailBrandProps } from "../components/base-layout";
 
 export interface TwoFactorOtpEmailProps {
   brand?: EmailBrandProps;
@@ -11,65 +13,63 @@ export interface TwoFactorOtpEmailProps {
   userName: string;
 }
 
-export function TwoFactorOtpEmail({
+export const TwoFactorOtpEmail = ({
   userName,
   otp,
   expiresIn,
   ipAddress,
   userAgent,
   brand,
-}: TwoFactorOtpEmailProps) {
-  return (
-    <BaseLayout previewText={`Your 2FA code: ${otp}`} {...brand}>
-      <Section>
-        <Heading className="text-[28px] font-bold text-slate-900 text-center m-0 mb-6 leading-tight">
-          Two-Factor Authentication
-        </Heading>
-        <Text className="text-[16px] text-slate-600 leading-relaxed m-0 mb-4">
-          Hi {userName},
+}: TwoFactorOtpEmailProps) => (
+  <BaseLayout previewText={`Your 2FA code: ${otp}`} {...brand}>
+    <Section>
+      <Heading className="m-0 mb-6 text-center text-[28px] leading-tight font-bold text-slate-900">
+        Two-Factor Authentication
+      </Heading>
+      <Text className="m-0 mb-4 text-[16px] leading-relaxed text-slate-600">
+        Hi {userName},
+      </Text>
+      <Text className="m-0 mb-6 text-[16px] leading-relaxed text-slate-600">
+        A sign-in attempt requires verification. Use the code below to complete
+        your login.
+      </Text>
+      <Section className="mb-6 rounded-lg border border-slate-200 bg-slate-50 p-6 text-center">
+        <Text className="m-0 mb-2 text-[14px] text-slate-500">
+          Your verification code is:
         </Text>
-        <Text className="text-[16px] text-slate-600 leading-relaxed m-0 mb-6">
-          A sign-in attempt requires verification. Use the code below to
-          complete your login.
-        </Text>
-        <Section className="bg-slate-50 rounded-lg p-6 border border-slate-200 mb-6 text-center">
-          <Text className="text-[14px] text-slate-500 m-0 mb-2">
-            Your verification code is:
-          </Text>
-          <Text className="text-[36px] font-bold text-slate-900 m-0 tracking-[0.3em] font-mono">
-            {otp}
-          </Text>
-        </Section>
-        <Text className="text-[14px] text-slate-500 leading-relaxed m-0 text-center">
-          This code will expire in <strong>{expiresIn}</strong>.
-        </Text>
-        {(ipAddress || userAgent) && (
-          <Section className="bg-slate-50 rounded-lg p-4 border border-slate-100 mt-6">
-            <Text className="text-[13px] text-slate-500 m-0 leading-relaxed">
-              <strong>Sign-in attempt details:</strong>
-              {ipAddress && (
-                <>
-                  <br />
-                  IP Address: {ipAddress}
-                </>
-              )}
-              {userAgent && (
-                <>
-                  <br />
-                  Device: {userAgent}
-                </>
-              )}
-            </Text>
-          </Section>
-        )}
-        <Text className="text-[14px] text-slate-400 leading-relaxed m-0 text-center mt-6">
-          If you did not attempt to sign in, please secure your account
-          immediately by changing your password.
+        <Text className="m-0 font-mono text-[36px] font-bold tracking-[0.3em] text-slate-900">
+          {otp}
         </Text>
       </Section>
-    </BaseLayout>
-  );
-}
+      <Text className="m-0 text-center text-[14px] leading-relaxed text-slate-500">
+        This code will expire in <strong>{expiresIn}</strong>.
+      </Text>
+      {(ipAddress || userAgent) && (
+        <Section className="mt-6 rounded-lg border border-slate-100 bg-slate-50 p-4">
+          <Text className="m-0 text-[13px] leading-relaxed text-slate-500">
+            <strong>Sign-in attempt details:</strong>
+            {ipAddress && (
+              <>
+                <br />
+                IP Address: {ipAddress}
+              </>
+            )}
+            {userAgent && (
+              <>
+                <br />
+                Device: {userAgent}
+              </>
+            )}
+          </Text>
+        </Section>
+      )}
+      <Text className="m-0 mt-6 text-center text-[14px] leading-relaxed text-slate-400">
+        If you did not attempt to sign in, please secure your account
+        immediately by changing your password.
+      </Text>
+    </Section>
+  </BaseLayout>
+);
 
 TwoFactorOtpEmail.PreviewProps = {
   expiresIn: "3 minutes",

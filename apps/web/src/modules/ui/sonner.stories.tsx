@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { toast } from "sonner";
+
 import { Button } from "./button";
 import { Toaster } from "./sonner";
 
@@ -73,9 +74,11 @@ export const PromiseToast: Story = {
     <>
       <Button
         onClick={() => {
+          // oxlint-disable-next-line promise/avoid-new -- toast.promise needs a delayed promise; Promise.withResolvers is outside lib es2022
           const work = new Promise<{ name: string }>((resolve) => {
             setTimeout(() => resolve({ name: "Report.pdf" }), 1500);
           });
+
           toast.promise(work, {
             error: "Upload failed",
             loading: "Uploading file...",

@@ -1,16 +1,18 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { type ColumnDef, useTable } from "@tanstack/react-table";
+import { useTable } from "@tanstack/react-table";
+import type { ColumnDef } from "@tanstack/react-table";
+
 import type { DataTableFeatures } from "./features";
 import { dataTableFeatures } from "./features";
 import { DataTableViewOptions } from "./view-options";
 
-type Row = {
+interface Row {
   name: string;
   email: string;
   status: string;
   role: string;
   createdAt: string;
-};
+}
 
 const rows: Row[] = [
   {
@@ -30,18 +32,19 @@ const columns: ColumnDef<DataTableFeatures, Row>[] = [
   { accessorKey: "createdAt", header: "Created" },
 ];
 
-function ViewOptionsHost() {
+const ViewOptionsHost = () => {
   const table = useTable({
     columns,
     data: rows,
     features: dataTableFeatures,
   });
+
   return (
     <div className="flex justify-end">
       <DataTableViewOptions table={table} />
     </div>
   );
-}
+};
 
 const meta = {
   component: ViewOptionsHost,

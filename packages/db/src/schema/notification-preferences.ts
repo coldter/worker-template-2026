@@ -5,6 +5,7 @@ import {
   uniqueIndex,
   varchar,
 } from "drizzle-orm/pg-core";
+
 import { createdAt, updatedAt } from "../helpers";
 import { generatePrefixedCuid } from "../ids";
 import { users } from "./auth";
@@ -39,5 +40,6 @@ export const notificationPreferences = pgTable(
 
 export type NotificationPreference =
   typeof notificationPreferences.$inferSelect;
+
 export type NewNotificationPreference =
   typeof notificationPreferences.$inferInsert;

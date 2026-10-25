@@ -1,6 +1,8 @@
 import { create } from "zustand";
 import { createJSONStorage, devtools, persist } from "zustand/middleware";
+
 import type { SessionUser } from "@/modules/auth";
+
 import { useLastUserStore } from "./last-user";
 
 interface UserStoreState {

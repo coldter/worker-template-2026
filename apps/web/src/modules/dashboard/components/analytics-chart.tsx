@@ -38,40 +38,33 @@ const data = [
   },
 ];
 
-export function AnalyticsChart() {
-  return (
-    <ResponsiveContainer height={300} width="100%">
-      <AreaChart data={data}>
-        <XAxis
-          axisLine={false}
-          dataKey="name"
-          fontSize={12}
-          stroke="#888888"
-          tickLine={false}
-        />
-        <YAxis
-          axisLine={false}
-          fontSize={12}
-          stroke="#888888"
-          tickLine={false}
-        />
-        <Area
-          className="text-primary"
-          dataKey="clicks"
-          fill="currentColor"
-          fillOpacity={0.15}
-          stroke="currentColor"
-          type="monotone"
-        />
-        <Area
-          className="text-muted-foreground"
-          dataKey="uniques"
-          fill="currentColor"
-          fillOpacity={0.1}
-          stroke="currentColor"
-          type="monotone"
-        />
-      </AreaChart>
-    </ResponsiveContainer>
-  );
-}
+export const AnalyticsChart = () => (
+  <ResponsiveContainer height={300} width="100%">
+    <AreaChart data={data}>
+      <XAxis
+        axisLine={false}
+        dataKey="name"
+        fontSize={12}
+        stroke="#888888"
+        tickLine={false}
+      />
+      <YAxis axisLine={false} fontSize={12} stroke="#888888" tickLine={false} />
+      <Area
+        className="text-primary"
+        dataKey="clicks"
+        fill="currentColor"
+        fillOpacity={0.15}
+        stroke="currentColor"
+        type="monotone"
+      />
+      <Area
+        className="text-muted-foreground"
+        dataKey="uniques"
+        fill="currentColor"
+        fillOpacity={0.1}
+        stroke="currentColor"
+        type="monotone"
+      />
+    </AreaChart>
+  </ResponsiveContainer>
+);

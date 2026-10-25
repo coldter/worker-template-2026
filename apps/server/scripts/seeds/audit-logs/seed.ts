@@ -1,12 +1,14 @@
 import { faker } from "@faker-js/faker";
 import { auditLogs, users } from "@repo/db/schema";
 import chalk from "chalk";
+
 import { ACTOR_TYPES, AUDIT_EVENTS } from "@/modules/audit-logs/constants";
 import type {
   ActorType,
   AuditEventKey,
   TargetType,
 } from "@/modules/audit-logs/types";
+
 import { db, isAuditLogsSeeded } from "../utils";
 
 const SEED_COUNT = 200;
@@ -23,15 +25,19 @@ const getTargetTypeForEvent = (event: AuditEventKey): TargetType | null => {
   if (event.startsWith("user.")) {
     return "user";
   }
+
   if (event.startsWith("role.")) {
     return "role";
   }
+
   if (event.startsWith("auth.session")) {
     return "session";
   }
+
   if (event.startsWith("auth.")) {
     return "user";
   }
+
   return null;
 };
 
@@ -45,6 +51,7 @@ const generateMetadata = (event: AuditEventKey) => {
       },
     };
   }
+
   if (event === "auth.login.failed") {
     return {
       attempts: faker.number.int({ max: 5, min: 1 }),
@@ -55,6 +62,7 @@ const generateMetadata = (event: AuditEventKey) => {
       ]),
     };
   }
+
   if (event === "role.assigned" || event === "role.unassigned") {
     return {
       role: faker.helpers.arrayElement([
@@ -65,17 +73,22 @@ const generateMetadata = (event: AuditEventKey) => {
       ]),
     };
   }
+
   return null;
 };
 
 export const auditLogsSeed = async () => {
-  if (process.env.NODE_ENV === "production") {
+  const nodeEnv: string = process.env.NODE_ENV;
+
+  if (nodeEnv === "production") {
     console.error("Not allowed in production.");
+
     return;
   }
 
   if (await isAuditLogsSeeded()) {
     console.warn("Audit logs table is not empty - skipping seed");
+
     return;
   }
 

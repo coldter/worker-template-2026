@@ -2,6 +2,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
+
 import { Button } from "./button";
 import {
   Form,
@@ -25,13 +26,13 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>;
 
-type DemoFormProps = {
+interface DemoFormProps {
   defaultValues?: Partial<FormValues>;
   disabled?: boolean;
   forceErrors?: boolean;
-};
+}
 
-function DemoForm({ defaultValues, disabled, forceErrors }: DemoFormProps) {
+const DemoForm = ({ defaultValues, disabled, forceErrors }: DemoFormProps) => {
   const form = useForm<FormValues>({
     defaultValues: {
       bio: defaultValues?.bio ?? "",
@@ -52,7 +53,7 @@ function DemoForm({ defaultValues, disabled, forceErrors }: DemoFormProps) {
     <Form {...form}>
       <form
         className="grid w-80 gap-4"
-        onSubmit={form.handleSubmit(() => undefined)}
+        onSubmit={form.handleSubmit(() => null)}
       >
         <FormField
           control={form.control}
@@ -92,7 +93,7 @@ function DemoForm({ defaultValues, disabled, forceErrors }: DemoFormProps) {
       </form>
     </Form>
   );
-}
+};
 
 const meta = {
   argTypes: {

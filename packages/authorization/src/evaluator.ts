@@ -1,4 +1,4 @@
-// biome-ignore-all lint/performance/noAwaitInLoops: policy evaluation is ordered (deny precedence) and short-circuits on first match, so parallelising would change outcomes.
+/* oxlint-disable no-await-in-loop -- policy evaluation is ordered for deny precedence and short-circuits on the first match, so parallelising would change outcomes */
 import type {
   ConditionContext,
   DenyReason,
@@ -9,186 +9,50 @@ import type {
 
 export interface EvaluateInput<TResource = unknown> {
   action: string;
-  globalPolicies: PolicyRule[];
+  globalPolicies: PolicyRule<never>[];
   principal: Principal | null | undefined;
   resolveOrganization?: (resource: TResource) => string | null | undefined;
   resource?: TResource;
-  resourcePolicies: PolicyRule[];
+  resourcePolicies: PolicyRule<never>[];
   systemAdminRoles: readonly string[];
 }
 
-export async function evaluate<TResource = unknown>(
-  input: EvaluateInput<TResource>
-): Promise<PolicyDecision> {
-  return runEvaluation(input, false);
-}
-
-export async function evaluateOptimistic<TResource = unknown>(
-  input: EvaluateInput<TResource>
-): Promise<PolicyDecision> {
-  return runEvaluation(input, true);
-}
-
-async function runEvaluation<TResource>(
-  input: EvaluateInput<TResource>,
-  optimistic: boolean
-): Promise<PolicyDecision> {
-  const {
-    principal,
-    action,
-    globalPolicies,
-    resourcePolicies,
-    systemAdminRoles,
-    resolveOrganization,
-    resource,
-  } = input;
-
-  if (!principal) {
-    return { allowed: false, reason: "UNAUTHENTICATED" };
-  }
-
-  for (const policy of globalPolicies) {
-    if (policy.effect !== "deny") {
-      continue;
-    }
-    const { matched, conditionError } = await matchPolicy(
-      policy,
-      principal,
-      action,
-      undefined,
-      false
-    );
-    if (conditionError) {
-      return { allowed: false, reason: "EVALUATION_ERROR" };
-    }
-    if (matched) {
-      return {
-        allowed: false,
-        matchedPolicy: policy.label,
-        reason: "GLOBAL_DENY",
-      };
-    }
-  }
-
-  let orgDenyReason: DenyReason | undefined;
-
-  for (const policy of resourcePolicies) {
-    if (policy.effect !== "deny") {
-      continue;
-    }
-
-    if (hasResourceConditions(policy) && resource === undefined) {
-      continue;
-    }
-
-    if (resolveOrganization && resource !== undefined) {
-      const orgResult = checkOrgScoping(
-        principal,
-        resource,
-        resolveOrganization,
-        policy,
-        systemAdminRoles
-      );
-      if (orgResult !== "pass") {
-        orgDenyReason ??= orgResult.skip;
-        continue;
-      }
-    }
-
-    const { matched, conditionError } = await matchPolicy(
-      policy,
-      principal,
-      action,
-      resource,
-      false
-    );
-    if (conditionError) {
-      return { allowed: false, reason: "EVALUATION_ERROR" };
-    }
-    if (matched) {
-      return {
-        allowed: false,
-        matchedPolicy: policy.label,
-        reason: "EXPLICIT_DENY",
-      };
-    }
-  }
-
-  for (const policy of resourcePolicies) {
-    if (policy.effect !== "allow") {
-      continue;
-    }
-
-    if (
-      hasResourceConditions(policy) &&
-      resource === undefined &&
-      !optimistic
-    ) {
-      continue;
-    }
-
-    if (resolveOrganization && resource !== undefined) {
-      const orgResult = checkOrgScoping(
-        principal,
-        resource,
-        resolveOrganization,
-        policy,
-        systemAdminRoles
-      );
-      if (orgResult !== "pass") {
-        orgDenyReason ??= orgResult.skip;
-        continue;
-      }
-    }
-
-    const { matched, conditionError } = await matchPolicy(
-      policy,
-      principal,
-      action,
-      resource,
-      optimistic
-    );
-    if (conditionError) {
-      return { allowed: false, reason: "EVALUATION_ERROR" };
-    }
-    if (matched) {
-      return { allowed: true, matchedPolicy: policy.label };
-    }
-  }
-
-  if (orgDenyReason) {
-    return { allowed: false, reason: orgDenyReason };
-  }
-  return { allowed: false, reason: "NO_MATCHING_POLICY" };
-}
-
-function roleMatches(policy: PolicyRule, principal: Principal): boolean {
+const roleMatches = (
+  policy: PolicyRule<never>,
+  principal: Principal
+): boolean => {
   if (policy.roles === "*") {
     return true;
   }
-  return policy.roles.some((role) => principal.roles.includes(role));
-}
 
-function actionMatches(policy: PolicyRule, action: string): boolean {
+  return policy.roles.some((role) => principal.roles.includes(role));
+};
+
+const actionMatches = (policy: PolicyRule<never>, action: string): boolean => {
   if (policy.actions === "*") {
     return true;
   }
+
   return policy.actions.includes(action);
+};
+
+const hasResourceConditions = (policy: PolicyRule<never>): boolean =>
+  policy.conditions.some(
+    (condition) => condition.effect === "requires_resource"
+  );
+
+interface MatchResult {
+  matched: boolean;
+  conditionError?: true;
 }
 
-function hasResourceConditions(policy: PolicyRule): boolean {
-  return policy.conditions.some((c) => c.effect === "requires_resource");
-}
-
-type MatchResult = { matched: boolean; conditionError?: true };
-
-async function matchPolicy<TResource>(
-  policy: PolicyRule,
+const matchPolicy = async <TResource>(
+  policy: PolicyRule<TResource>,
   principal: Principal,
   action: string,
   resource: TResource | undefined,
   optimistic: boolean
-): Promise<MatchResult> {
+): Promise<MatchResult> => {
   if (!roleMatches(policy, principal)) {
     return { matched: false };
   }
@@ -206,12 +70,14 @@ async function matchPolicy<TResource>(
       return { matched: false };
     }
 
-    const ctx: ConditionContext = {
+    const ctx: ConditionContext<TResource> = {
       principal,
       resource,
     };
+
     try {
       const result = await condition.evaluate(ctx);
+
       if (!result) {
         return { matched: false };
       }
@@ -220,6 +86,7 @@ async function matchPolicy<TResource>(
         error instanceof Error
           ? { message: error.message, name: error.name, stack: error.stack }
           : { value: String(error) };
+
       console.error(
         JSON.stringify({
           action,
@@ -231,40 +98,44 @@ async function matchPolicy<TResource>(
           ts: Date.now(),
         })
       );
+
       return { conditionError: true, matched: false };
     }
   }
 
   return { matched: true };
-}
+};
 
-type OrgCheckResult =
-  | "pass"
-  | {
-      skip: "ORG_CONTEXT_MISSING" | "ORG_RESOLUTION_FAILED" | "TENANT_MISMATCH";
-    };
+type OrgSkipReason =
+  | "ORG_CONTEXT_MISSING"
+  | "ORG_RESOLUTION_FAILED"
+  | "TENANT_MISMATCH";
 
-function checkOrgScoping<TResource>(
+type OrgCheckResult = "pass" | { skip: OrgSkipReason };
+
+const checkOrgScoping = <TResource>(
   principal: Principal,
   resource: TResource,
   resolveOrganization: (resource: TResource) => string | null | undefined,
-  policy: PolicyRule,
+  policy: PolicyRule<never>,
   systemAdminRoles: readonly string[]
-): OrgCheckResult {
+): OrgCheckResult => {
   if (
     (policy.roles === "*" ||
-      policy.roles.some((r) => principal.roles.includes(r))) &&
-    principal.roles.some((r) => systemAdminRoles.includes(r))
+      policy.roles.some((role) => principal.roles.includes(role))) &&
+    principal.roles.some((role) => systemAdminRoles.includes(role))
   ) {
     return "pass";
   }
 
   const org = principal.organization;
+
   if (!org) {
     return { skip: "ORG_CONTEXT_MISSING" };
   }
 
   const resourceOrgId = resolveOrganization(resource);
+
   if (resourceOrgId === null || resourceOrgId === undefined) {
     return { skip: "ORG_RESOLUTION_FAILED" };
   }
@@ -274,4 +145,199 @@ function checkOrgScoping<TResource>(
   }
 
   return "pass";
+};
+
+type PolicyVerdict =
+  | { kind: "match" }
+  | { kind: "no-match" }
+  | { kind: "skip"; reason: OrgSkipReason }
+  | { kind: "condition-error" };
+
+const assessResourcePolicy = async <TResource>(
+  input: EvaluateInput<TResource>,
+  principal: Principal,
+  policy: PolicyRule<TResource>,
+  optimistic: boolean
+): Promise<PolicyVerdict> => {
+  const { action, resolveOrganization, resource, systemAdminRoles } = input;
+
+  if (resolveOrganization && resource !== undefined) {
+    const orgResult = checkOrgScoping(
+      principal,
+      resource,
+      resolveOrganization,
+      policy,
+      systemAdminRoles
+    );
+
+    if (orgResult !== "pass") {
+      return { kind: "skip", reason: orgResult.skip };
+    }
+  }
+
+  const { matched, conditionError } = await matchPolicy(
+    policy,
+    principal,
+    action,
+    resource,
+    optimistic
+  );
+
+  if (conditionError) {
+    return { kind: "condition-error" };
+  }
+
+  return matched ? { kind: "match" } : { kind: "no-match" };
+};
+
+const evaluateGlobalDenyPolicies = async <TResource>(
+  input: EvaluateInput<TResource>,
+  principal: Principal
+): Promise<PolicyDecision | undefined> => {
+  for (const policy of input.globalPolicies) {
+    if (policy.effect !== "deny") {
+      continue;
+    }
+
+    const { matched, conditionError } = await matchPolicy(
+      policy,
+      principal,
+      input.action,
+      undefined,
+      false
+    );
+
+    if (conditionError) {
+      return { allowed: false, reason: "EVALUATION_ERROR" };
+    }
+
+    if (matched) {
+      return {
+        allowed: false,
+        matchedPolicy: policy.label,
+        reason: "GLOBAL_DENY",
+      };
+    }
+  }
+
+  return undefined;
+};
+
+interface ResourcePhaseResult {
+  decision?: PolicyDecision;
+  orgDenyReason?: DenyReason;
 }
+
+const evaluateResourcePolicies = async <TResource>(
+  input: EvaluateInput<TResource>,
+  principal: Principal,
+  effect: "allow" | "deny",
+  optimistic: boolean,
+  orgDenyReason: DenyReason | undefined
+): Promise<ResourcePhaseResult> => {
+  let pendingOrgReason = orgDenyReason;
+
+  for (const erasedPolicy of input.resourcePolicies) {
+    if (erasedPolicy.effect !== effect) {
+      continue;
+    }
+
+    if (
+      hasResourceConditions(erasedPolicy) &&
+      input.resource === undefined &&
+      !optimistic
+    ) {
+      continue;
+    }
+
+    // SAFETY: resource policies are stored erased (PolicyRule<never>) so a heterogeneous registry stays assignable; each rule was authored for the resource definition that owns it, which is the resource passed in here.
+    const policy = erasedPolicy as PolicyRule<TResource>;
+
+    const verdict = await assessResourcePolicy(
+      input,
+      principal,
+      policy,
+      optimistic
+    );
+
+    if (verdict.kind === "condition-error") {
+      return { decision: { allowed: false, reason: "EVALUATION_ERROR" } };
+    }
+
+    if (verdict.kind === "skip") {
+      pendingOrgReason ??= verdict.reason;
+      continue;
+    }
+
+    if (verdict.kind === "match") {
+      return {
+        decision:
+          effect === "deny"
+            ? {
+                allowed: false,
+                matchedPolicy: policy.label,
+                reason: "EXPLICIT_DENY",
+              }
+            : { allowed: true, matchedPolicy: policy.label },
+        orgDenyReason: pendingOrgReason,
+      };
+    }
+  }
+
+  return { orgDenyReason: pendingOrgReason };
+};
+
+const runEvaluation = async <TResource>(
+  input: EvaluateInput<TResource>,
+  optimistic: boolean
+): Promise<PolicyDecision> => {
+  const { principal } = input;
+
+  if (!principal) {
+    return { allowed: false, reason: "UNAUTHENTICATED" };
+  }
+
+  const globalDecision = await evaluateGlobalDenyPolicies(input, principal);
+
+  if (globalDecision) {
+    return globalDecision;
+  }
+
+  const denied = await evaluateResourcePolicies(
+    input,
+    principal,
+    "deny",
+    false,
+    undefined
+  );
+
+  if (denied.decision) {
+    return denied.decision;
+  }
+
+  const allowed = await evaluateResourcePolicies(
+    input,
+    principal,
+    "allow",
+    optimistic,
+    denied.orgDenyReason
+  );
+
+  if (allowed.decision) {
+    return allowed.decision;
+  }
+
+  if (allowed.orgDenyReason) {
+    return { allowed: false, reason: allowed.orgDenyReason };
+  }
+
+  return { allowed: false, reason: "NO_MATCHING_POLICY" };
+};
+
+export const evaluate = <TResource = unknown>(
+  input: EvaluateInput<TResource>
+): Promise<PolicyDecision> => runEvaluation(input, false);
+
+export const evaluateOptimistic = <TResource = unknown>(
+  input: EvaluateInput<TResource>
+): Promise<PolicyDecision> => runEvaluation(input, true);

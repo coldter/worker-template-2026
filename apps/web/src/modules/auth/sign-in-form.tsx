@@ -1,7 +1,9 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
-import { type FormEvent, useState } from "react";
+import { useState } from "react";
+import type { FormEvent } from "react";
 import { toast } from "sonner";
+
 import { authClient } from "@/lib/auth-client";
 import { Button } from "@/modules/ui/button";
 import { Input } from "@/modules/ui/input";
@@ -15,12 +17,12 @@ interface SignInFormProps {
   showEmailField?: boolean;
 }
 
-export function SignInForm({
+export const SignInForm = ({
   onSuccess,
   onTwoFactorRequired,
   initialEmail = "",
   showEmailField = true,
-}: SignInFormProps) {
+}: SignInFormProps) => {
   const queryClient = useQueryClient();
   const [email, setEmail] = useState(initialEmail);
   const [password, setPassword] = useState("");
@@ -31,6 +33,7 @@ export function SignInForm({
 
     if (!(email && password)) {
       toast.error("Please enter email and password");
+
       return;
     }
 
@@ -45,6 +48,8 @@ export function SignInForm({
       if (result.error) {
         toast.error(result.error.message ?? "Sign in failed");
         setPassword("");
+        setIsLoading(false);
+
         return;
       }
 
@@ -54,6 +59,8 @@ export function SignInForm({
         result.data.twoFactorRedirect
       ) {
         onTwoFactorRequired?.(email);
+        setIsLoading(false);
+
         return;
       }
 
@@ -66,9 +73,9 @@ export function SignInForm({
       const message = error instanceof Error ? error.message : "Sign in failed";
       toast.error(message);
       setPassword("");
-    } finally {
-      setIsLoading(false);
     }
+
+    setIsLoading(false);
   };
 
   return (
@@ -115,4 +122,4 @@ export function SignInForm({
       </Button>
     </form>
   );
-}
+};

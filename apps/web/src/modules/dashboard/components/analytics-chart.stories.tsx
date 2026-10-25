@@ -1,11 +1,12 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+
 import { AnalyticsChart } from "./analytics-chart";
 
 const meta = {
   component: AnalyticsChart,
   decorators: [
     (Story) => (
-      <div className="w-[720px] rounded-md border bg-card p-4">
+      <div className="bg-card w-[720px] rounded-md border p-4">
         <Story />
       </div>
     ),

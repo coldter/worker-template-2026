@@ -6,6 +6,7 @@ import {
   RouterProvider,
 } from "@tanstack/react-router";
 import { Bell, CreditCard, User } from "lucide-react";
+
 import { SidebarNav } from "./sidebar-nav";
 
 const items = [
@@ -22,7 +23,7 @@ const items = [
   },
 ];
 
-function renderWithRouter() {
+const renderWithRouter = () => {
   const rootRoute = createRootRoute({
     component: () => (
       <div className="w-60 border-r p-4">
@@ -30,12 +31,14 @@ function renderWithRouter() {
       </div>
     ),
   });
+
   const router = createRouter({
     history: createMemoryHistory({ initialEntries: ["/settings"] }),
     routeTree: rootRoute,
   });
+
   return <RouterProvider router={router} />;
-}
+};
 
 const meta = {
   args: {

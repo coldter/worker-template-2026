@@ -1,5 +1,7 @@
-import { beforeEach, describe, expect, test } from "vitest";
-import { createEmailSender, type EmailClient } from "../lib/send";
+import { beforeEach, describe, expect, it } from "vitest";
+
+import { createEmailSender } from "../lib/send";
+import type { EmailClient } from "../lib/send";
 
 type SendResponse =
   | { kind: "ok"; data: { id: string } }
@@ -10,42 +12,51 @@ const sendQueue: SendResponse[] = [];
 
 const clientApiKeys: string[] = [];
 
-function createFakeClient(apiKey: string): EmailClient {
+const createFakeClient = (apiKey: string): EmailClient => {
   clientApiKeys.push(apiKey);
+
   return {
     emails: {
-      send: async () => {
+      send: () => {
         const next = sendQueue.shift();
+
         if (!next) {
-          return { data: { id: "msg_default" }, error: null };
+          return Promise.resolve({
+            data: { id: "msg_default" },
+            error: null,
+          });
         }
+
         if (next.kind === "throw") {
-          throw next.error;
+          return Promise.reject(next.error);
         }
+
         if (next.kind === "apiError") {
-          return { data: null, error: { message: next.message } };
+          return Promise.resolve({
+            data: null,
+            error: { message: next.message },
+          });
         }
-        return { data: next.data, error: null };
+
+        return Promise.resolve({ data: next.data, error: null });
       },
     },
   };
-}
+};
 
 interface DummyProps {
   name: string;
 }
 
-function DummyTemplate({ name }: DummyProps) {
-  return <div>Hello {name}</div>;
-}
-
-beforeEach(() => {
-  clientApiKeys.length = 0;
-  sendQueue.length = 0;
-});
+const DummyTemplate = ({ name }: DummyProps) => <div>Hello {name}</div>;
 
 describe("sendEmail", () => {
-  test("returns success on a successful send", async () => {
+  beforeEach(() => {
+    clientApiKeys.length = 0;
+    sendQueue.length = 0;
+  });
+
+  it("returns success on a successful send", async () => {
     sendQueue.push({ data: { id: "msg_123" }, kind: "ok" });
     const sendEmail = createEmailSender(createFakeClient);
 
@@ -58,11 +69,11 @@ describe("sendEmail", () => {
       to: "ada@example.com",
     });
 
-    expect(result).toEqual({ messageId: "msg_123", success: true });
-    expect(clientApiKeys).toEqual(["key-success"]);
+    expect(result).toStrictEqual({ messageId: "msg_123", success: true });
+    expect(clientApiKeys).toStrictEqual(["key-success"]);
   });
 
-  test("caches Resend clients per apiKey", async () => {
+  it("caches Resend clients per apiKey", async () => {
     const sendEmail = createEmailSender(createFakeClient);
 
     await sendEmail<DummyProps>({
@@ -90,10 +101,10 @@ describe("sendEmail", () => {
       to: "ada@example.com",
     });
 
-    expect(clientApiKeys).toEqual(["key-a", "key-b"]);
+    expect(clientApiKeys).toStrictEqual(["key-a", "key-b"]);
   });
 
-  test("throws on a Resend API error", async () => {
+  it("throws on a Resend API error", async () => {
     sendQueue.push({ kind: "apiError", message: "Invalid recipient" });
     const sendEmail = createEmailSender(createFakeClient);
 
@@ -109,7 +120,7 @@ describe("sendEmail", () => {
     ).rejects.toThrow("Invalid recipient");
   });
 
-  test("propagates thrown errors from the Resend client", async () => {
+  it("propagates thrown errors from the Resend client", async () => {
     sendQueue.push({ error: new Error("network down"), kind: "throw" });
     const sendEmail = createEmailSender(createFakeClient);
 

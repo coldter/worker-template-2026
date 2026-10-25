@@ -1,4 +1,5 @@
 import { useNavigate } from "@tanstack/react-router";
+
 import { authClient } from "@/lib/auth-client";
 import { clearSession, resetSessionQuery } from "@/modules/auth/helpers";
 import { ConfirmDialog } from "@/modules/common/confirm-dialog";
@@ -10,7 +11,7 @@ interface SignOutDialogProps {
   open: boolean;
 }
 
-export function SignOutDialog({ open, onOpenChange }: SignOutDialogProps) {
+export const SignOutDialog = ({ open, onOpenChange }: SignOutDialogProps) => {
   const navigate = useNavigate();
 
   const handleSignOut = async () => {
@@ -45,4 +46,4 @@ export function SignOutDialog({ open, onOpenChange }: SignOutDialogProps) {
       title="Sign out"
     />
   );
-}
+};

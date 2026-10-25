@@ -1,9 +1,11 @@
 import path from "node:path";
+
 import tailwindcss from "@tailwindcss/vite";
 import { tanstackRouter } from "@tanstack/router-plugin/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig, loadEnv } from "vite";
-import { watchBackendOpenApi } from "./vite/openapi-watch-mode";
+
+import { watchBackendOpenApi } from "./vite/openapi-watch-mode.ts";
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
@@ -21,7 +23,7 @@ export default defineConfig(({ mode }) => {
       {
         name: "inject-brand-html",
         transformIndexHtml(html) {
-          return html.replace(/%VITE_APP_NAME%/g, appName);
+          return html.replaceAll("%VITE_APP_NAME%", appName);
         },
       },
     ],

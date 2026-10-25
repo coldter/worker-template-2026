@@ -5,16 +5,19 @@ import {
   createRouter,
   RouterProvider,
 } from "@tanstack/react-router";
+
 import { UnauthorisedError } from "./unauthorized-error";
 
-function renderWithRouter() {
+const renderWithRouter = () => {
   const rootRoute = createRootRoute({ component: UnauthorisedError });
+
   const router = createRouter({
     history: createMemoryHistory({ initialEntries: ["/"] }),
     routeTree: rootRoute,
   });
+
   return <RouterProvider router={router} />;
-}
+};
 
 const meta = {
   component: UnauthorisedError,

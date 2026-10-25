@@ -1,4 +1,4 @@
-import { clientConfig } from "@/lib/utils";
+export { clientConfig } from "@/lib/utils";
 
 export class ApiError extends Error {
   error: {
@@ -8,12 +8,12 @@ export class ApiError extends Error {
   path?: string;
 
   constructor(
-    error: { error: { message?: string }; name?: string },
+    error: { error: { message?: string } },
     status?: number,
     path?: string
   ) {
     super(error.error.message);
-    this.name = error.name ?? "ApiError";
+    this.name = "ApiError";
     this.error = error.error;
     this.status = status ?? 500;
     this.path = path;
@@ -23,5 +23,3 @@ export class ApiError extends Error {
     return e instanceof ApiError;
   }
 }
-
-export { clientConfig };

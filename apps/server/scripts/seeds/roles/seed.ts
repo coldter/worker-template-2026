@@ -1,6 +1,8 @@
 import { roles } from "@repo/db/schema";
 import chalk from "chalk";
+
 import { SYSTEM_ROLES } from "@/modules/roles";
+
 import { db } from "../utils";
 
 const systemRoles = [SYSTEM_ROLES.ADMIN, SYSTEM_ROLES.USER];
@@ -18,6 +20,7 @@ export const rolesSeed = async () => {
         console.info(
           `  Role ${chalk.cyan(role.slug)} already exists - skipping`
         );
+
         return;
       }
 

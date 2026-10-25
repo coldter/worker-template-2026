@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+
 import { UserRoleBadges } from "./user-role-badges";
 
 const meta = {

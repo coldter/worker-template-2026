@@ -1,4 +1,5 @@
 import { ArrowRight } from "lucide-react";
+
 import { Avatar, AvatarFallback, AvatarImage } from "@/modules/ui/avatar";
 import { Button } from "@/modules/ui/button";
 
@@ -12,12 +13,13 @@ interface WelcomeBackCardProps {
   };
 }
 
-export function WelcomeBackCard({
+export const WelcomeBackCard = ({
   user,
   onContinue,
   onSwitchAccount,
-}: WelcomeBackCardProps) {
+}: WelcomeBackCardProps) => {
   const displayName = user.name || "User";
+
   const initials = user.name
     ? user.name
         .split(" ")
@@ -35,7 +37,7 @@ export function WelcomeBackCard({
       </Avatar>
 
       <div className="text-center">
-        <h2 className="font-bold text-2xl text-foreground">
+        <h2 className="text-foreground text-2xl font-bold">
           Welcome back, {displayName}!
         </h2>
         <p className="text-muted-foreground">{user.email}</p>
@@ -48,7 +50,7 @@ export function WelcomeBackCard({
         </Button>
 
         <button
-          className="w-full text-center text-muted-foreground text-sm hover:text-foreground hover:underline"
+          className="text-muted-foreground hover:text-foreground w-full text-center text-sm hover:underline"
           onClick={onSwitchAccount}
           type="button"
         >
@@ -57,4 +59,4 @@ export function WelcomeBackCard({
       </div>
     </div>
   );
-}
+};

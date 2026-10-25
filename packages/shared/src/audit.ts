@@ -81,21 +81,21 @@ export interface FieldChange<T = unknown> {
   to: T;
 }
 
-export type AuditLogChangeSet = {
+export interface AuditLogChangeSet {
   changedFields?: string[];
   changes?: Record<string, FieldChange>;
-};
+}
 
-export type AuditLogOpenMetadata = {
+export interface AuditLogOpenMetadata {
   changedFields?: string[];
   changes?: Record<string, FieldChange>;
   [key: string]:
     | AuditLogMetadataValue
     | Record<string, FieldChange>
     | undefined;
-};
+}
 
-export type AuditLogMetadata = AuditLogChangeSet | AuditLogOpenMetadata;
+export type AuditLogMetadata = AuditLogOpenMetadata;
 
 export const CRITICAL_EVENTS = [
   "user.created",
@@ -122,7 +122,9 @@ export const BUFFERABLE_EVENTS = [
 ] as const;
 
 export type CriticalAuditEvent = (typeof CRITICAL_EVENTS)[number];
+
 export type BufferableAuditEvent = (typeof BUFFERABLE_EVENTS)[number];
 
 type _AllClassified = CriticalAuditEvent | BufferableAuditEvent;
+
 type _ExhaustivenessCheck = AuditEventKey extends _AllClassified ? true : never;

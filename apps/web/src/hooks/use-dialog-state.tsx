@@ -3,10 +3,10 @@ import { useState } from "react";
 export default function useDialogState<T extends string | boolean>(
   initialState: T | null = null
 ) {
-  const [open, _setOpen] = useState<T | null>(initialState);
+  const [open, setOpen] = useState<T | null>(initialState);
 
-  const setOpen = (str: T | null) =>
-    _setOpen((prev) => (prev === str ? null : str));
+  const updateOpen = (str: T | null) =>
+    setOpen((prev) => (prev === str ? null : str));
 
-  return [open, setOpen] as const;
+  return [open, updateOpen] as const;
 }

@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
+
 import useDialogState from "@/hooks/use-dialog-state";
 import { SignOutDialog } from "@/modules/common/sign-out-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/modules/ui/avatar";
@@ -15,7 +16,7 @@ import {
 } from "@/modules/ui/dropdown-menu";
 import { sessionQueryOptions } from "@/query/session-query";
 
-export function ProfileDropdown() {
+export const ProfileDropdown = () => {
   const [open, setOpen] = useDialogState();
   const { data: session } = useQuery(sessionQueryOptions);
   const user = session?.user;
@@ -60,4 +61,4 @@ export function ProfileDropdown() {
       <SignOutDialog onOpenChange={setOpen} open={!!open} />
     </>
   );
-}
+};

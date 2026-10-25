@@ -6,25 +6,29 @@ import {
   createRouter,
   RouterProvider,
 } from "@tanstack/react-router";
+
 import { PermissionDenied } from "./permission-denied";
 
 type StoryArgs = React.ComponentProps<typeof PermissionDenied>;
 
-function renderWithProviders(args: StoryArgs) {
+const renderWithProviders = (args: StoryArgs) => {
   const client = new QueryClient();
+
   const rootRoute = createRootRoute({
     component: () => <PermissionDenied {...args} />,
   });
+
   const router = createRouter({
     history: createMemoryHistory({ initialEntries: ["/"] }),
     routeTree: rootRoute,
   });
+
   return (
     <QueryClientProvider client={client}>
       <RouterProvider router={router} />
     </QueryClientProvider>
   );
-}
+};
 
 const meta = {
   component: PermissionDenied,

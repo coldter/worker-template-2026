@@ -72,14 +72,17 @@ export const authorization = auth.buildRegistry({ user: usersAuthorization });
 ## 5. Guard routes
 
 ```ts
-import { createAuthorize, getAuthorizedResource } from "@repo/authorization/hono";
+import {
+  createAuthorize,
+  getAuthorizedResource,
+} from "@repo/authorization/hono";
 
 type AppEnv = { Variables: { principal: AppPrincipal | null } };
 
-export const authorize = createAuthorize<typeof authorization.resources, AppEnv>(
-  authorization,
-  { resolvePrincipal: (c) => c.get("principal") ?? null }
-);
+export const authorize = createAuthorize<
+  typeof authorization.resources,
+  AppEnv
+>(authorization, { resolvePrincipal: (c) => c.get("principal") ?? null });
 
 app.get("/users", authorize("user", "list"), listUsers);
 
@@ -113,7 +116,10 @@ app.get("/authorization/capabilities", async (c) => {
   const principal = c.get("principal");
 
   if (!principal) {
-    return c.json({ error: { code: "UNAUTHORIZED", message: "Unauthorized" } }, 401);
+    return c.json(
+      { error: { code: "UNAUTHORIZED", message: "Unauthorized" } },
+      401
+    );
   }
 
   const capabilities = await authorization.evaluateCapabilities(principal);
@@ -138,7 +144,10 @@ export const projectsAuthorization = auth.createResource<ProjectRecord>()(
     resolveOrganization: (resource) => resource.organizationId,
     policies: (p) => [
       p.allow("admin").to("*"),
-      p.allow("user").to("list", "view").withOrgRole("owner", "admin", "member"),
+      p
+        .allow("user")
+        .to("list", "view")
+        .withOrgRole("owner", "admin", "member"),
       p.allow("user").to("update", "delete").withOrgRole("owner", "admin"),
     ],
   }

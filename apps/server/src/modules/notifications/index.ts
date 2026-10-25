@@ -1,10 +1,11 @@
-export type {
-  NotificationsSortColumn,
-  NotificationType,
-} from "./constants";
+export type { NotificationsSortColumn, NotificationType } from "./constants";
+
 export { NOTIFICATION_TYPE_CONFIG, NOTIFICATION_TYPES } from "./constants";
+
 export { notificationDispatch } from "./dispatch";
+
 export { default as notificationsHandler } from "./handler";
+
 export { notificationService } from "./service";
 
 export type {

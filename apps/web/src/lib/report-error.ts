@@ -1,10 +1,12 @@
 import * as z from "zod/mini";
 
-type ErrorContext = {
-  source: "router-error-boundary" | "unhandledrejection" | "window.error";
-};
+const catchSchema = z.catch;
 
-export const reportableErrorSchema = z.catch(
+interface ErrorContext {
+  source: "router-error-boundary" | "unhandledrejection" | "window.error";
+}
+
+export const reportableErrorSchema = catchSchema(
   z.union([z.instanceof(Error), z.string()]),
   (ctx) => {
     try {
@@ -17,19 +19,20 @@ export const reportableErrorSchema = z.catch(
 
 export type ReportableError = z.infer<typeof reportableErrorSchema>;
 
-export function reportError(
+export const reportError = (
   error: ReportableError,
   context?: ErrorContext
-): void {
+): void => {
   console.error("[report-error]", error, context ?? {});
-}
+};
 
 let initialized = false;
 
-export function initErrorReporting(): void {
+export const initErrorReporting = (): void => {
   if (initialized) {
     return;
   }
+
   initialized = true;
 
   window.addEventListener("error", (event) => {
@@ -39,4 +42,4 @@ export function initErrorReporting(): void {
   window.addEventListener("unhandledrejection", (event) => {
     reportError(event.reason, { source: "unhandledrejection" });
   });
-}
+};

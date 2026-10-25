@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 const REDACTED = "[REDACTED]";
-const TOKEN_LIKE = /^[A-Za-z0-9+/=_-]{24,}$|^[0-9a-fA-F]{24,}$/;
+const TOKEN_LIKE = /^[A-Za-z0-9+/=_-]{24,}$|^[0-9a-fA-F]{24,}$/u;
 const DEFAULT_MAX_DEPTH = 5;
 const NESTED_STRING_REDACT_MIN_LENGTH = 8;
 
@@ -21,21 +21,18 @@ export type RedactableValue =
   | { [key: string]: RedactableValue };
 
 const stringSchema = z.string();
+
 const numberSchema = z.union([
   z.number(),
   z.nan(),
   z.literal(Number.POSITIVE_INFINITY),
   z.literal(Number.NEGATIVE_INFINITY),
 ]);
+
 const booleanSchema = z.boolean();
 const primitiveSchema = z.union([numberSchema, booleanSchema]);
 const dateSchema = z.date();
 const bytesSchema = z.instanceof(Uint8Array);
-const arraySchema = z.array(z.lazy(() => redactableValueSchema));
-const recordSchema = z.record(
-  z.string(),
-  z.lazy(() => redactableValueSchema)
-);
 
 export const redactableValueSchema: z.ZodType<RedactableValue> = z.lazy(() =>
   z.union([
@@ -46,33 +43,35 @@ export const redactableValueSchema: z.ZodType<RedactableValue> = z.lazy(() =>
     z.undefined(),
     dateSchema,
     bytesSchema,
-    arraySchema,
-    recordSchema,
+    z.array(z.lazy(() => redactableValueSchema)),
+    z.record(
+      z.string(),
+      z.lazy(() => redactableValueSchema)
+    ),
   ])
 );
 
-export function looksLikeToken(value: string): boolean {
-  return value.length >= 24 && TOKEN_LIKE.test(value);
-}
+const arraySchema = z.array(z.lazy(() => redactableValueSchema));
 
-export function redactNested(
-  value: RedactableValue,
-  opts?: RedactOptions
-): RedactableValue {
-  const maxDepth = opts?.maxDepth ?? DEFAULT_MAX_DEPTH;
-  return redactNestedInner(value, 0, maxDepth);
-}
+const recordSchema = z.record(
+  z.string(),
+  z.lazy(() => redactableValueSchema)
+);
 
-function redactNestedInner(
+export const looksLikeToken = (value: string): boolean =>
+  value.length >= 24 && TOKEN_LIKE.test(value);
+
+const redactNestedInner = (
   value: RedactableValue,
   depth: number,
   maxDepth: number
-): RedactableValue {
+): RedactableValue => {
   if (depth >= maxDepth) {
     return REDACTED;
   }
 
   const stringValue = stringSchema.safeParse(value);
+
   if (stringValue.success) {
     return stringValue.data.length > NESTED_STRING_REDACT_MIN_LENGTH
       ? REDACTED
@@ -84,6 +83,7 @@ function redactNestedInner(
   }
 
   const primitive = primitiveSchema.safeParse(value);
+
   if (primitive.success) {
     return primitive.data;
   }
@@ -93,15 +93,19 @@ function redactNestedInner(
   }
 
   const bytes = bytesSchema.safeParse(value);
+
   if (bytes.success) {
     const result: { [key: string]: RedactableValue } = {};
-    bytes.data.forEach((byte, index) => {
+
+    for (const [index, byte] of bytes.data.entries()) {
       result[index] = redactNestedInner(byte, depth + 1, maxDepth);
-    });
+    }
+
     return result;
   }
 
   const arrayValue = arraySchema.safeParse(value);
+
   if (arrayValue.success) {
     return arrayValue.data.map((entry) =>
       redactNestedInner(entry, depth + 1, maxDepth)
@@ -109,44 +113,63 @@ function redactNestedInner(
   }
 
   const recordValue = recordSchema.safeParse(value);
+
   if (recordValue.success) {
     const result: { [key: string]: RedactableValue } = {};
+
     for (const [key, entry] of Object.entries(recordValue.data)) {
       result[key] = redactNestedInner(entry, depth + 1, maxDepth);
     }
+
     return result;
   }
 
   return REDACTED;
-}
+};
 
-export function redactValue(
+export const redactNested = (
   value: RedactableValue,
   opts?: RedactOptions
-): RedactableValue {
+): RedactableValue => {
+  const maxDepth = opts?.maxDepth ?? DEFAULT_MAX_DEPTH;
+
+  return redactNestedInner(value, 0, maxDepth);
+};
+
+export const redactValue = (
+  value: RedactableValue,
+  opts?: RedactOptions
+): RedactableValue => {
   const stringValue = stringSchema.safeParse(value);
+
   if (stringValue.success) {
     return REDACTED;
   }
+
   if (value === null || value === undefined) {
     return value;
   }
+
   const primitive = primitiveSchema.safeParse(value);
+
   if (primitive.success) {
     return primitive.data;
   }
-  return redactNested(value, opts);
-}
 
-export function buildSensitiveRefMatcher(
+  return redactNested(value, opts);
+};
+
+export const buildSensitiveRefMatcher = (
   names: readonly string[]
-): (input: string) => boolean {
+): ((input: string) => boolean) => {
   if (names.length === 0) {
     return () => false;
   }
+
   const pattern = new RegExp(
     `(^|[\\s,"\`(.])"?(${names.join("|")})"?($|[\\s,.="\`)])`,
-    "i"
+    "iu"
   );
+
   return (input: string) => pattern.test(input);
-}
+};

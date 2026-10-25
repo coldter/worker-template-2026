@@ -16,18 +16,16 @@ export const RATE_LIMIT_CONFIG = {
   },
 } as const;
 
-export function calculateLockoutExpiry(): Date {
-  return new Date(
-    Date.now() + LOCKOUT_CONFIG.lockoutDurationMinutes * 60 * 1000
-  );
-}
+export const calculateLockoutExpiry = (): Date =>
+  new Date(Date.now() + LOCKOUT_CONFIG.lockoutDurationMinutes * 60 * 1000);
 
-export function isLockoutExpired(lockedUntil: Date | null): boolean {
+export const isLockoutExpired = (lockedUntil: Date | null): boolean => {
   if (!lockedUntil) {
     return true;
   }
+
   return lockedUntil <= new Date();
-}
+};
 
 export const TWO_FACTOR_CONFIG = {
   emailOtpExpiresIn: 300,

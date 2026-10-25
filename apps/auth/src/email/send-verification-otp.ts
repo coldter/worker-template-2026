@@ -2,6 +2,7 @@ import type { DrizzleClient } from "@repo/db";
 import { sendEmail, VerificationOtpEmail } from "@repo/email";
 import type { BrandConfig } from "@repo/shared/brand";
 import { logger } from "@repo/shared/logger";
+
 import { TWO_FACTOR_CONFIG } from "../constants";
 import type { AuthBindings } from "../instance";
 import type { MinimalExecutionContext } from "../lib/execution-context";
@@ -12,24 +13,28 @@ type EmailOTPType =
   | "forget-password"
   | "change-email";
 
-function maskEmail(email: string): string {
+const maskEmail = (email: string): string => {
   const atIndex = email.indexOf("@");
+
   if (atIndex <= 0) {
     return "***";
   }
+
   const localPart = email.slice(0, atIndex);
   const domain = email.slice(atIndex);
   const visible = localPart.slice(0, 2);
-  return `${visible}***${domain}`;
-}
 
-export function createSendVerificationOTP(
-  db: DrizzleClient,
-  env: AuthBindings,
-  ctx: MinimalExecutionContext,
-  brand: BrandConfig
-) {
-  return async ({
+  return `${visible}***${domain}`;
+};
+
+export const createSendVerificationOTP =
+  (
+    db: DrizzleClient,
+    env: AuthBindings,
+    ctx: MinimalExecutionContext,
+    brand: BrandConfig
+  ) =>
+  async ({
     email,
     otp,
     type,
@@ -62,26 +67,29 @@ export function createSendVerificationOTP(
     const templateType = type === "change-email" ? "email-verification" : type;
 
     ctx.waitUntil(
-      sendEmail({
-        apiKey: env.RESEND_API_KEY,
-        from: `${brand.appName} <${env.EMAIL_FROM}>`,
-        props: {
-          brand,
-          expiresIn: `${Math.floor(TWO_FACTOR_CONFIG.emailOtpExpiresIn / 60)} minutes`,
-          otp,
-          type: templateType,
-          userName: user?.name ?? "User",
-        },
-        subject: subjectByType[type],
-        template: VerificationOtpEmail,
-        to: email,
-      }).catch((error) => {
-        logger.error("Failed to send verification OTP email", {
-          email: maskEmail(email),
-          error,
-          type,
-        });
-      })
+      (async () => {
+        try {
+          await sendEmail({
+            apiKey: env.RESEND_API_KEY,
+            from: `${brand.appName} <${env.EMAIL_FROM}>`,
+            props: {
+              brand,
+              expiresIn: `${Math.floor(TWO_FACTOR_CONFIG.emailOtpExpiresIn / 60)} minutes`,
+              otp,
+              type: templateType,
+              userName: user?.name ?? "User",
+            },
+            subject: subjectByType[type],
+            template: VerificationOtpEmail,
+            to: email,
+          });
+        } catch (error) {
+          logger.error("Failed to send verification OTP email", {
+            email: maskEmail(email),
+            error,
+            type,
+          });
+        }
+      })()
     );
   };
-}

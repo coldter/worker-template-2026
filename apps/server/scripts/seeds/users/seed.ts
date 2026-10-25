@@ -2,18 +2,24 @@ import { createAccountId, createUserId } from "@repo/db/ids";
 import { accounts, users } from "@repo/db/schema";
 import { hashPassword } from "better-auth/crypto";
 import chalk from "chalk";
+
 import { SYSTEM_ROLES } from "@/modules/roles";
+
 import { defaultAdminUser } from "../fixtures";
 import { db, isUserSeeded } from "../utils";
 
 export const userSeed = async () => {
-  if (process.env.NODE_ENV === "production") {
+  const nodeEnv: string = process.env.NODE_ENV;
+
+  if (nodeEnv === "production") {
     console.error("Not allowed in production.");
+
     return;
   }
 
   if (await isUserSeeded()) {
     console.warn("Users table is not empty - skipping seed");
+
     return;
   }
 
@@ -35,6 +41,7 @@ export const userSeed = async () => {
 
   if (!user) {
     console.error("Failed to create admin user");
+
     return;
   }
 

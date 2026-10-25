@@ -36,7 +36,7 @@ interface UseMutationFormResult {
   submit: (e?: React.BaseSyntheticEvent) => void;
 }
 
-export function useMutationForm<
+export const useMutationForm = <
   TValues extends FieldValues,
   TVariables,
   TData,
@@ -47,22 +47,33 @@ export function useMutationForm<
   onClose,
   resetOnSuccess = false,
   resetWhen,
-}: UseMutationFormOptions<TValues, TVariables, TData>): UseMutationFormResult {
+}: UseMutationFormOptions<
+  TValues,
+  TVariables,
+  TData
+>): UseMutationFormResult => {
   const resetOpen = resetWhen?.open;
   const resetKey = resetWhen?.key;
-  const resetValuesRef = useRef(resetWhen?.values);
-  resetValuesRef.current = resetWhen?.values;
+  const resetValues = resetWhen?.values;
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: values read via ref; form is stable.
+  const previousResetRef = useRef<{ key: unknown; open: boolean }>({
+    key: resetKey,
+    open: false,
+  });
+
   useEffect(() => {
-    if (!resetOpen) {
+    const { key, open } = previousResetRef.current;
+    const opened = resetOpen && !open;
+    const keyChanged = resetKey !== key;
+
+    previousResetRef.current = { key: resetKey, open: Boolean(resetOpen) };
+
+    if (!(opened || (resetOpen && keyChanged)) || !resetValues) {
       return;
     }
-    const values = resetValuesRef.current;
-    if (values) {
-      form.reset(values);
-    }
-  }, [resetOpen, resetKey]);
+
+    form.reset(resetValues);
+  }, [form, resetKey, resetOpen, resetValues]);
 
   const submit = form.handleSubmit((values) => {
     mutation.mutate(toVariables(values), {
@@ -70,6 +81,7 @@ export function useMutationForm<
         if (resetOnSuccess) {
           form.reset();
         }
+
         onClose();
       },
     });
@@ -79,4 +91,4 @@ export function useMutationForm<
     isPending: mutation.isPending,
     submit,
   };
-}
+};

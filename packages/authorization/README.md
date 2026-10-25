@@ -116,14 +116,17 @@ export const authorization = auth.buildRegistry({
 Wire it into Hono:
 
 ```ts
-import { createAuthorize, getAuthorizedResource } from "@repo/authorization/hono";
+import {
+  createAuthorize,
+  getAuthorizedResource,
+} from "@repo/authorization/hono";
 
 type AppEnv = { Variables: { principal: Principal | null } };
 
-export const authorize = createAuthorize<typeof authorization.resources, AppEnv>(
-  authorization,
-  { resolvePrincipal: (c) => c.get("principal") ?? null }
-);
+export const authorize = createAuthorize<
+  typeof authorization.resources,
+  AppEnv
+>(authorization, { resolvePrincipal: (c) => c.get("principal") ?? null });
 
 app.get("/users", authorize("user", "list"), listUsers);
 

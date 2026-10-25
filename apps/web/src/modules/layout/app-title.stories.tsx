@@ -5,10 +5,12 @@ import {
   createRouter,
   RouterProvider,
 } from "@tanstack/react-router";
+
 import { Sidebar, SidebarContent, SidebarProvider } from "@/modules/ui/sidebar";
+
 import { AppTitle } from "./app-title";
 
-function renderWithProviders() {
+const renderWithProviders = () => {
   const rootRoute = createRootRoute({
     component: () => (
       <SidebarProvider>
@@ -20,12 +22,14 @@ function renderWithProviders() {
       </SidebarProvider>
     ),
   });
+
   const router = createRouter({
     history: createMemoryHistory({ initialEntries: ["/"] }),
     routeTree: rootRoute,
   });
+
   return <RouterProvider router={router} />;
-}
+};
 
 const meta = {
   component: AppTitle,

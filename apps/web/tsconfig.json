@@ -5,6 +5,7 @@
     "jsx": "react-jsx",
     "types": ["vite/client"],
     "allowArbitraryExtensions": true,
+    "allowImportingTsExtensions": true,
     "paths": {
       "@/*": ["./src/*"]
     }

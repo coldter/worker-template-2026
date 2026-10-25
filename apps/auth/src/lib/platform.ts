@@ -16,28 +16,29 @@ export const SESSION_CONFIG = {
 } as const;
 
 const MOBILE_PATTERNS = [
-  /android/i,
-  /iphone/i,
-  /ipad/i,
-  /mobile/i,
-  /okhttp/i,
-  /dart/i,
-  /flutter/i,
-  /react-native/i,
-  /expo/i,
+  /android/iu,
+  /iphone/iu,
+  /ipad/iu,
+  /mobile/iu,
+  /okhttp/iu,
+  /dart/iu,
+  /flutter/iu,
+  /react-native/iu,
+  /expo/iu,
 ];
 
 export const detectPlatform = (userAgent: string | null): Platform => {
   if (!userAgent) {
     return "web";
   }
+
   return MOBILE_PATTERNS.some((pattern) => pattern.test(userAgent))
     ? "mobile"
     : "web";
 };
 
-export type SessionWithAdditionalFields = {
+export interface SessionWithAdditionalFields {
   platform: Platform;
   expiresAt: Date;
   activeOrgRole: string | null;
-};
+}

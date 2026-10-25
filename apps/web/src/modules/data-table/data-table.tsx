@@ -1,4 +1,6 @@
-import { flexRender, type RowData, useTable } from "@tanstack/react-table";
+import { flexRender, useTable } from "@tanstack/react-table";
+import type { RowData } from "@tanstack/react-table";
+
 import {
   Table,
   TableBody,
@@ -7,27 +9,28 @@ import {
   TableHeader,
   TableRow,
 } from "@/modules/ui/table";
+
 import { dataTableFeatures } from "./features";
 import { TableEmpty } from "./table-empty";
 import { TableError } from "./table-error";
 import { TableSkeleton } from "./table-skeleton";
 import type { DataTableProps } from "./types";
 
-type DataTableViewProps<TData extends RowData> = {
+interface DataTableViewProps<TData extends RowData> {
   columns: DataTableProps<TData>["columns"];
   emptyMessage?: string;
   isError?: boolean;
   isLoading?: boolean;
   table: NonNullable<DataTableProps<TData>["table"]>;
-};
+}
 
-function DataTableView<TData extends RowData>({
+const DataTableView = <TData extends RowData>({
   columns,
   emptyMessage,
   isError,
   isLoading,
   table,
-}: DataTableViewProps<TData>) {
+}: DataTableViewProps<TData>) => {
   const renderContent = () => {
     if (isError) {
       return <TableError colSpan={columns.length} />;
@@ -38,6 +41,7 @@ function DataTableView<TData extends RowData>({
     }
 
     const { rows } = table.getRowModel();
+
     if (rows.length === 0) {
       return <TableEmpty colSpan={columns.length} message={emptyMessage} />;
     }
@@ -76,16 +80,16 @@ function DataTableView<TData extends RowData>({
       </Table>
     </div>
   );
-}
+};
 
-function InternalDataTable<TData extends RowData>({
+const InternalDataTable = <TData extends RowData>({
   columns,
   data,
   emptyMessage,
   isError,
   isLoading,
   ...tableProps
-}: Omit<DataTableProps<TData>, "table">) {
+}: Omit<DataTableProps<TData>, "table">) => {
   const table = useTable({
     columns,
     data,
@@ -105,16 +109,16 @@ function InternalDataTable<TData extends RowData>({
       table={table}
     />
   );
-}
+};
 
-export function DataTable<TData extends RowData>({
+export const DataTable = <TData extends RowData>({
   columns,
   emptyMessage,
   isError,
   isLoading,
   table,
   ...tableProps
-}: DataTableProps<TData>) {
+}: DataTableProps<TData>) => {
   if (table) {
     return (
       <DataTableView
@@ -136,4 +140,4 @@ export function DataTable<TData extends RowData>({
       {...tableProps}
     />
   );
-}
+};

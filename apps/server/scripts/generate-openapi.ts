@@ -1,6 +1,6 @@
 import { writeFileSync } from "node:fs";
 import { register } from "node:module";
-import { resolve } from "node:path";
+import path from "node:path";
 
 register("./cloudflare-stub-hooks.mjs", import.meta.url);
 
@@ -19,21 +19,25 @@ process.env.SKIP_DB = "true";
       info: { title: "Server API", version: "v1" },
       openapi: "3.1.0",
     });
-    const outPath = resolve(
+
+    const outPath = path.resolve(
       import.meta.dirname ?? ".",
       "../openapi.cache.json"
     );
+
     writeFileSync(outPath, JSON.stringify(spec, null, 2));
     console.info(`OpenAPI spec written to ${outPath}`);
 
     process.exit(0);
-  } catch (err) {
+  } catch (error) {
     console.error("Failed to generate fresh OpenAPI cache");
-    if (err instanceof Error) {
-      console.error(err.stack || err.message);
+
+    if (error instanceof Error) {
+      console.error(error.stack || error.message);
     } else {
-      console.error(err);
+      console.error(error);
     }
+
     process.exit(1);
   }
 })();

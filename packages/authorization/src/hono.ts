@@ -1,5 +1,6 @@
 import type { Context, Env, MiddlewareHandler } from "hono";
 import { HTTPException } from "hono/http-exception";
+
 import type { RegistryInstance } from "./registry";
 import type { ActionsOf, ResourceTypeFor } from "./resource";
 import type { AnyResourceDef } from "./schema";
@@ -13,66 +14,76 @@ export interface AuthorizationGuard {
   readonly [AUTHORIZATION_GUARD]?: true;
 }
 
-export function isAuthorizationGuard(
+export const isAuthorizationGuard = (
   middleware: unknown
-): middleware is MiddlewareHandler & AuthorizationGuard {
-  return (
-    middleware instanceof Function &&
-    Object.hasOwn(middleware, AUTHORIZATION_GUARD)
-  );
-}
+): middleware is MiddlewareHandler & AuthorizationGuard =>
+  typeof middleware === "function" &&
+  Object.hasOwn(middleware, AUTHORIZATION_GUARD);
 
-function denyStatus(reason: DenyReason): 401 | 403 | 404 | 500 {
+const denyStatus = (reason: DenyReason): 401 | 403 | 404 | 500 => {
   if (reason === "UNAUTHENTICATED") {
     return 401;
   }
+
   if (reason === "RESOURCE_NOT_FOUND") {
     return 404;
   }
+
   if (reason === "EVALUATION_ERROR") {
     return 500;
   }
-  return 403;
-}
 
-function denyMessage(status: 401 | 403 | 404 | 500): string {
+  return 403;
+};
+
+const denyMessage = (status: 401 | 403 | 404 | 500): string => {
   if (status === 401) {
     return "Unauthorized";
   }
+
   if (status === 404) {
     return "Not Found";
   }
+
   if (status === 500) {
     return "Internal Server Error";
   }
-  return "Forbidden";
-}
 
-function denyCode(status: 401 | 403 | 404 | 500): string {
+  return "Forbidden";
+};
+
+const denyCode = (status: 401 | 403 | 404 | 500): string => {
   if (status === 401) {
     return "UNAUTHORIZED";
   }
+
   if (status === 404) {
     return "NOT_FOUND";
   }
+
   if (status === 500) {
     return "INTERNAL_ERROR";
   }
-  return "FORBIDDEN";
-}
 
-function denyResponse(reason: DenyReason): HTTPException {
+  return "FORBIDDEN";
+};
+
+const denyResponse = (reason: DenyReason): HTTPException => {
   const status = denyStatus(reason);
   const message = denyMessage(status);
   const code = denyCode(status);
+
   return new HTTPException(status, {
     message,
-    res: new Response(JSON.stringify({ error: { code, message } }), {
-      headers: { "Content-Type": "application/json" },
-      status,
-    }),
+    res: Response.json(
+      { error: { code, message } },
+      {
+        headers: { "Content-Type": "application/json" },
+        status,
+      }
+    ),
   });
-}
+};
 
 export interface CreateAuthorizeOptions<TEnv extends Env = Env> {
   resolvePrincipal: (c: Context<TEnv>) => Principal | null | undefined;
@@ -93,24 +104,26 @@ export type AuthorizeFunction<
   opts?: AuthorizeOptions<ResourceTypeFor<TResources[K]>>
 ) => MiddlewareHandler;
 
-export function createAuthorize<
+export const createAuthorize = <
   TResources extends Record<string, AnyResourceDef>,
   TEnv extends Env = Env,
 >(
   registry: RegistryInstance<TResources>,
   options: CreateAuthorizeOptions<TEnv>
-): AuthorizeFunction<TResources> {
-  function authorizeImpl<K extends keyof TResources & string>(
+): AuthorizeFunction<TResources> => {
+  const authorizeImpl = <K extends keyof TResources & string>(
     resource: K,
     action: ActionsOf<TResources[K]>,
     opts?: AuthorizeOptions<ResourceTypeFor<TResources[K]>>
-  ): MiddlewareHandler {
+  ): MiddlewareHandler => {
     const middleware: MiddlewareHandler = async (c, next) => {
       const principal = options.resolvePrincipal(c);
 
       let loadedResource: ResourceTypeFor<TResources[K]> | undefined;
+
       if (opts?.loadResource) {
         const loaded = await opts.loadResource(c);
+
         if (loaded === null || loaded === undefined) {
           const globalDecision = await registry.can(
             principal,
@@ -124,6 +137,7 @@ export function createAuthorize<
 
           throw denyResponse("NO_MATCHING_POLICY");
         }
+
         loadedResource = loaded;
       }
 
@@ -141,6 +155,7 @@ export function createAuthorize<
             })
           );
         }
+
         throw denyResponse(decision.reason);
       }
 
@@ -148,19 +163,20 @@ export function createAuthorize<
         c.set(AUTHORIZED_RESOURCE_KEY, loadedResource);
       }
 
-      await next();
+      return next();
     };
 
     Object.defineProperty(middleware, AUTHORIZATION_GUARD, { value: true });
 
     return middleware;
-  }
+  };
 
   return authorizeImpl;
-}
+};
 
-export function getAuthorizedResource<T>(c: Context): T {
+export const getAuthorizedResource = <T>(c: Context): T => {
   const value = c.get(AUTHORIZED_RESOURCE_KEY);
+
   if (value === undefined || value === null) {
     throw new Error(
       "getAuthorizedResource() called but no resource was loaded. " +
@@ -169,4 +185,4 @@ export function getAuthorizedResource<T>(c: Context): T {
   }
 
   return value;
-}
+};

@@ -1,6 +1,7 @@
 import { authorize } from "@/auth/middleware";
 import { commonErrorResponses } from "@/lib/common-response";
 import { createRouteConfig } from "@/lib/route-config";
+
 import { loadCurrentUserResource, loadUserResource } from "./auth-loader";
 import {
   createUserBodySchema,

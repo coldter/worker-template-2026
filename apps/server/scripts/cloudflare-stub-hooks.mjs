@@ -12,12 +12,13 @@ const STUB_SOURCE = [
   "export class WorkflowEntrypoint {}",
 ].join("\n");
 
-export async function resolve(specifier, context, nextResolve) {
+export const resolve = (specifier, context, nextResolve) => {
   if (specifier.startsWith("cloudflare:")) {
     return {
       shortCircuit: true,
       url: `data:text/javascript,${encodeURIComponent(STUB_SOURCE)}`,
     };
   }
+
   return nextResolve(specifier, context);
-}
+};

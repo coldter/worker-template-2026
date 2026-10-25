@@ -2,6 +2,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
+
 import { Button } from "@/modules/ui/button";
 import {
   Form,
@@ -13,6 +14,7 @@ import {
 } from "@/modules/ui/form";
 import { Skeleton } from "@/modules/ui/skeleton";
 import { Switch } from "@/modules/ui/switch";
+
 import {
   useNotificationPreferencesQuery,
   useUpdateNotificationPreferencesMutation,
@@ -25,7 +27,7 @@ const notificationsFormSchema = z.object({
 
 type NotificationsFormValues = z.infer<typeof notificationsFormSchema>;
 
-export function NotificationsForm() {
+export const NotificationsForm = () => {
   const { data: preferences, isLoading } = useNotificationPreferencesQuery();
   const updateMutation = useUpdateNotificationPreferencesMutation();
 
@@ -46,9 +48,9 @@ export function NotificationsForm() {
     }
   }, [preferences, form]);
 
-  function onSubmit(data: NotificationsFormValues) {
+  const onSubmit = (data: NotificationsFormValues) => {
     updateMutation.mutate(data);
-  }
+  };
 
   if (isLoading) {
     return (
@@ -81,7 +83,7 @@ export function NotificationsForm() {
                 <FormControl>
                   <Switch
                     checked={field.value}
-                    onCheckedChange={field.onChange}
+                    onCheckedChange={(checked) => field.onChange(checked)}
                   />
                 </FormControl>
               </FormItem>
@@ -103,7 +105,7 @@ export function NotificationsForm() {
                 <FormControl>
                   <Switch
                     checked={field.value}
-                    onCheckedChange={field.onChange}
+                    onCheckedChange={(checked) => field.onChange(checked)}
                   />
                 </FormControl>
               </FormItem>
@@ -129,4 +131,4 @@ export function NotificationsForm() {
       </form>
     </Form>
   );
-}
+};

@@ -1,6 +1,9 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useEffect } from "react";
-import { type DownAlertType, useAlertStore } from "@/store/alert";
+
+import { useAlertStore } from "@/store/alert";
+import type { DownAlertType } from "@/store/alert";
+
 import { DownAlert } from "./down-alert";
 
 const meta = {
@@ -22,19 +25,21 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-function WithAlert({ alert }: { alert: DownAlertType }) {
+const WithAlert = ({ alert }: { alert: DownAlertType }) => {
   const setDownAlert = useAlertStore((state) => state.setDownAlert);
   useEffect(() => {
     setDownAlert(alert);
+
     return () => setDownAlert(null);
   }, [alert, setDownAlert]);
+
   return (
-    <div className="min-h-40 p-8 text-muted-foreground text-sm">
+    <div className="text-muted-foreground min-h-40 p-8 text-sm">
       <DownAlert />
       Background page content.
     </div>
   );
-}
+};
 
 export const AuthExpired: Story = {
   render: () => <WithAlert alert="auth_expired" />,

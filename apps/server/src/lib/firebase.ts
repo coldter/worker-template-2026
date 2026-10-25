@@ -1,6 +1,7 @@
-import { env } from "cloudflare:workers";
 import { logger } from "@repo/shared/logger";
+import { env } from "cloudflare:workers";
 import { z } from "zod";
+
 import type { ServiceAccount } from "./firebase-token";
 import { getAccessToken, parseServiceAccount } from "./firebase-token";
 
@@ -17,7 +18,7 @@ interface PushSendResult {
 }
 
 interface PushProvider {
-  send(message: PushMessage): Promise<PushSendResult>;
+  send: (message: PushMessage) => Promise<PushSendResult>;
 }
 
 const fcmSuccessSchema = z.object({
@@ -41,17 +42,21 @@ const fcmErrorSchema = z.object({
     .optional(),
 });
 
-class ConsolePushProvider implements PushProvider {
-  async send(message: PushMessage): Promise<PushSendResult> {
+const createConsolePushProvider = (): PushProvider => ({
+  send: (message) => {
     logger.info("Console push provider: would send push notification", {
       body: message.data.body,
       title: message.data.title,
       token: `${message.token.slice(0, 12)}...`,
       type: message.data.type,
     });
-    return { messageId: `console_${Date.now()}`, success: true };
-  }
-}
+
+    return Promise.resolve({
+      messageId: `console_${Date.now()}`,
+      success: true,
+    });
+  },
+});
 
 const INVALID_TOKEN_ERROR_CODES = new Set([
   "UNREGISTERED",
@@ -59,16 +64,12 @@ const INVALID_TOKEN_ERROR_CODES = new Set([
   "SENDER_ID_MISMATCH",
 ]);
 
-class FcmHttpProvider implements PushProvider {
-  private readonly serviceAccount: ServiceAccount;
-
-  constructor(serviceAccount: ServiceAccount) {
-    this.serviceAccount = serviceAccount;
-  }
-
-  async send(message: PushMessage): Promise<PushSendResult> {
-    const accessToken = await getAccessToken(this.serviceAccount);
-    const url = `https://fcm.googleapis.com/v1/projects/${this.serviceAccount.project_id}/messages:send`;
+const createFcmPushProvider = (
+  serviceAccount: ServiceAccount
+): PushProvider => ({
+  send: async (message) => {
+    const accessToken = await getAccessToken(serviceAccount);
+    const url = `https://fcm.googleapis.com/v1/projects/${serviceAccount.project_id}/messages:send`;
 
     const response = await fetch(url, {
       body: JSON.stringify({
@@ -87,17 +88,21 @@ class FcmHttpProvider implements PushProvider {
     if (response.ok) {
       const rawResult: unknown = await response.json();
       const parsedResult = fcmSuccessSchema.safeParse(rawResult);
+
       if (!parsedResult.success) {
         throw new Error("FCM success response did not match expected shape");
       }
+
       return { messageId: parsedResult.data.name, success: true };
     }
 
     const rawError: unknown = await response.json();
     const parsedError = fcmErrorSchema.safeParse(rawError);
+
     if (!parsedError.success) {
       throw new Error("FCM error response did not match expected shape");
     }
+
     const errorBody = parsedError.data;
 
     const fcmErrorCode = errorBody.error?.details?.find(
@@ -115,25 +120,26 @@ class FcmHttpProvider implements PushProvider {
       invalidToken: isInvalidToken,
       success: false,
     };
-  }
-}
+  },
+});
 
 let pushProvider: PushProvider | null = null;
 
-export function getPushProvider(): PushProvider {
+export const getPushProvider = (): PushProvider => {
   if (pushProvider) {
     return pushProvider;
   }
 
   const configuredProvider = String(env.FCM_PROVIDER).toLowerCase();
+
   const wantsFcm =
     configuredProvider === "fcm" || configuredProvider === "firebase";
 
   if (wantsFcm && env.FIREBASE_SERVICE_ACCOUNT_KEY_BASE64) {
-    pushProvider = new FcmHttpProvider(parseServiceAccount());
+    pushProvider = createFcmPushProvider(parseServiceAccount());
     logger.info("FCM HTTP v1 push provider initialized");
   } else {
-    pushProvider = new ConsolePushProvider();
+    pushProvider = createConsolePushProvider();
     logger.warn("Console push provider initialized", {
       configuredProvider,
       hasServiceAccount: Boolean(env.FIREBASE_SERVICE_ACCOUNT_KEY_BASE64),
@@ -141,6 +147,6 @@ export function getPushProvider(): PushProvider {
   }
 
   return pushProvider;
-}
+};
 
 export type { PushMessage, PushProvider, PushSendResult };

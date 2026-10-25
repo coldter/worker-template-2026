@@ -6,33 +6,52 @@ import {
   Outlet,
   RouterProvider,
 } from "@tanstack/react-router";
+import { createContext, useContext, useMemo } from "react";
+import { fn } from "storybook/test";
+
 import AppError from "./app-error";
 
-function StoryRouter({ error }: { error: Error }) {
-  const rootRoute = createRootRoute({
-    component: () => (
-      <>
-        <Outlet />
-        <AppError
-          error={error}
-          info={{ componentStack: "" }}
-          reset={() => undefined}
-        />
-      </>
-    ),
-  });
-  const router = createRouter({
-    history: createMemoryHistory({ initialEntries: ["/"] }),
-    routeTree: rootRoute,
-  });
-  return <RouterProvider router={router} />;
-}
+const noop = fn();
+
+const StoryErrorContext = createContext<Error | null>(null);
+
+const StoryRoot = () => {
+  const error = useContext(StoryErrorContext);
+
+  if (!error) {
+    return <Outlet />;
+  }
+
+  return (
+    <>
+      <Outlet />
+      <AppError error={error} info={{ componentStack: "" }} reset={noop} />
+    </>
+  );
+};
+
+const StoryRouter = ({ error }: { error: Error }) => {
+  const router = useMemo(() => {
+    const storyRoute = createRootRoute({ component: StoryRoot });
+
+    return createRouter({
+      history: createMemoryHistory({ initialEntries: ["/"] }),
+      routeTree: storyRoute,
+    });
+  }, []);
+
+  return (
+    <StoryErrorContext value={error}>
+      <RouterProvider router={router} />
+    </StoryErrorContext>
+  );
+};
 
 const meta = {
   args: {
     error: new Error("Placeholder"),
     info: { componentStack: "" },
-    reset: () => undefined,
+    reset: noop,
   },
   component: AppError,
   parameters: {
@@ -63,6 +82,7 @@ export const WithStack: Story = {
     const err = new Error("Unexpected token in JSON at position 42");
     err.stack =
       "Error: Unexpected token in JSON at position 42\n    at parseResponse (api.ts:112:9)\n    at fetchUser (api.ts:48:22)";
+
     return <StoryRouter error={err} />;
   },
 };

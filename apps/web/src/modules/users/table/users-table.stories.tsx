@@ -1,7 +1,9 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { type ColumnDef, useTable } from "@tanstack/react-table";
+import { useTable } from "@tanstack/react-table";
+import type { ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns";
 import { CheckCircle2, Circle, Lock } from "lucide-react";
+
 import { DataTableColumnHeader } from "@/modules/data-table/column-header";
 import { DataTable } from "@/modules/data-table/data-table";
 import type { DataTableFeatures } from "@/modules/data-table/features";
@@ -9,6 +11,7 @@ import { dataTableFeatures } from "@/modules/data-table/features";
 import { DataTablePagination } from "@/modules/data-table/pagination";
 import { DataTableToolbar } from "@/modules/data-table/toolbar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/modules/ui/avatar";
+
 import { UserRoleBadges } from "../components/user-role-badges";
 import { UserStatusBadge } from "../components/user-status-badge";
 import type { User } from "../types";
@@ -18,12 +21,14 @@ const mockUsersColumns: ColumnDef<DataTableFeatures, User>[] = [
     accessorKey: "name",
     cell: ({ row }) => {
       const user = row.original;
+
       const initials = user.name
         .split(" ")
         .map((n) => n[0])
         .join("")
         .toUpperCase()
         .slice(0, 2);
+
       return (
         <div className="flex items-center gap-3">
           <Avatar className="h-9 w-9">
@@ -41,6 +46,7 @@ const mockUsersColumns: ColumnDef<DataTableFeatures, User>[] = [
     filterFn: (row, _id, value: string) => {
       const user = row.original;
       const needle = value.toLowerCase();
+
       return (
         user.name.toLowerCase().includes(needle) ||
         user.email.toLowerCase().includes(needle)
@@ -220,13 +226,17 @@ const statusOptions = [
   { icon: Lock, label: "Locked", value: "locked" },
 ];
 
-type UsersTableStoryProps = {
+interface UsersTableStoryProps {
   data: User[];
   isLoading?: boolean;
   isError?: boolean;
-};
+}
 
-function UsersTableStory({ data, isLoading, isError }: UsersTableStoryProps) {
+const UsersTableStory = ({
+  data,
+  isLoading,
+  isError,
+}: UsersTableStoryProps) => {
   const table = useTable({
     columns: mockUsersColumns,
     data,
@@ -255,7 +265,7 @@ function UsersTableStory({ data, isLoading, isError }: UsersTableStoryProps) {
       <DataTablePagination table={table} />
     </div>
   );
-}
+};
 
 const meta = {
   component: UsersTableStory,

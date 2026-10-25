@@ -1,72 +1,84 @@
 import { Cross2Icon } from "@radix-ui/react-icons";
 import type { ReactTable, RowData } from "@tanstack/react-table";
 import { useEffect, useEffectEvent, useState } from "react";
+
 import { Button } from "@/modules/ui/button";
 import { Input } from "@/modules/ui/input";
+
 import { DataTableFacetedFilter } from "./faceted-filter";
 import type { DataTableFeatures } from "./features";
 import { DataTableViewOptions } from "./view-options";
 
 const SEARCH_DEBOUNCE_MS = 300;
 
-type DebouncedInputProps = {
+interface DebouncedInputProps {
   "aria-label": string;
   className?: string;
   onValueChange: (value: string) => void;
   placeholder: string;
   value: string;
-};
+}
 
-function DebouncedInput({
+const DebouncedInput = ({
   onValueChange,
   value,
   ...props
-}: DebouncedInputProps) {
-  const [localValue, setLocalValue] = useState(value);
+}: DebouncedInputProps) => {
+  const [input, setInput] = useState({ local: value, synced: value });
   const commit = useEffectEvent((next: string) => onValueChange(next));
 
-  useEffect(() => {
-    setLocalValue(value);
-  }, [value]);
+  if (value !== input.synced) {
+    setInput({ local: value, synced: value });
+  }
+
+  const localValue = value === input.synced ? input.local : value;
 
   useEffect(() => {
     if (localValue === value) {
       return;
     }
+
     const timer = setTimeout(() => commit(localValue), SEARCH_DEBOUNCE_MS);
+
     return () => clearTimeout(timer);
   }, [localValue, value]);
 
   return (
     <Input
       {...props}
-      onChange={(event) => setLocalValue(event.target.value)}
+      onChange={(event) => {
+        setInput({ local: event.target.value, synced: value });
+      }}
       value={localValue}
     />
   );
+};
+
+interface DataTableFilter {
+  columnId: string;
+  title: string;
+  options: {
+    label: string;
+    value: string;
+    icon?: React.ComponentType<{ className?: string }>;
+  }[];
 }
 
-type DataTableToolbarProps<TData extends RowData> = {
+const EMPTY_FILTERS: DataTableFilter[] = [];
+
+interface DataTableToolbarProps<TData extends RowData> {
   table: ReactTable<DataTableFeatures, TData>;
   searchPlaceholder?: string;
   searchKey?: string;
-  filters?: {
-    columnId: string;
-    title: string;
-    options: {
-      label: string;
-      value: string;
-      icon?: React.ComponentType<{ className?: string }>;
-    }[];
-  }[];
-};
+  filters?: DataTableFilter[];
+}
 
-export function DataTableToolbar<TData extends RowData>({
+export const DataTableToolbar = <TData extends RowData>({
   table,
   searchPlaceholder = "Filter...",
   searchKey,
-  filters = [],
-}: DataTableToolbarProps<TData>) {
+  filters = EMPTY_FILTERS,
+}: DataTableToolbarProps<TData>) => {
   const isFiltered =
     table.state.columnFilters.length > 0 || table.state.globalFilter;
 
@@ -95,9 +107,11 @@ export function DataTableToolbar<TData extends RowData>({
         <div className="flex gap-x-2">
           {filters.map((filter) => {
             const column = table.getColumn(filter.columnId);
+
             if (!column) {
               return null;
             }
+
             return (
               <DataTableFacetedFilter
                 column={column}
@@ -125,4 +139,4 @@ export function DataTableToolbar<TData extends RowData>({
       <DataTableViewOptions table={table} />
     </div>
   );
-}
+};

@@ -13,6 +13,7 @@ import {
   text,
   varchar,
 } from "drizzle-orm/pg-core";
+
 import { createdAt } from "../helpers";
 import { generatePrefixedCuid, ID_PREFIXES } from "../ids";
 import { users } from "./auth";
@@ -57,4 +58,5 @@ export const auditLogs = pgTable(
 );
 
 export type AuditLog = typeof auditLogs.$inferSelect;
+
 export type NewAuditLog = typeof auditLogs.$inferInsert;

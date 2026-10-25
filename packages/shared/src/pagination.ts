@@ -69,18 +69,20 @@ export const PAGINATION_DEFAULTS = {
   PER_PAGE: 20,
 } as const;
 
-export function getPaginationParams(query: Partial<PaginationQuery>) {
+export const getPaginationParams = (query: Partial<PaginationQuery>) => {
   const rawPage = query.page ?? PAGINATION_DEFAULTS.PAGE;
   const page = Math.max(1, Math.trunc(rawPage));
+
   const perPage = Math.min(
     query.perPage ?? PAGINATION_DEFAULTS.PER_PAGE,
     PAGINATION_DEFAULTS.MAX_PER_PAGE
   );
+
   const offset = (page - 1) * perPage;
   const { sort, order = PAGINATION_DEFAULTS.ORDER } = query;
 
   return { offset, order, page, perPage, sort } as const;
-}
+};
 
 export function createPaginatedResponse<T>(options: {
   data: T[];
@@ -119,27 +121,24 @@ export function createPaginatedResponse<T, R>(options: {
   };
 }
 
-function valueAt<T extends Record<string, unknown>>(
+const valueAt = <T extends Record<string, unknown>>(
   columns: T,
   key: keyof T
-): T[keyof T] {
-  return columns[key];
-}
+): T[keyof T] => columns[key];
 
-function isOwnKey<T extends Record<string, unknown>>(
+const isOwnKey = <T extends Record<string, unknown>>(
   columns: T,
   key: PropertyKey
-): key is keyof T {
-  return Object.hasOwn(columns, key);
-}
+): key is keyof T => Object.hasOwn(columns, key);
 
-export function resolveSortColumn<T extends Record<string, unknown>>(
+export const resolveSortColumn = <T extends Record<string, unknown>>(
   columns: T,
   sort: string | undefined,
   fallback: T[keyof T]
-): T[keyof T] {
+): T[keyof T] => {
   if (sort !== undefined && isOwnKey(columns, sort)) {
     return valueAt(columns, sort);
   }
+
   return fallback;
-}
+};

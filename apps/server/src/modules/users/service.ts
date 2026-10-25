@@ -1,28 +1,20 @@
 import {
   activateUser,
   clearUserLockout,
-  type DrizzleClient,
   deactivateUser,
   deleteUserSessions,
   firstOrThrow,
 } from "@repo/db";
+import type { DrizzleClient } from "@repo/db";
 import { accounts, users } from "@repo/db/schema";
 import { logger } from "@repo/shared/logger";
 import { hashPassword } from "better-auth/crypto";
-import {
-  and,
-  arrayContains,
-  count,
-  eq,
-  ilike,
-  or,
-  type SQL,
-} from "drizzle-orm";
+import { and, arrayContains, count, eq, ilike, or } from "drizzle-orm";
+import type { SQL } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
-import {
-  type AuditContext,
-  auditTransaction,
-} from "@/modules/audit-logs/auditable";
+
+import { auditTransaction } from "@/modules/audit-logs/auditable";
+import type { AuditContext } from "@/modules/audit-logs/auditable";
 import { AUDIT_EVENTS, TARGET_TYPES } from "@/modules/audit-logs/constants";
 import type { AuditLogMetadata } from "@/modules/audit-logs/types";
 import {
@@ -44,12 +36,12 @@ import type {
 } from "./types";
 import { onUserStatusChange } from "./user-status-hooks";
 
-async function safeNotifyStatusChange(
+const safeNotifyStatusChange = async (
   userId: string,
   newStatus: string,
   previousStatus: string,
   reason: string | null
-): Promise<void> {
+): Promise<void> => {
   try {
     await onUserStatusChange(userId, newStatus, previousStatus, reason);
   } catch (error) {
@@ -60,7 +52,7 @@ async function safeNotifyStatusChange(
       userId,
     });
   }
-}
+};
 
 export const userService = {
   async activate(
@@ -81,9 +73,11 @@ export const userService = {
       if (!existing) {
         throw new UserNotFoundError(id);
       }
+
       previousStatus = existing.status;
 
       const updated = await activateUser(tx, id);
+
       if (!updated) {
         throw new UserNotFoundError(id);
       }
@@ -166,9 +160,11 @@ export const userService = {
       if (!existing) {
         throw new UserNotFoundError(id);
       }
+
       previousStatus = existing.status;
 
       const updated = await deactivateUser(tx, id, actorId, reason);
+
       if (!updated) {
         throw new UserNotFoundError(id);
       }
@@ -202,6 +198,7 @@ export const userService = {
       const nameMatch = ilike(users.name, searchPattern);
       const emailMatch = ilike(users.email, searchPattern);
       const searchCondition = or(nameMatch, emailMatch);
+
       if (searchCondition) {
         conditions.push(searchCondition);
       }
@@ -278,6 +275,7 @@ export const userService = {
       .from(users)
       .where(eq(users.id, id))
       .limit(1);
+
     return row ?? null;
   },
 
@@ -287,6 +285,7 @@ export const userService = {
       .from(users)
       .where(eq(users.id, id))
       .limit(1);
+
     return user ?? null;
   },
 
@@ -311,6 +310,7 @@ export const userService = {
       .from(users)
       .where(eq(users.id, id))
       .limit(1);
+
     return user ?? null;
   },
 
@@ -332,9 +332,11 @@ export const userService = {
       if (!existing) {
         throw new UserNotFoundError(id);
       }
+
       previousStatus = existing.status;
 
       const updated = await clearUserLockout(tx, id);
+
       if (!updated) {
         throw new UserNotFoundError(id);
       }
@@ -350,7 +352,7 @@ export const userService = {
     await safeNotifyStatusChange(id, USER_STATUS.ACTIVE, previousStatus, null);
   },
 
-  async update(
+  update(
     db: DrizzleClient,
     id: string,
     input: UpdateUserInput,
@@ -412,7 +414,7 @@ export const userService = {
     });
   },
 
-  async updateRoles(
+  updateRoles(
     db: DrizzleClient,
     id: string,
     input: UpdateUserRolesInput,

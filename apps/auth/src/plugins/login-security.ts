@@ -1,10 +1,10 @@
 import {
   clearUserLockout,
-  type DrizzleClient,
   resetFailedLoginAttemptsByEmail,
   setUserFailedAttempts,
   setUserLocked,
 } from "@repo/db";
+import type { DrizzleClient } from "@repo/db";
 import type { BetterAuthPlugin } from "better-auth";
 import { APIError, createAuthMiddleware } from "better-auth/api";
 import { z } from "zod";
@@ -20,12 +20,15 @@ const hookBodySchema = z.object({
   email: z.string(),
 });
 
-type HookCtxWithBody = { body?: unknown };
-
-function extractEmailFromHookBody(ctx: HookCtxWithBody): string | null {
-  const parsed = hookBodySchema.safeParse(ctx.body);
-  return parsed.success ? parsed.data.email.trim().toLowerCase() : null;
+interface HookCtxWithBody {
+  body?: unknown;
 }
+
+const extractEmailFromHookBody = (ctx: HookCtxWithBody): string | null => {
+  const parsed = hookBodySchema.safeParse(ctx.body);
+
+  return parsed.success ? parsed.data.email.trim().toLowerCase() : null;
+};
 
 const twoFactorRedirectSchema = z
   .object({
@@ -33,12 +36,13 @@ const twoFactorRedirectSchema = z
   })
   .passthrough();
 
-function isTwoFactorRedirect(
+const isTwoFactorRedirect = (
   returned: unknown
-): returned is { twoFactorRedirect: true } {
+): returned is { twoFactorRedirect: true } => {
   const parsed = twoFactorRedirectSchema.safeParse(returned);
+
   return parsed.success && parsed.data.twoFactorRedirect === true;
-}
+};
 
 const twoFactorVerifySuccessSchema = z
   .object({
@@ -65,12 +69,15 @@ const credentialFailureBodySchema = z.object({
   code: z.literal(BETTER_AUTH_CREDENTIALS_FAILURE_CODE),
 });
 
-export function isCredentialFailure(returned: unknown): returned is APIError {
+export const isCredentialFailure = (
+  returned: unknown
+): returned is APIError => {
   if (!(returned instanceof APIError) || returned.status !== "UNAUTHORIZED") {
     return false;
   }
+
   return credentialFailureBodySchema.safeParse(returned.body).success;
-}
+};
 
 export const loginSecurityPlugin = (db: DrizzleClient) =>
   ({
@@ -79,6 +86,7 @@ export const loginSecurityPlugin = (db: DrizzleClient) =>
         {
           handler: createAuthMiddleware(async (ctx) => {
             const email = extractEmailFromHookBody(ctx);
+
             if (!email) {
               return;
             }
@@ -95,6 +103,7 @@ export const loginSecurityPlugin = (db: DrizzleClient) =>
               }
 
               await resetFailedLoginAttemptsByEmail(db, email);
+
               return;
             }
 
@@ -107,6 +116,7 @@ export const loginSecurityPlugin = (db: DrizzleClient) =>
             }
 
             const newFailedAttempts = (user.failedLoginAttempts ?? 0) + 1;
+
             const shouldLock =
               newFailedAttempts >= LOCKOUT_CONFIG.maxFailedAttempts;
 
@@ -127,6 +137,7 @@ export const loginSecurityPlugin = (db: DrizzleClient) =>
 
             const remainingAttempts =
               LOCKOUT_CONFIG.maxFailedAttempts - newFailedAttempts;
+
             throw new APIError("UNAUTHORIZED", {
               code: AUTH_ERROR_CODES.INVALID_CREDENTIALS,
               message: `Invalid credentials. ${remainingAttempts} attempt(s) remaining.`,
@@ -138,12 +149,14 @@ export const loginSecurityPlugin = (db: DrizzleClient) =>
         {
           handler: createAuthMiddleware(async (ctx) => {
             const { returned } = ctx.context;
+
             if (returned instanceof APIError) {
               return;
             }
 
             const parsed = twoFactorVerifySuccessSchema.safeParse(returned);
             const email = parsed.success ? parsed.data.user?.email : undefined;
+
             if (!email) {
               return;
             }
@@ -157,6 +170,7 @@ export const loginSecurityPlugin = (db: DrizzleClient) =>
         {
           handler: createAuthMiddleware(async (ctx) => {
             const email = extractEmailFromHookBody(ctx);
+
             if (!email) {
               return;
             }
@@ -177,6 +191,7 @@ export const loginSecurityPlugin = (db: DrizzleClient) =>
         {
           handler: createAuthMiddleware(async (ctx) => {
             const email = extractEmailFromHookBody(ctx);
+
             if (!email) {
               return;
             }

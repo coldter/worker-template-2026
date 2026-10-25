@@ -6,10 +6,10 @@ interface AuthStepTransitionProps {
   step: string;
 }
 
-export function AuthStepTransition({
+export const AuthStepTransition = ({
   children,
   step,
-}: AuthStepTransitionProps) {
+}: AuthStepTransitionProps) => {
   const shouldReduceMotion = useReducedMotion();
 
   const variants = {
@@ -46,4 +46,4 @@ export function AuthStepTransition({
       </motion.div>
     </AnimatePresence>
   );
-}
+};

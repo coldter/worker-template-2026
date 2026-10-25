@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { ArrowRight, Plus, Trash2 } from "lucide-react";
+
 import { Button } from "./button";
 
 const meta = {

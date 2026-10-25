@@ -21,10 +21,7 @@ jobs:
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U postgres"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
+          --health-cmd "pg_isready -U postgres" --health-interval 10s --health-timeout 5s --health-retries 5
     env:
       DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres
       DATABASE_TEST_URL: postgres://postgres:postgres@localhost:5432/postgres
@@ -36,5 +33,5 @@ jobs:
       - run: bun install --frozen-lockfile
       - run: bun run check
       - run: bun run verify:generated
-      - run: bun run check-types
+      - run: bun run typecheck
       - run: bun run test

@@ -1,11 +1,15 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { type ColumnDef, useTable } from "@tanstack/react-table";
+import { useTable } from "@tanstack/react-table";
+import type { ColumnDef } from "@tanstack/react-table";
 import { CheckCircle2, Circle, Lock } from "lucide-react";
+
 import { DataTableFacetedFilter } from "./faceted-filter";
 import type { DataTableFeatures } from "./features";
 import { dataTableFeatures } from "./features";
 
-type Row = { status: "active" | "inactive" | "locked" };
+interface Row {
+  status: "active" | "inactive" | "locked";
+}
 
 const rows: Row[] = [
   { status: "active" },
@@ -28,14 +32,17 @@ const options = [
   { icon: Lock, label: "Locked", value: "locked" },
 ];
 
-type FilterHostProps = { title: string };
+interface FilterHostProps {
+  title: string;
+}
 
-function FilterHost({ title }: FilterHostProps) {
+const FilterHost = ({ title }: FilterHostProps) => {
   const table = useTable({
     columns,
     data: rows,
     features: dataTableFeatures,
   });
+
   return (
     <DataTableFacetedFilter
       column={table.getColumn("status")}
@@ -43,7 +50,7 @@ function FilterHost({ title }: FilterHostProps) {
       title={title}
     />
   );
-}
+};
 
 const meta = {
   component: FilterHost,

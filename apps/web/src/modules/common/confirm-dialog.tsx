@@ -10,7 +10,7 @@ import {
 } from "@/modules/ui/alert-dialog";
 import { Button } from "@/modules/ui/button";
 
-type ConfirmDialogProps = {
+interface ConfirmDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   title: React.ReactNode;
@@ -23,9 +23,9 @@ type ConfirmDialogProps = {
   isLoading?: boolean;
   className?: string;
   children?: React.ReactNode;
-};
+}
 
-export function ConfirmDialog(props: ConfirmDialogProps) {
+export const ConfirmDialog = (props: ConfirmDialogProps) => {
   const {
     title,
     desc,
@@ -39,6 +39,7 @@ export function ConfirmDialog(props: ConfirmDialogProps) {
     handleConfirm,
     ...actions
   } = props;
+
   return (
     <AlertDialog {...actions}>
       <AlertDialogContent className={cn(className)}>
@@ -64,4 +65,4 @@ export function ConfirmDialog(props: ConfirmDialogProps) {
       </AlertDialogContent>
     </AlertDialog>
   );
-}
+};

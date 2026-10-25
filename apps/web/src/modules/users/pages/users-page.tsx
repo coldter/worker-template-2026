@@ -1,12 +1,13 @@
 import { Plus } from "lucide-react";
 import { useState } from "react";
+
 import { Authorized } from "@/components/authorized";
 import { Button } from "@/modules/ui/button";
 
 import { CreateUserDialog } from "../dialogs/create-user-dialog";
 import { UsersTable } from "../table";
 
-export function UsersPage() {
+export const UsersPage = () => {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
 
   return (
@@ -35,4 +36,4 @@ export function UsersPage() {
       />
     </div>
   );
-}
+};

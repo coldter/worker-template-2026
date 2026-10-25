@@ -1,8 +1,9 @@
 import { useRouterState } from "@tanstack/react-router";
 import { useEffect, useRef } from "react";
-import LoadingBar, { type LoadingBarRef } from "react-top-loading-bar";
+import LoadingBar from "react-top-loading-bar";
+import type { LoadingBarRef } from "react-top-loading-bar";
 
-export function NavigationProgress() {
+export const NavigationProgress = () => {
   const ref = useRef<LoadingBarRef>(null);
   const state = useRouterState();
 
@@ -22,4 +23,4 @@ export function NavigationProgress() {
       shadow={true}
     />
   );
-}
+};

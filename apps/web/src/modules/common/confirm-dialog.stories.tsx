@@ -1,11 +1,15 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import { fn } from "storybook/test";
+
 import { ConfirmDialog } from "./confirm-dialog";
+
+const noop = fn();
 
 const meta = {
   args: {
     desc: "This will permanently remove the project and all associated data. This action cannot be undone.",
-    handleConfirm: () => undefined,
-    onOpenChange: () => undefined,
+    handleConfirm: noop,
+    onOpenChange: noop,
     open: true,
     title: "Delete project?",
   },
@@ -50,7 +54,7 @@ export const WithChildren: Story = {
   args: {
     children: (
       <p className="text-muted-foreground text-sm">
-        Note: archived items don't count toward your plan limits.
+        Note: archived items don&apos;t count toward your plan limits.
       </p>
     ),
     desc: "Archived items are moved out of the active workspace. You can restore them at any time.",

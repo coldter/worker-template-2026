@@ -1,4 +1,5 @@
 import { logger } from "@repo/shared/logger";
+
 import {
   AUDIT_LOG_DLQ_NAME,
   AUDIT_LOG_QUEUE_NAME,
@@ -17,20 +18,22 @@ const QUEUE_CONSUMERS = new Map<string, QueueConsumer>([
   [AUDIT_LOG_DLQ_NAME, handleAuditLogDlq],
 ]);
 
-function recordBatchMetrics(
+const recordBatchMetrics = (
   batch: MessageBatch,
   env: CloudflareBindings,
   outcome: "ok" | "error",
   durationMs: number
-): void {
+): void => {
   try {
     const now = Date.now();
     let oldestLagMs = 0;
     let maxAttempts = 0;
+
     for (const message of batch.messages) {
       oldestLagMs = Math.max(oldestLagMs, now - message.timestamp.getTime());
       maxAttempts = Math.max(maxAttempts, message.attempts);
     }
+
     env.ANALYTICS?.writeDataPoint({
       blobs: [
         "queue",
@@ -41,18 +44,18 @@ function recordBatchMetrics(
       doubles: [batch.messages.length, durationMs, oldestLagMs, maxAttempts],
       indexes: [batch.queue],
     });
-  } catch (err) {
+  } catch (error) {
     logger.debug("Queue analytics writeDataPoint failed", {
-      error: err,
+      error,
     });
   }
-}
+};
 
-export async function routeQueueBatch(
+export const routeQueueBatch = async (
   batch: MessageBatch,
   env: CloudflareBindings,
   ctx: ExecutionContext
-): Promise<void> {
+): Promise<void> => {
   const consumer = QUEUE_CONSUMERS.get(batch.queue);
 
   if (!consumer) {
@@ -61,10 +64,12 @@ export async function routeQueueBatch(
       queue: batch.queue,
     });
     batch.ackAll();
+
     return;
   }
 
   const start = Date.now();
+
   try {
     await consumer(batch, env, ctx);
     recordBatchMetrics(batch, env, "ok", Date.now() - start);
@@ -72,4 +77,4 @@ export async function routeQueueBatch(
     recordBatchMetrics(batch, env, "error", Date.now() - start);
     throw error;
   }
-}
+};

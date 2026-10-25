@@ -1,11 +1,13 @@
 import type * as React from "react";
-import { createContext, useContext } from "react";
-import { type Collapsible, useUIStore, type Variant } from "@/store";
+import { createContext, useCallback, useContext, useMemo } from "react";
+
+import { useUIStore } from "@/store";
+import type { Collapsible, Variant } from "@/store";
 
 const DEFAULT_VARIANT = "floating";
 const DEFAULT_COLLAPSIBLE = "icon";
 
-type LayoutContextType = {
+interface LayoutContextType {
   resetLayout: () => void;
 
   defaultCollapsible: Collapsible;
@@ -15,50 +17,61 @@ type LayoutContextType = {
   defaultVariant: Variant;
   variant: Variant;
   setVariant: (variant: Variant) => void;
-};
+}
 
 const LayoutContext = createContext<LayoutContextType | null>(null);
 
-type LayoutProviderProps = {
+interface LayoutProviderProps {
   children: React.ReactNode;
-};
+}
 
-export function LayoutProvider({ children }: LayoutProviderProps) {
+export const LayoutProvider = ({ children }: LayoutProviderProps) => {
   const collapsible = useUIStore((state) => state.collapsible);
   const setCollapsibleStore = useUIStore((state) => state.setCollapsible);
   const variant = useUIStore((state) => state.variant);
   const setVariantStore = useUIStore((state) => state.setVariant);
 
-  const setCollapsible = (newCollapsible: Collapsible) => {
-    setCollapsibleStore(newCollapsible);
-  };
+  const setCollapsible = useCallback(
+    (newCollapsible: Collapsible) => {
+      setCollapsibleStore(newCollapsible);
+    },
+    [setCollapsibleStore]
+  );
 
-  const setVariant = (newVariant: Variant) => {
-    setVariantStore(newVariant);
-  };
+  const setVariant = useCallback(
+    (newVariant: Variant) => {
+      setVariantStore(newVariant);
+    },
+    [setVariantStore]
+  );
 
-  const resetLayout = () => {
+  const resetLayout = useCallback(() => {
     setCollapsible(DEFAULT_COLLAPSIBLE);
     setVariant(DEFAULT_VARIANT);
-  };
+  }, [setCollapsible, setVariant]);
 
-  const contextValue: LayoutContextType = {
-    collapsible,
-    defaultCollapsible: DEFAULT_COLLAPSIBLE,
-    defaultVariant: DEFAULT_VARIANT,
-    resetLayout,
-    setCollapsible,
-    setVariant,
-    variant,
-  };
+  const contextValue: LayoutContextType = useMemo(
+    () => ({
+      collapsible,
+      defaultCollapsible: DEFAULT_COLLAPSIBLE,
+      defaultVariant: DEFAULT_VARIANT,
+      resetLayout,
+      setCollapsible,
+      setVariant,
+      variant,
+    }),
+    [collapsible, resetLayout, setCollapsible, setVariant, variant]
+  );
 
   return <LayoutContext value={contextValue}>{children}</LayoutContext>;
-}
+};
 
-export function useLayout() {
+export const useLayout = () => {
   const context = useContext(LayoutContext);
+
   if (!context) {
     throw new Error("useLayout must be used within a LayoutProvider");
   }
+
   return context;
-}
+};

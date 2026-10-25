@@ -1,10 +1,14 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
+import { fn } from "storybook/test";
+
 import { DatePicker } from "./date-picker";
+
+const noop = fn();
 
 const meta = {
   args: {
-    onSelect: () => undefined,
+    onSelect: noop,
     selected: undefined,
   },
   component: DatePicker,
@@ -25,10 +29,19 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-function Controlled({ initial }: { initial?: Date }) {
+const Controlled = ({
+  initial,
+  placeholder,
+}: {
+  initial?: Date;
+  placeholder?: string;
+}) => {
   const [date, setDate] = useState<Date | undefined>(initial);
-  return <DatePicker onSelect={setDate} selected={date} />;
-}
+
+  return (
+    <DatePicker onSelect={setDate} placeholder={placeholder} selected={date} />
+  );
+};
 
 export const Empty: Story = {
   render: () => <Controlled />,
@@ -39,14 +52,5 @@ export const WithInitialDate: Story = {
 };
 
 export const CustomPlaceholder: Story = {
-  render: () => {
-    const [date, setDate] = useState<Date | undefined>();
-    return (
-      <DatePicker
-        onSelect={setDate}
-        placeholder="Select due date"
-        selected={date}
-      />
-    );
-  },
+  render: () => <Controlled placeholder="Select due date" />,
 };

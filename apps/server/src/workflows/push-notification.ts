@@ -1,21 +1,16 @@
-import {
-  WorkflowEntrypoint,
-  type WorkflowEvent,
-  type WorkflowStep,
-} from "cloudflare:workers";
 import { withDrizzleClient } from "@repo/db/client";
 import * as schema from "@repo/db/schema";
 import { logger } from "@repo/shared/logger";
 import { DrizzleLogger } from "@repo/shared/logger-drizzle";
+import { WorkflowEntrypoint } from "cloudflare:workers";
+import type { WorkflowEvent, WorkflowStep } from "cloudflare:workers";
 import { eq, inArray } from "drizzle-orm";
+
 import { getPushProvider } from "@/lib/firebase";
 import { runWithWorkflowMetrics } from "@/lib/workflow-metrics";
 
-function getDrizzleLogger() {
-  return process.env.NODE_ENV === "development"
-    ? new DrizzleLogger()
-    : undefined;
-}
+const getDrizzleLogger = () =>
+  process.env.NODE_ENV === "development" ? new DrizzleLogger() : undefined;
 
 interface PushNotificationParams {
   notificationId: string;
@@ -41,7 +36,7 @@ export class PushNotificationWorkflow extends WorkflowEntrypoint<
     const data = await step.do(
       "load-notification-and-tokens",
       { retries: { backoff: "exponential", delay: "2 seconds", limit: 3 } },
-      async () =>
+      () =>
         withDrizzleClient(
           this.env.HYPERDRIVE.connectionString,
           async (db) => {
@@ -76,6 +71,7 @@ export class PushNotificationWorkflow extends WorkflowEntrypoint<
       logger.info("No push tokens found for notification", {
         notificationId: event.payload.notificationId,
       });
+
       return;
     }
 
@@ -84,6 +80,7 @@ export class PushNotificationWorkflow extends WorkflowEntrypoint<
       { retries: { backoff: "exponential", delay: "5 seconds", limit: 3 } },
       async () => {
         const provider = getPushProvider();
+
         const results = await Promise.all(
           data.tokens.map(async (token) => {
             const result = await provider.send({

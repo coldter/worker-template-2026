@@ -1,6 +1,6 @@
 {
     "recommendations": [
-        "biomejs.biome",
+        "oxc.oxc-vscode",
         "oven.bun-vscode"
     ]
 }

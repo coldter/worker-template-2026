@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+
 import {
   Carousel,
   CarouselContent,
@@ -28,13 +29,11 @@ type Story = StoryObj<typeof meta>;
 
 const slides = ["One", "Two", "Three", "Four", "Five"];
 
-function Slide({ label }: { label: string }) {
-  return (
-    <div className="flex aspect-square items-center justify-center rounded-md border bg-muted text-4xl font-semibold">
-      {label}
-    </div>
-  );
-}
+const Slide = ({ label }: { label: string }) => (
+  <div className="bg-muted flex aspect-square items-center justify-center rounded-md border text-4xl font-semibold">
+    {label}
+  </div>
+);
 
 export const Horizontal: Story = {
   render: () => (

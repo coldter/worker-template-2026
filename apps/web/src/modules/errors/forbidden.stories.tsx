@@ -5,16 +5,19 @@ import {
   createRouter,
   RouterProvider,
 } from "@tanstack/react-router";
+
 import { ForbiddenError } from "./forbidden";
 
-function renderWithRouter() {
+const renderWithRouter = () => {
   const rootRoute = createRootRoute({ component: ForbiddenError });
+
   const router = createRouter({
     history: createMemoryHistory({ initialEntries: ["/"] }),
     routeTree: rootRoute,
   });
+
   return <RouterProvider router={router} />;
-}
+};
 
 const meta = {
   component: ForbiddenError,

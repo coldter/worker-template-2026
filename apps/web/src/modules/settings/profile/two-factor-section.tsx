@@ -2,6 +2,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { ShieldCheck, ShieldOff } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+
 import { authClient } from "@/lib/auth-client";
 import { Badge } from "@/modules/ui/badge";
 import { Button } from "@/modules/ui/button";
@@ -12,14 +13,18 @@ import { useUserStore } from "@/store/user";
 
 type ConfirmAction = "enable" | "disable" | null;
 
-function getConfirmButtonLabel(action: "enable" | "disable", loading: boolean) {
+const getConfirmButtonLabel = (
+  action: "enable" | "disable",
+  loading: boolean
+) => {
   if (action === "enable") {
     return loading ? "Enabling..." : "Confirm enable";
   }
-  return loading ? "Disabling..." : "Confirm disable";
-}
 
-export function TwoFactorSection() {
+  return loading ? "Disabling..." : "Confirm disable";
+};
+
+export const TwoFactorSection = () => {
   const user = useUserStore((s) => s.user);
   const updateUser = useUserStore((s) => s.updateUser);
   const queryClient = useQueryClient();
@@ -29,19 +34,19 @@ export function TwoFactorSection() {
   const [confirmAction, setConfirmAction] = useState<ConfirmAction>(null);
   const [password, setPassword] = useState("");
 
-  function resetConfirm() {
+  const resetConfirm = () => {
     setConfirmAction(null);
     setPassword("");
-  }
+  };
 
-  async function handleEnable() {
+  const handleEnable = async () => {
     if (!password) {
       toast.error("Password is required to enable 2FA");
+
       return;
     }
 
-    setIsLoading(true);
-    try {
+    const enable = async () => {
       const { error } = await authClient.twoFactor.enable({
         method: "otp",
         password,
@@ -49,6 +54,7 @@ export function TwoFactorSection() {
 
       if (error) {
         toast.error(error.message || "Failed to enable 2FA");
+
         return;
       }
 
@@ -58,25 +64,29 @@ export function TwoFactorSection() {
       });
       resetConfirm();
       toast.success("Two-factor authentication enabled");
-    } finally {
-      setIsLoading(false);
-    }
-  }
+    };
 
-  async function handleDisable() {
+    setIsLoading(true);
+    await enable().finally(() => {
+      setIsLoading(false);
+    });
+  };
+
+  const handleDisable = async () => {
     if (!password) {
       toast.error("Password is required to disable 2FA");
+
       return;
     }
 
-    setIsLoading(true);
-    try {
+    const disable = async () => {
       const { error } = await authClient.twoFactor.disable({
         password,
       });
 
       if (error) {
         toast.error(error.message || "Failed to disable 2FA");
+
         return;
       }
 
@@ -86,10 +96,13 @@ export function TwoFactorSection() {
       });
       resetConfirm();
       toast.success("Two-factor authentication disabled");
-    } finally {
+    };
+
+    setIsLoading(true);
+    await disable().finally(() => {
       setIsLoading(false);
-    }
-  }
+    });
+  };
 
   return (
     <div className="space-y-4">
@@ -99,7 +112,7 @@ export function TwoFactorSection() {
         </div>
         <div className="flex-1 space-y-1">
           <div className="flex items-center gap-2">
-            <p className="text-sm font-medium leading-none">
+            <p className="text-sm leading-none font-medium">
               Two-factor authentication
             </p>
             <Badge variant={isEnabled ? "default" : "outline"}>
@@ -158,4 +171,4 @@ export function TwoFactorSection() {
       )}
     </div>
   );
-}
+};

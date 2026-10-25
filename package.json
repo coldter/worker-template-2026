@@ -6,13 +6,14 @@
     "apps/*",
     "packages/*"
   ],
+  "type": "module",
   "scripts": {
     "build": "turbo build",
     "build:storybook": "turbo -F web build-storybook",
     "cf-typegen": "turbo cf-typegen",
     "cf-typegen:check": "turbo cf-typegen:check",
     "check": "ultracite check",
-    "check-types": "turbo check-types",
+    "typecheck": "turbo typecheck",
     "clean": "rm -rf .turbo && git clean -xdf node_modules apps/*/node_modules packages/*/node_modules && rm bun.lock",
     "db:generate": "turbo -F @repo/db db:generate",
     "db:migrate": "turbo -F @repo/db db:migrate",
@@ -26,7 +27,7 @@
     "dev:storybook": "turbo -F web storybook",
     "dev:web": "turbo -F web dev",
     "fix": "ultracite fix",
-    "format": "biome format --write",
+    "format": "oxfmt --write .",
     "generate-client": "turbo -F web generate-client",
     "generate-openapi": "turbo -F server generate-openapi",
     "postinstall": "test -f apps/server/openapi.cache.json || turbo -F server generate-openapi",
@@ -41,16 +42,17 @@
     "verify:generated": "bun run generate-client && bun run cf-typegen:check && git diff --exit-code -- apps/server/openapi.cache.json apps/web/src/api.gen"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.5.12",
-    "@types/node": "^26.5.1",
-    "knip": "^6.35.1",
-    "tsx": "^4.23.13",
-    "turbo": "^2.10.12",
+    "@types/node": "^26.6.5",
+    "knip": "^6.43.0",
+    "oxfmt": "^0.74.0",
+    "oxlint": "^1.89.0",
+    "tsx": "^4.23.15",
+    "turbo": "^2.11.10",
     "typescript": "^7.0.2",
-    "ultracite": "^7.11.1"
+    "ultracite": "^8.0.2"
   },
-  "packageManager": "bun@1.4.2",
   "engines": {
     "node": "^22.18.0 || ^24.0.0 || >=26.0.0"
-  }
+  },
+  "packageManager": "bun@1.4.4"
 }

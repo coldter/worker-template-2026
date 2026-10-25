@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+
 import { MaintenanceError } from "./maintenance-error";
 
 const meta = {

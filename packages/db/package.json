@@ -10,8 +10,8 @@
     "./ids": "./src/ids.ts"
   },
   "scripts": {
-    "check-types": "tsc --noEmit",
-    "db:generate": "drizzle-kit generate && bunx biome format --write src/migrations",
+    "typecheck": "tsc --noEmit",
+    "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio"
@@ -19,7 +19,7 @@
   "dependencies": {
     "@repo/shared": "workspace:*",
     "drizzle-orm": "1.0.0-rc.5-5935859",
-    "pg": "^8.23.0"
+    "pg": "^8.23.1"
   },
   "devDependencies": {
     "@types/pg": "^8.23.1",

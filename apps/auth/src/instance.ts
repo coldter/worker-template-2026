@@ -3,15 +3,12 @@ import { generateIdForModel } from "@repo/db/ids";
 import * as schema from "@repo/db/schema";
 import type { ApiBindingRpc } from "@repo/shared/api-binding";
 import { getBrandConfig } from "@repo/shared/brand";
-import {
-  type BetterAuthOptions,
-  betterAuth,
-  type Session,
-  type User,
-} from "better-auth";
+import { betterAuth } from "better-auth";
+import type { BetterAuthOptions, Session, User } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { bearer, emailOTP, jwt, openAPI, twoFactor } from "better-auth/plugins";
 import { z } from "zod";
+
 import { RATE_LIMIT_CONFIG, TWO_FACTOR_CONFIG } from "./constants";
 import { createSendTwoFactorOTP } from "./email/send-two-factor-otp";
 import { createSendVerificationOTP } from "./email/send-verification-otp";
@@ -22,18 +19,15 @@ import {
   createUserCreateBeforeHook,
 } from "./hooks/user-create";
 import type { MinimalExecutionContext } from "./lib/execution-context";
-import {
-  platformSchema,
-  SESSION_CONFIG,
-  type SessionWithAdditionalFields,
-} from "./lib/platform";
+import { platformSchema, SESSION_CONFIG } from "./lib/platform";
+import type { SessionWithAdditionalFields } from "./lib/platform";
 import { createSecondaryStorage } from "./lib/secondary-storage";
 import { loginSecurityPlugin } from "./plugins/login-security";
 import { createOrganizationPlugin } from "./plugins/organization-setup";
-import {
-  enhancedUserPlugin,
-  type UserWithStatusFields,
-} from "./plugins/user-status";
+import { enhancedUserPlugin } from "./plugins/user-status";
+import type { UserWithStatusFields } from "./plugins/user-status";
+
+export { type SessionWithAdditionalFields } from "./lib/platform";
 
 export type AuthBindings = Omit<
   CloudflareBindings,
@@ -44,14 +38,12 @@ export type AuthBindings = Omit<
   ENABLE_SIGNUP: string;
 };
 
-export type { SessionWithAdditionalFields };
-
-type SessionInference = {
+interface SessionInference {
   Session: {
     user: User & UserWithStatusFields;
     session: Session & SessionWithAdditionalFields;
   };
-};
+}
 
 const jwtUserFieldsSchema = z.object({
   roleSlugs: z.array(z.string()),
@@ -60,18 +52,19 @@ const jwtUserFieldsSchema = z.object({
 let memoizedCorsOrigins: string[] | undefined;
 let memoizedBrand: ReturnType<typeof getBrandConfig> | undefined;
 
-function getCorsOrigins(env: AuthBindings): string[] {
+const getCorsOrigins = (env: AuthBindings): string[] => {
   if (!memoizedCorsOrigins) {
     memoizedCorsOrigins = env.CORS_ORIGINS.split(",").map((s: string) =>
       s.trim()
     );
   }
-  return memoizedCorsOrigins;
-}
 
-function getMemoizedBrandConfig(
+  return memoizedCorsOrigins;
+};
+
+const getMemoizedBrandConfig = (
   env: AuthBindings
-): ReturnType<typeof getBrandConfig> {
+): ReturnType<typeof getBrandConfig> => {
   if (!memoizedBrand) {
     memoizedBrand = getBrandConfig({
       APP_NAME: env.APP_NAME,
@@ -82,14 +75,15 @@ function getMemoizedBrandConfig(
       SUPPORT_EMAIL: env.SUPPORT_EMAIL,
     });
   }
-  return memoizedBrand;
-}
 
-export function createAuth(
+  return memoizedBrand;
+};
+
+export const createAuth = (
   db: DrizzleClient,
   env: AuthBindings,
   ctx: MinimalExecutionContext
-) {
+) => {
   const corsOrigins = getCorsOrigins(env);
   const brand = getMemoizedBrandConfig(env);
 
@@ -172,6 +166,7 @@ export function createAuth(
           audience: env.APP_URL,
           definePayload: ({ user, session }) => {
             const parsed = jwtUserFieldsSchema.safeParse(user);
+
             return {
               email: user.email,
               platform: session.platform,
@@ -234,4 +229,4 @@ export function createAuth(
   } satisfies BetterAuthOptions;
 
   return betterAuth(authConfig);
-}
+};

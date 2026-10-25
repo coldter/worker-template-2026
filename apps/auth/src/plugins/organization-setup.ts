@@ -1,12 +1,18 @@
 import type { DrizzleClient } from "@repo/db";
 import * as schema from "@repo/db/schema";
 import type { User } from "better-auth";
-import type { Invitation, Member, Organization } from "better-auth/plugins";
-import { type OrganizationOptions, organization } from "better-auth/plugins";
+import { organization } from "better-auth/plugins";
+import type {
+  Invitation,
+  Member,
+  Organization,
+  OrganizationOptions,
+} from "better-auth/plugins";
 import { and, eq } from "drizzle-orm";
+
 import { tolerateMissingOrgTables } from "../lib/org-tables";
 
-export function createOrganizationPlugin(
+export const createOrganizationPlugin = (
   db: DrizzleClient,
   sendInvitationEmailFn?: (
     data: {
@@ -19,7 +25,7 @@ export function createOrganizationPlugin(
     },
     request?: Request
   ) => Promise<void>
-) {
+) => {
   const options = {
     allowUserToCreateOrganization: false,
     cancelPendingInvitationsOnReInvite: true,
@@ -91,4 +97,4 @@ export function createOrganizationPlugin(
   }
 
   return organization(options);
-}
+};

@@ -1,14 +1,16 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { type ColumnDef, useTable } from "@tanstack/react-table";
+import { useTable } from "@tanstack/react-table";
+import type { ColumnDef } from "@tanstack/react-table";
 import { CheckCircle2, Circle, Lock } from "lucide-react";
+
 import type { DataTableFeatures } from "./features";
 import { dataTableFeatures } from "./features";
 import { DataTableToolbar } from "./toolbar";
 
-type Row = {
+interface Row {
   name: string;
   status: "active" | "inactive" | "locked";
-};
+}
 
 const rows: Row[] = [
   { name: "Ada", status: "active" },
@@ -32,17 +34,18 @@ const statusOptions = [
   { icon: Lock, label: "Locked", value: "locked" },
 ];
 
-type ToolbarHostProps = {
+interface ToolbarHostProps {
   searchKey?: string;
   withFilters: boolean;
-};
+}
 
-function ToolbarHost({ searchKey, withFilters }: ToolbarHostProps) {
+const ToolbarHost = ({ searchKey, withFilters }: ToolbarHostProps) => {
   const table = useTable({
     columns,
     data: rows,
     features: dataTableFeatures,
   });
+
   return (
     <DataTableToolbar
       filters={
@@ -55,7 +58,7 @@ function ToolbarHost({ searchKey, withFilters }: ToolbarHostProps) {
       table={table}
     />
   );
-}
+};
 
 const meta = {
   component: ToolbarHost,

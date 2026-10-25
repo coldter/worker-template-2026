@@ -1,12 +1,14 @@
-import { resolve } from "node:path";
+import path from "node:path";
+
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vitest/config";
 
 export default defineConfig({
+  cacheDir: "node_modules/.vitest",
   plugins: [react()],
   resolve: {
     alias: {
-      "@": resolve(import.meta.dirname, "./src"),
+      "@": path.resolve(import.meta.dirname, "./src"),
     },
   },
   test: {

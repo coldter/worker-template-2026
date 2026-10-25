@@ -1,4 +1,4 @@
-import Autoplay from "embla-carousel-autoplay";
+import createAutoplayPlugin from "embla-carousel-autoplay";
 import type { UseEmblaCarouselType } from "embla-carousel-react";
 import useEmblaCarousel from "embla-carousel-react";
 import { ArrowLeft, ArrowRight } from "lucide-react";
@@ -8,15 +8,20 @@ import {
   useCallback,
   useContext,
   useEffect,
-  useState,
+  useMemo,
+  useSyncExternalStore,
 } from "react";
 
 import { cn } from "@/lib/utils";
+
 import { Button } from "./button";
 
 type CarouselApi = UseEmblaCarouselType[1];
+
 type UseCarouselParameters = Parameters<typeof useEmblaCarousel>;
+
 type CarouselOptions = UseCarouselParameters[0];
+
 type CarouselPlugin = UseCarouselParameters[1];
 
 interface CarouselProps {
@@ -39,7 +44,7 @@ type CarouselContextProps = {
 
 const CarouselContext = createContext<CarouselContextProps | null>(null);
 
-function useCarousel() {
+const useCarousel = () => {
   const context = useContext(CarouselContext);
 
   if (!context) {
@@ -47,9 +52,9 @@ function useCarousel() {
   }
 
   return context;
-}
+};
 
-function Carousel({
+const Carousel = ({
   orientation = "horizontal",
   opts,
   setApi,
@@ -59,9 +64,9 @@ function Carousel({
   autoplay = true,
   autoplayDelay = 4000,
   ...props
-}: HTMLAttributes<HTMLDivElement> & CarouselProps) {
+}: HTMLAttributes<HTMLDivElement> & CarouselProps) => {
   const effectivePlugins = autoplay
-    ? [Autoplay({ delay: autoplayDelay }), ...(plugins ?? [])]
+    ? [createAutoplayPlugin({ delay: autoplayDelay }), ...(plugins ?? [])]
     : plugins;
 
   const [carouselRef, api] = useEmblaCarousel(
@@ -71,17 +76,41 @@ function Carousel({
     },
     effectivePlugins
   );
-  const [canScrollPrev, setCanScrollPrev] = useState(false);
-  const [canScrollNext, setCanScrollNext] = useState(false);
 
-  const onSelect = useCallback((emblaApi: CarouselApi) => {
-    if (!emblaApi) {
-      return;
-    }
+  const subscribe = useCallback(
+    (onStoreChange: () => void) => {
+      api?.on("reInit", onStoreChange);
+      api?.on("select", onStoreChange);
 
-    setCanScrollPrev(emblaApi.canScrollPrev());
-    setCanScrollNext(emblaApi.canScrollNext());
-  }, []);
+      return () => {
+        api?.off("reInit", onStoreChange);
+        api?.off("select", onStoreChange);
+      };
+    },
+    [api]
+  );
+
+  const getCanScrollPrev = useCallback(
+    () => api?.canScrollPrev() ?? false,
+    [api]
+  );
+
+  const getCanScrollNext = useCallback(
+    () => api?.canScrollNext() ?? false,
+    [api]
+  );
+
+  const canScrollPrev = useSyncExternalStore(
+    subscribe,
+    getCanScrollPrev,
+    getCanScrollPrev
+  );
+
+  const canScrollNext = useSyncExternalStore(
+    subscribe,
+    getCanScrollNext,
+    getCanScrollNext
+  );
 
   const scrollPrev = useCallback(() => {
     api?.scrollPrev();
@@ -110,36 +139,36 @@ function Carousel({
     }
   }, [api, setApi]);
 
-  useEffect(() => {
-    if (!api) {
-      return;
-    }
-
-    onSelect(api);
-    api.on("reInit", onSelect);
-    api.on("select", onSelect);
-
-    return () => {
-      api.off("select", onSelect);
-    };
-  }, [api, onSelect]);
+  const contextValue = useMemo<CarouselContextProps>(
+    () => ({
+      api,
+      autoplay,
+      autoplayDelay,
+      canScrollNext,
+      canScrollPrev,
+      carouselRef,
+      opts,
+      orientation:
+        orientation || (opts?.axis === "y" ? "vertical" : "horizontal"),
+      scrollNext,
+      scrollPrev,
+    }),
+    [
+      api,
+      autoplay,
+      autoplayDelay,
+      canScrollNext,
+      canScrollPrev,
+      carouselRef,
+      opts,
+      orientation,
+      scrollNext,
+      scrollPrev,
+    ]
+  );
 
   return (
-    <CarouselContext.Provider
-      value={{
-        api,
-        autoplay,
-        autoplayDelay,
-        canScrollNext,
-        canScrollPrev,
-        carouselRef,
-        opts,
-        orientation:
-          orientation || (opts?.axis === "y" ? "vertical" : "horizontal"),
-        scrollNext,
-        scrollPrev,
-      }}
-    >
+    <CarouselContext.Provider value={contextValue}>
       <section
         aria-label="Image carousel"
         className={cn("relative", className)}
@@ -150,12 +179,12 @@ function Carousel({
       </section>
     </CarouselContext.Provider>
   );
-}
+};
 
-function CarouselContent({
+const CarouselContent = ({
   className,
   ...props
-}: HTMLAttributes<HTMLDivElement>) {
+}: HTMLAttributes<HTMLDivElement>) => {
   const { carouselRef, orientation } = useCarousel();
 
   return (
@@ -170,9 +199,12 @@ function CarouselContent({
       />
     </div>
   );
-}
+};
 
-function CarouselItem({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
+const CarouselItem = ({
+  className,
+  ...props
+}: HTMLAttributes<HTMLDivElement>) => {
   const { orientation } = useCarousel();
 
   return (
@@ -185,14 +217,14 @@ function CarouselItem({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
       {...props}
     />
   );
-}
+};
 
-function CarouselPrevious({
+const CarouselPrevious = ({
   className,
   variant = "outline",
   size = "icon",
   ...props
-}: ComponentProps<typeof Button>) {
+}: ComponentProps<typeof Button>) => {
   const { orientation, scrollPrev, canScrollPrev } = useCarousel();
 
   return (
@@ -214,14 +246,14 @@ function CarouselPrevious({
       <span className="sr-only">Previous slide</span>
     </Button>
   );
-}
+};
 
-function CarouselNext({
+const CarouselNext = ({
   className,
   variant = "outline",
   size = "icon",
   ...props
-}: ComponentProps<typeof Button>) {
+}: ComponentProps<typeof Button>) => {
   const { orientation, scrollNext, canScrollNext } = useCarousel();
 
   return (
@@ -243,7 +275,7 @@ function CarouselNext({
       <span className="sr-only">Next slide</span>
     </Button>
   );
-}
+};
 
 export {
   Carousel,

@@ -33,16 +33,19 @@ export interface EmailClient {
 
 export type EmailClientFactory = (apiKey: string) => EmailClient;
 
-export function createEmailSender(createClient: EmailClientFactory) {
+export const createEmailSender = (createClient: EmailClientFactory) => {
   const clients = new Map<string, EmailClient>();
 
   const getClient = (apiKey: string): EmailClient => {
     const cached = clients.get(apiKey);
+
     if (cached) {
       return cached;
     }
+
     const client = createClient(apiKey);
     clients.set(apiKey, client);
+
     return client;
   };
 
@@ -50,6 +53,7 @@ export function createEmailSender(createClient: EmailClientFactory) {
     params: SendEmailParams<T>
   ): Promise<SendEmailResult> {
     const client = getClient(params.apiKey);
+
     const { data, error } = await client.emails.send({
       from: params.from,
       react: params.template(params.props),
@@ -63,6 +67,6 @@ export function createEmailSender(createClient: EmailClientFactory) {
 
     return { messageId: data?.id, success: true };
   };
-}
+};
 
 export const sendEmail = createEmailSender((apiKey) => new Resend(apiKey));

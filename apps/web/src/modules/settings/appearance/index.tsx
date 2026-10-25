@@ -1,14 +1,12 @@
 import { ContentSection } from "../components/content-section";
 import { AppearanceForm } from "./appearance-form";
 
-export function SettingsAppearance() {
-  return (
-    <ContentSection
-      desc="Customize the appearance of the app. Automatically switch between day
+export const SettingsAppearance = () => (
+  <ContentSection
+    desc="Customize the appearance of the app. Automatically switch between day
           and night themes."
-      title="Appearance"
-    >
-      <AppearanceForm />
-    </ContentSection>
-  );
-}
+    title="Appearance"
+  >
+    <AppearanceForm />
+  </ContentSection>
+);

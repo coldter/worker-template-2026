@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+
 import {
   Table,
   TableBody,
@@ -6,31 +7,30 @@ import {
   TableHeader,
   TableRow,
 } from "@/modules/ui/table";
+
 import { TableEmpty } from "./table-empty";
 
-type EmptyHostProps = {
+interface EmptyHostProps {
   message?: string;
   colSpan: number;
-};
-
-function EmptyHost({ message, colSpan }: EmptyHostProps) {
-  return (
-    <div className="rounded-md border">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            {Array.from({ length: colSpan }).map((_, i) => (
-              <TableHead key={`head-${i}`}>Column {i + 1}</TableHead>
-            ))}
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          <TableEmpty colSpan={colSpan} message={message} />
-        </TableBody>
-      </Table>
-    </div>
-  );
 }
+
+const EmptyHost = ({ message, colSpan }: EmptyHostProps) => (
+  <div className="rounded-md border">
+    <Table>
+      <TableHeader>
+        <TableRow>
+          {Array.from({ length: colSpan }).map((_, i) => (
+            <TableHead key={`head-${i}`}>Column {i + 1}</TableHead>
+          ))}
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        <TableEmpty colSpan={colSpan} message={message} />
+      </TableBody>
+    </Table>
+  </div>
+);
 
 const meta = {
   component: EmptyHost,

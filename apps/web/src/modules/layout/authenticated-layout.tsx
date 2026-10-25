@@ -1,4 +1,5 @@
 import { Outlet } from "@tanstack/react-router";
+
 import { LayoutProvider } from "@/context/layout-provider";
 import { SearchProvider } from "@/context/search-provider";
 import { cn } from "@/lib/utils";
@@ -7,12 +8,13 @@ import { AppSidebar } from "@/modules/layout/app-sidebar";
 import { SidebarInset, SidebarProvider } from "@/modules/ui/sidebar";
 import { useUIStore } from "@/store";
 
-type AuthenticatedLayoutProps = {
+interface AuthenticatedLayoutProps {
   children?: React.ReactNode;
-};
+}
 
-export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
+export const AuthenticatedLayout = ({ children }: AuthenticatedLayoutProps) => {
   const defaultOpen = useUIStore((state) => state.sidebarOpen);
+
   return (
     <SearchProvider>
       <LayoutProvider>
@@ -36,4 +38,4 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
       </LayoutProvider>
     </SearchProvider>
   );
-}
+};

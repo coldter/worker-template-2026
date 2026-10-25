@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
-import { type Capability, useCan } from "@/hooks/use-authorization";
+
+import { useCan } from "@/hooks/use-authorization";
+import type { Capability } from "@/hooks/use-authorization";
 import { Skeleton } from "@/modules/ui/skeleton";
 
 interface AuthorizedProps {
@@ -9,18 +11,19 @@ interface AuthorizedProps {
   loadingFallback?: ReactNode;
 }
 
-export function Authorized({
+export const Authorized = ({
   capability,
   children,
   fallback = null,
   loadingFallback,
-}: AuthorizedProps) {
+}: AuthorizedProps) => {
   const { allowed, isLoading } = useCan(capability);
 
   if (isLoading) {
     if (loadingFallback !== undefined) {
       return loadingFallback;
     }
+
     return (
       <Skeleton
         aria-hidden="true"
@@ -34,4 +37,4 @@ export function Authorized({
   }
 
   return children;
-}
+};

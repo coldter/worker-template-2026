@@ -1,5 +1,6 @@
 import { withThemeByClassName } from "@storybook/addon-themes";
 import type { Preview } from "@storybook/react-vite";
+
 import "../src/index.css";
 
 const preview = {
@@ -32,8 +33,8 @@ const preview = {
     },
     controls: {
       matchers: {
-        color: /(background|color)$/i,
-        date: /Date$/i,
+        color: /(?<property>background|color)$/iu,
+        date: /Date$/iu,
       },
     },
     layout: "centered",

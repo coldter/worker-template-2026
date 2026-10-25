@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
+
 import { PasswordInput } from "./password-input";
 
 const meta = {
@@ -33,16 +34,19 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {};
 
+const Controlled = () => {
+  const [value, setValue] = useState("hunter2-super-secret");
+
+  return (
+    <PasswordInput
+      onChange={(event) => setValue(event.target.value)}
+      value={value}
+    />
+  );
+};
+
 export const WithValue: Story = {
-  render: () => {
-    const [value, setValue] = useState("hunter2-super-secret");
-    return (
-      <PasswordInput
-        onChange={(event) => setValue(event.target.value)}
-        value={value}
-      />
-    );
-  },
+  render: () => <Controlled />,
 };
 
 export const ToggleShown: Story = {

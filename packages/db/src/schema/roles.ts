@@ -6,6 +6,7 @@ import {
   uniqueIndex,
   varchar,
 } from "drizzle-orm/pg-core";
+
 import { generatePrefixedCuid, ID_PREFIXES } from "../ids";
 
 export const roles = pgTable(

@@ -1,6 +1,8 @@
 import type { DrizzleClient, Executor } from "@repo/db";
 import { auditLogs } from "@repo/db/schema";
-import { and, count, eq, gte, lte, type SQL, sql } from "drizzle-orm";
+import { and, count, eq, gte, lte, sql } from "drizzle-orm";
+import type { SQL } from "drizzle-orm";
+
 import type {
   CriticalAuditLogInput,
   FindAuditLogsQuery,
@@ -10,22 +12,21 @@ import {
   createPaginatedResponse,
   getPaginationParams,
 } from "@/utils/pagination";
+
 import type { AuditLogQueueMessage } from "./queue-message";
 
-function toInsertValues(
+const toInsertValues = (
   input: CriticalAuditLogInput
-): typeof auditLogs.$inferInsert {
-  return {
-    actorId: input.actorId,
-    actorType: input.actorType ?? "user",
-    event: input.event,
-    ipAddress: input.ipAddress,
-    metadata: input.metadata,
-    targetId: input.targetId,
-    targetType: input.targetType,
-    userAgent: input.userAgent,
-  };
-}
+): typeof auditLogs.$inferInsert => ({
+  actorId: input.actorId,
+  actorType: input.actorType ?? "user",
+  event: input.event,
+  ipAddress: input.ipAddress,
+  metadata: input.metadata,
+  targetId: input.targetId,
+  targetType: input.targetType,
+  userAgent: input.userAgent,
+});
 
 const ALLOWED_SORT_COLUMNS = {
   actorType: auditLogs.actorType,
@@ -41,6 +42,7 @@ export const auditLogService = {
       .insert(auditLogs)
       .values(toInsertValues(input))
       .returning();
+
     return log;
   },
 
@@ -48,15 +50,18 @@ export const auditLogService = {
     if (inputs.length === 0) {
       return;
     }
+
     await executor.insert(auditLogs).values(inputs.map(toInsertValues));
   },
 
   async enqueue(queue: Queue, messages: AuditLogQueueMessage[]) {
     const MAX_MESSAGES_PER_BATCH = 100;
     const chunks: AuditLogQueueMessage[][] = [];
+
     for (let i = 0; i < messages.length; i += MAX_MESSAGES_PER_BATCH) {
       chunks.push(messages.slice(i, i + MAX_MESSAGES_PER_BATCH));
     }
+
     await Promise.all(
       chunks.map((chunk) => queue.sendBatch(chunk.map((body) => ({ body }))))
     );

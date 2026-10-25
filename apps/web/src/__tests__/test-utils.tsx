@@ -1,9 +1,10 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { type RenderOptions, render } from "@testing-library/react";
+import { render } from "@testing-library/react";
+import type { RenderOptions } from "@testing-library/react";
 import type * as React from "react";
 
-export function createTestQueryClient() {
-  return new QueryClient({
+export const createTestQueryClient = () =>
+  new QueryClient({
     defaultOptions: {
       mutations: {
         retry: false,
@@ -15,22 +16,20 @@ export function createTestQueryClient() {
       },
     },
   });
-}
 
-function AllProviders({ children }: { children: React.ReactNode }) {
+const AllProviders = ({ children }: { children: React.ReactNode }) => {
   const queryClient = createTestQueryClient();
 
   return (
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   );
-}
+};
 
-function customRender(
+const customRender = (
   ui: React.ReactElement,
   options?: Omit<RenderOptions, "wrapper">
-) {
-  return render(ui, { wrapper: AllProviders, ...options });
-}
+) => render(ui, { wrapper: AllProviders, ...options });
 
 export * from "@testing-library/react";
+
 export { customRender as render };

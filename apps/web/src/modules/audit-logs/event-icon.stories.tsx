@@ -1,5 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+
 import { cn } from "@/lib/utils";
+
 import { EventIcon } from "./event-icon";
 import { getEventBadgeStyle, getEventDisplayName } from "./event-utils";
 
@@ -60,6 +62,7 @@ export const AllVariants: Story = {
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
       {ALL_EVENTS.map((event) => {
         const style = getEventBadgeStyle(event);
+
         return (
           <div
             className="flex items-center gap-2 rounded-md border p-2"

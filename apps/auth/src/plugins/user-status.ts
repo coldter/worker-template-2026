@@ -17,7 +17,7 @@ export const USER_STATUS_VALUES = Object.values(USER_STATUS);
 
 export const userStatusSchema = z.enum(USER_STATUS_VALUES);
 
-export type UserWithStatusFields = {
+export interface UserWithStatusFields {
   status: z.infer<typeof userStatusSchema>;
   deactivatedAt: Date | null;
   deactivatedBy: string | null;
@@ -27,13 +27,13 @@ export type UserWithStatusFields = {
   roleSlugs: string[];
   onboardingCompletedAt: Date | null;
   twoFactorEnabled: boolean;
-};
+}
 
-async function setTwoFactorEnabled(
+const setTwoFactorEnabled = async (
   db: DrizzleClient,
   userId: string,
   enabled: boolean
-) {
+) => {
   try {
     await db
       .update(schema.users)
@@ -45,7 +45,7 @@ async function setTwoFactorEnabled(
       userId,
     });
   }
-}
+};
 
 export const enhancedUserPlugin = (db: DrizzleClient) =>
   ({
@@ -54,17 +54,20 @@ export const enhancedUserPlugin = (db: DrizzleClient) =>
         {
           handler: createAuthMiddleware(async (ctx) => {
             const { returned } = ctx.context;
+
             if (returned instanceof APIError) {
               return;
             }
 
             const userId = ctx.context.session?.user.id;
+
             if (!userId) {
               return;
             }
 
             if (ctx.path === "/two-factor/enable") {
               await setTwoFactorEnabled(db, userId, true);
+
               return;
             }
 

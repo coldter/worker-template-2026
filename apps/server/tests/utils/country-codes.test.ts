@@ -1,17 +1,20 @@
 import { describe, expect, it } from "vitest";
+
 import { alpha2ToNumeric } from "@/utils/country-codes";
 
-describe("alpha2ToNumeric", () => {
-  it("converts known codes", () => {
-    expect(alpha2ToNumeric("US")).toBe("0840");
-    expect(alpha2ToNumeric("CA")).toBe("0124");
-    expect(alpha2ToNumeric("GB")).toBe("0826");
-    expect(alpha2ToNumeric("IN")).toBe("0356");
-    expect(alpha2ToNumeric("AU")).toBe("0036");
-    expect(alpha2ToNumeric("JP")).toBe("0392");
-    expect(alpha2ToNumeric("DE")).toBe("0276");
-    expect(alpha2ToNumeric("FR")).toBe("0250");
-    expect(alpha2ToNumeric("MX")).toBe("0484");
+describe(alpha2ToNumeric, () => {
+  it.each([
+    ["US", "0840"],
+    ["CA", "0124"],
+    ["GB", "0826"],
+    ["IN", "0356"],
+    ["AU", "0036"],
+    ["JP", "0392"],
+    ["DE", "0276"],
+    ["FR", "0250"],
+    ["MX", "0484"],
+  ])("converts %s to %s", (alpha2, expected) => {
+    expect(alpha2ToNumeric(alpha2)).toBe(expected);
   });
 
   it("is case-insensitive", () => {

@@ -6,64 +6,69 @@ import { ApiError } from "@/lib/api";
 import { handleGlobalError, handleGlobalSuccess } from "@/query/on-error";
 import { useAlertStore } from "@/store/alert";
 
-const toastError = vi.spyOn(toast, "error").mockImplementation(() => "");
+const toastError = vi.spyOn(toast, "error").mockReturnValue("");
 
-beforeEach(() => {
-  toastError.mockClear();
-  useAlertStore.getState().clearDownAlert();
-  vi.spyOn(console, "error").mockImplementation(() => undefined);
-});
+describe("global error handling", () => {
+  beforeEach(() => {
+    toastError.mockClear();
+    useAlertStore.getState().clearDownAlert();
+    vi.spyOn(console, "error").mockReturnValue(undefined);
+  });
 
-afterEach(() => {
-  vi.mocked(console.error).mockRestore();
-  vi.unstubAllGlobals();
-});
+  afterEach(() => {
+    vi.mocked(console.error).mockRestore();
+    vi.unstubAllGlobals();
+  });
 
-describe("api client error normalization", () => {
-  it("wraps non-JSON error responses in an ApiError with status and path", async () => {
-    const response = new Response("<html>bad gateway</html>", { status: 502 });
-    Object.defineProperty(response, "url", {
-      value: "http://localhost:8787/api/users",
+  describe("api client error normalization", () => {
+    it("wraps non-JSON error responses in an ApiError with status and path", async () => {
+      const response = new Response("<html>bad gateway</html>", {
+        status: 502,
+      });
+
+      Object.defineProperty(response, "url", {
+        value: "http://localhost:8787/api/users",
+      });
+      vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response));
+
+      const config = createClientConfig({});
+
+      await expect(
+        config.fetch?.("http://localhost:8787/api/users", {})
+      ).rejects.toMatchObject({
+        name: "ApiError",
+        path: "/api/users",
+        status: 502,
+      });
     });
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response));
+  });
 
-    const config = createClientConfig({});
+  describe(handleGlobalError, () => {
+    it("notifies on network errors without a status code", async () => {
+      await handleGlobalError(new Error("Failed to fetch"));
 
-    await expect(
-      config.fetch?.("http://localhost:8787/api/users", {})
-    ).rejects.toMatchObject({
-      name: "ApiError",
-      path: "/api/users",
-      status: 502,
+      expect(toastError).toHaveBeenCalledWith(
+        "Network error",
+        expect.any(Object)
+      );
+    });
+
+    it("maps 502 responses to a maintenance alert", async () => {
+      await handleGlobalError(
+        new ApiError({ error: { message: "bad gateway" } }, 502)
+      );
+
+      expect(useAlertStore.getState().downAlert).toBe("maintenance");
     });
   });
-});
 
-describe("handleGlobalError", () => {
-  it("notifies on network errors without a status code", async () => {
-    await handleGlobalError(new Error("Failed to fetch"));
+  describe(handleGlobalSuccess, () => {
+    it("clears a forbidden banner after a subsequent success", () => {
+      useAlertStore.getState().setDownAlert("forbidden");
 
-    expect(toastError).toHaveBeenCalledWith(
-      "Network error",
-      expect.any(Object)
-    );
-  });
+      handleGlobalSuccess();
 
-  it("maps 502 responses to a maintenance alert", async () => {
-    await handleGlobalError(
-      new ApiError({ error: { message: "bad gateway" } }, 502)
-    );
-
-    expect(useAlertStore.getState().downAlert).toBe("maintenance");
-  });
-});
-
-describe("handleGlobalSuccess", () => {
-  it("clears a forbidden banner after a subsequent success", () => {
-    useAlertStore.getState().setDownAlert("forbidden");
-
-    handleGlobalSuccess();
-
-    expect(useAlertStore.getState().downAlert).toBeNull();
+      expect(useAlertStore.getState().downAlert).toBeNull();
+    });
   });
 });

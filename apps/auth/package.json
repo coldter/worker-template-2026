@@ -6,7 +6,7 @@
   "scripts": {
     "cf-typegen": "wrangler types --env-interface CloudflareBindings",
     "cf-typegen:check": "wrangler types --check --env-interface CloudflareBindings",
-    "check-types": "tsc --noEmit",
+    "typecheck": "tsc --noEmit",
     "deploy": "wrangler deploy --var NODE_ENV:production --var ENABLE_SIGNUP:false",
     "dev": "wrangler types --env-interface CloudflareBindings && wrangler dev --port 8788 --inspector-port 9230",
     "test": "vitest run --passWithNoTests"
@@ -15,16 +15,16 @@
     "@repo/db": "workspace:*",
     "@repo/email": "workspace:*",
     "@repo/shared": "workspace:*",
-    "better-auth": "^1.7.3",
+    "better-auth": "^1.7.12",
     "drizzle-orm": "1.0.0-rc.5-5935859",
-    "hono": "^4.13.7",
-    "pg": "^8.23.0",
-    "zod": "^4.6.1"
+    "hono": "^4.13.14",
+    "pg": "^8.23.1",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@types/pg": "^8.23.1",
     "typescript": "^7.0.2",
-    "vitest": "^5.0.0",
-    "wrangler": "^4.130.0"
+    "vitest": "^5.0.5",
+    "wrangler": "^4.152.0"
   }
 }

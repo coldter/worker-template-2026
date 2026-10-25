@@ -8,6 +8,7 @@ import {
   LogOut,
   Sparkles,
 } from "lucide-react";
+
 import useDialogState from "@/hooks/use-dialog-state";
 import { SignOutDialog } from "@/modules/common/sign-out-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/modules/ui/avatar";
@@ -28,7 +29,7 @@ import {
 } from "@/modules/ui/sidebar";
 import { sessionQueryOptions } from "@/query/session-query";
 
-export function NavUser() {
+export const NavUser = () => {
   const { isMobile } = useSidebar();
   const [open, setOpen] = useDialogState();
   const { data: session } = useQuery(sessionQueryOptions);
@@ -125,4 +126,4 @@ export function NavUser() {
       <SignOutDialog onOpenChange={setOpen} open={!!open} />
     </>
   );
-}
+};

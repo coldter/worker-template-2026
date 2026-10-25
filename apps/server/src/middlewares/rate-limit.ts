@@ -1,5 +1,6 @@
 import { logger } from "@repo/shared/logger";
 import { createMiddleware } from "hono/factory";
+
 import { getClientIp } from "@/lib/audit-context";
 import type { AppEnv } from "@/lib/context";
 
@@ -17,6 +18,7 @@ export const rateLimitMiddleware = createMiddleware<AppEnv>(async (c, next) => {
   const limit = GUEST_LIMIT;
 
   const doBinding = c.env.RATE_LIMITER;
+
   if (doBinding) {
     try {
       const doId = doBinding.idFromName(identifier);
@@ -31,10 +33,11 @@ export const rateLimitMiddleware = createMiddleware<AppEnv>(async (c, next) => {
       }
 
       c.header("X-RateLimit-Remaining", String(remaining));
+
       return next();
-    } catch (err) {
+    } catch (error) {
       logger.warn("Rate limiter DO unavailable, falling back to KV", {
-        error: err,
+        error,
         requestId: c.get("requestId"),
       });
     }
@@ -42,6 +45,7 @@ export const rateLimitMiddleware = createMiddleware<AppEnv>(async (c, next) => {
 
   const windowKey = `rl:${identifier}:${Math.floor(Date.now() / (WINDOW_SECONDS * 1000))}`;
   const raw = await c.env.CACHE.get(windowKey, "text");
+  // oxlint-disable-next-line unicorn/prefer-number-coercion -- parseInt keeps integer-prefix semantics for counter values
   const count = raw ? Number.parseInt(raw, 10) : 0;
 
   if (count >= limit) {
@@ -55,17 +59,18 @@ export const rateLimitMiddleware = createMiddleware<AppEnv>(async (c, next) => {
     c.executionCtx.waitUntil(
       (async () => {
         const current = await c.env.CACHE.get(windowKey, "text");
+        // oxlint-disable-next-line unicorn/prefer-number-coercion -- parseInt keeps integer-prefix semantics for counter values
         const n = current ? Number.parseInt(current, 10) : 0;
         await c.env.CACHE.put(windowKey, String(n + 1), {
           expirationTtl: WINDOW_SECONDS * 2,
         });
       })()
     );
-  } catch (err) {
+  } catch (error) {
     logger.debug("Rate limiter KV waitUntil unavailable", {
-      error: err,
+      error,
     });
   }
 
-  await next();
+  return await next();
 });

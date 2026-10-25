@@ -1,4 +1,5 @@
 import path from "node:path";
+
 import { createDrizzleClient } from "@repo/db/client";
 import { accounts, sessions, users, verifications } from "@repo/db/schema";
 import { logger } from "@repo/shared/logger";
@@ -10,13 +11,15 @@ import { vi } from "vitest";
 const client = new Client({
   connectionString: process.env.DATABASE_TEST_URL ?? process.env.DATABASE_URL,
 });
+
 await client.connect();
+
 const db = createDrizzleClient(
   client,
   process.env.NODE_ENV === "development" ? new DrizzleLogger() : undefined
 );
 
-export function mockFetchRequest() {
+export const mockFetchRequest = () => {
   vi.stubGlobal(
     "fetch",
     vi.fn().mockImplementation((input: string | Request | URL) => {
@@ -32,36 +35,37 @@ export function mockFetchRequest() {
           },
           ok: true,
           status: 200,
-          text: async () => "",
+          text: () => "",
         });
       }
 
       return Promise.resolve({
         clone: () => ({
-          json: async () => ({}),
-          text: async () => "",
+          json: () => ({}),
+          text: () => "",
         }),
-        json: async () => ({}),
+        json: () => ({}),
         ok: true,
         status: 200,
-        text: async () => "",
+        text: () => "",
       });
     })
   );
-}
+};
 
-export async function clearDatabase() {
+export const clearDatabase = async () => {
   await db.delete(sessions);
   await db.delete(verifications);
   await db.delete(accounts);
   await db.delete(users);
-}
+};
 
-export async function migrateDatabase() {
+export const migrateDatabase = async () => {
   const migrationsPath = path.resolve(
     import.meta.dirname,
     "../../../packages/db/src/migrations"
   );
+
   logger.info(`[Test Setup] Running migrations from ${migrationsPath}`);
 
   try {
@@ -71,4 +75,4 @@ export async function migrateDatabase() {
     logger.error("[Test Setup] Migrations failed:", { error });
     throw error;
   }
-}
+};

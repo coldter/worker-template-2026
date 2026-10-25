@@ -1,6 +1,6 @@
-export async function onUserStatusChange(
+export const onUserStatusChange = (
   _userId: string,
   _newStatus: string,
   _previousStatus: string,
   _reason?: string | null
-): Promise<void> {}
+): Promise<void> => Promise.resolve();

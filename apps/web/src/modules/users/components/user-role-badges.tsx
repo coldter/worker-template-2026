@@ -5,7 +5,7 @@ interface UserRoleBadgesProps {
   roles: string[];
 }
 
-export function UserRoleBadges({ roles, max = 2 }: UserRoleBadgesProps) {
+export const UserRoleBadges = ({ roles, max = 2 }: UserRoleBadgesProps) => {
   const displayRoles = roles.slice(0, max);
   const remaining = roles.length - max;
 
@@ -19,4 +19,4 @@ export function UserRoleBadges({ roles, max = 2 }: UserRoleBadgesProps) {
       {remaining > 0 && <Badge variant="secondary">+{remaining}</Badge>}
     </div>
   );
-}
+};

@@ -1,14 +1,12 @@
-import { WorkerEntrypoint } from "cloudflare:workers";
 import { withDrizzleClient } from "@repo/db/client";
 import { DrizzleLogger } from "@repo/shared/logger-drizzle";
+import { WorkerEntrypoint } from "cloudflare:workers";
+
 import { NOTIFICATION_TYPES } from "@/modules/notifications/constants";
 import { notificationDispatch } from "@/modules/notifications/dispatch";
 
-function getDrizzleLogger() {
-  return process.env.NODE_ENV === "development"
-    ? new DrizzleLogger()
-    : undefined;
-}
+const getDrizzleLogger = () =>
+  process.env.NODE_ENV === "development" ? new DrizzleLogger() : undefined;
 
 export class ApiEntrypoint extends WorkerEntrypoint<CloudflareBindings> {
   async onUserCreated(user: {
@@ -19,6 +17,7 @@ export class ApiEntrypoint extends WorkerEntrypoint<CloudflareBindings> {
     const instance = await this.env.ONBOARDING_WF.create({
       params: { email: user.email, name: user.name, userId: user.id },
     });
+
     return { workflowId: instance.id };
   }
 
@@ -33,6 +32,7 @@ export class ApiEntrypoint extends WorkerEntrypoint<CloudflareBindings> {
       async (db) => {
         const deviceDesc =
           params.platform === "mobile" ? "a mobile device" : "a web browser";
+
         await notificationDispatch.send(db, {
           body: `A new sign-in was detected from ${deviceDesc}.`,
           props: {

@@ -1,10 +1,14 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { type ColumnDef, useTable } from "@tanstack/react-table";
+import { useTable } from "@tanstack/react-table";
+import type { ColumnDef } from "@tanstack/react-table";
+
 import type { DataTableFeatures } from "./features";
 import { dataTableFeatures } from "./features";
 import { DataTablePagination } from "./pagination";
 
-type Row = { id: number };
+interface Row {
+  id: number;
+}
 
 const makeRows = (count: number): Row[] =>
   Array.from({ length: count }, (_, i) => ({ id: i + 1 }));
@@ -13,17 +17,17 @@ const columns: ColumnDef<DataTableFeatures, Row>[] = [
   { accessorKey: "id", header: "ID" },
 ];
 
-type PaginationHostProps = {
+interface PaginationHostProps {
   rowCount: number;
   pageSize: number;
   pageIndex: number;
-};
+}
 
-function PaginationHost({
+const PaginationHost = ({
   rowCount,
   pageSize,
   pageIndex,
-}: PaginationHostProps) {
+}: PaginationHostProps) => {
   const table = useTable({
     columns,
     data: makeRows(rowCount),
@@ -36,7 +40,7 @@ function PaginationHost({
       <DataTablePagination table={table} />
     </div>
   );
-}
+};
 
 const meta = {
   component: PaginationHost,

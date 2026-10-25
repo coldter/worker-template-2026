@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+
 import {
   getNotificationPreferences,
   updateNotificationPreferences,
@@ -11,17 +12,17 @@ export const notificationPreferencesKeys = {
   detail: () => [...notificationPreferencesKeys.all, "detail"] as const,
 };
 
-export function useNotificationPreferencesQuery() {
-  return useQuery({
+export const useNotificationPreferencesQuery = () =>
+  useQuery({
     queryFn: async ({ signal }) => {
       const response = await getNotificationPreferences({ signal });
+
       return response.preferences;
     },
     queryKey: notificationPreferencesKeys.detail(),
   });
-}
 
-export function useUpdateNotificationPreferencesMutation() {
+export const useUpdateNotificationPreferencesMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -29,6 +30,7 @@ export function useUpdateNotificationPreferencesMutation() {
       data: NonNullable<UpdateNotificationPreferencesData["body"]>
     ) => {
       const response = await updateNotificationPreferences({ body: data });
+
       return response.preferences;
     },
     onError: (error) => {
@@ -41,4 +43,4 @@ export function useUpdateNotificationPreferencesMutation() {
       toast.success("Notification preferences updated");
     },
   });
-}
+};

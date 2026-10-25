@@ -1,8 +1,10 @@
 import path from "node:path";
+
 import { cloudflareTest } from "@cloudflare/vitest-plugin";
 import { defineConfig } from "vitest/config";
 
 export default defineConfig({
+  cacheDir: "node_modules/.vitest",
   plugins: [
     cloudflareTest({
       miniflare: {

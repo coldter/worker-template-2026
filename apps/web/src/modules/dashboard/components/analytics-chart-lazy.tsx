@@ -1,4 +1,5 @@
 import { lazy, Suspense } from "react";
+
 import { Skeleton } from "@/modules/ui/skeleton";
 
 const AnalyticsChart = lazy(() =>
@@ -7,14 +8,10 @@ const AnalyticsChart = lazy(() =>
   }))
 );
 
-function AnalyticsChartFallback() {
-  return <Skeleton className="h-[300px] w-full" />;
-}
+const AnalyticsChartFallback = () => <Skeleton className="h-[300px] w-full" />;
 
-export function LazyAnalyticsChart() {
-  return (
-    <Suspense fallback={<AnalyticsChartFallback />}>
-      <AnalyticsChart />
-    </Suspense>
-  );
-}
+export const LazyAnalyticsChart = () => (
+  <Suspense fallback={<AnalyticsChartFallback />}>
+    <AnalyticsChart />
+  </Suspense>
+);

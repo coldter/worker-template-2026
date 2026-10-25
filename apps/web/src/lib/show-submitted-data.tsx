@@ -1,9 +1,9 @@
 import { toast } from "sonner";
 
-export function showSubmittedData<T>(
+export const showSubmittedData = <T,>(
   data: T,
   title = "You submitted the following values:"
-) {
+) => {
   toast.message(title, {
     description: (
       <pre className="mt-2 w-full overflow-x-auto rounded-md bg-slate-950 p-4">
@@ -11,4 +11,4 @@ export function showSubmittedData<T>(
       </pre>
     ),
   });
-}
+};

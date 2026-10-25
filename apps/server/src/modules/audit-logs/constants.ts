@@ -3,6 +3,7 @@ import {
   AUDIT_EVENTS as SHARED_AUDIT_EVENTS,
   TARGET_TYPES as SHARED_TARGET_TYPES,
 } from "@repo/shared/audit";
+
 import type { AuditEventKey } from "@/modules/audit-logs/types";
 
 export const ACTOR_TYPES = SHARED_ACTOR_TYPES;

@@ -5,27 +5,29 @@ import { DrizzleLogger } from "@repo/shared/logger-drizzle";
 import { Hono } from "hono";
 import { trimTrailingSlash } from "hono/trailing-slash";
 import { z } from "zod";
-import { type AuthBindings, createAuth } from "./instance";
+
+import { createAuth } from "./instance";
+import type { AuthBindings } from "./instance";
 
 const cfPropertiesSchema = z.object({
   colo: z.string().optional().catch(undefined),
   country: z.string().optional().catch(undefined),
 });
 
-type AuthEnv = {
+interface AuthEnv {
   Bindings: CloudflareBindings;
   Variables: {
     db: ReturnType<typeof createDrizzleClient>;
   };
-};
+}
 
 const app = new Hono<AuthEnv>();
 
 app.use("*", trimTrailingSlash());
 
-app.use("*", async (c, next) => {
+app.use("*", async (c, proceed) => {
   const start = Date.now();
-  await next();
+  await proceed();
   const duration = Date.now() - start;
 
   try {
@@ -43,19 +45,19 @@ app.use("*", async (c, next) => {
       doubles: [c.res.status, duration],
       indexes: [path],
     });
-  } catch (err) {
+  } catch (error) {
     logger.debug("Analytics writeDataPoint failed", {
-      error: err,
+      error,
     });
   }
 });
 
-app.use("*", async (c, next) => {
+app.use("*", async (c, proceed) => {
   await withDrizzleClient(
     c.env.HYPERDRIVE.connectionString,
     async (db) => {
       c.set("db", db);
-      await next();
+      await proceed();
     },
     {
       logger:
@@ -67,9 +69,10 @@ app.use("*", async (c, next) => {
   );
 });
 
-app.all("/*", async (c) => {
+app.all("/*", (c) => {
   // SAFETY: the API service binding targets the server worker's ApiEntrypoint, so it exposes the ApiBindingRpc methods at runtime.
   const auth = createAuth(c.var.db, c.env as AuthBindings, c.executionCtx);
+
   return auth.handler(c.req.raw);
 });
 

@@ -11,6 +11,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/modules/ui/form";
+
 import { RoleMultiSelect } from "../components/role-multi-select";
 import { useUpdateUserRolesMutation } from "../query";
 import type { User, UserDetail } from "../types";
@@ -27,11 +28,11 @@ interface RoleAssignmentDialogProps {
   user: User | UserDetail;
 }
 
-export function RoleAssignmentDialog({
+export const RoleAssignmentDialog = ({
   user,
   open,
   onOpenChange,
-}: RoleAssignmentDialogProps) {
+}: RoleAssignmentDialogProps) => {
   const updateMutation = useUpdateUserRolesMutation();
 
   const form = useForm<RolesFormValues>({
@@ -72,7 +73,10 @@ export function RoleAssignmentDialog({
           <FormItem>
             <FormLabel>Roles</FormLabel>
             <FormControl>
-              <RoleMultiSelect onChange={field.onChange} value={field.value} />
+              <RoleMultiSelect
+                onChange={(value) => field.onChange(value)}
+                value={field.value}
+              />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -80,4 +84,4 @@ export function RoleAssignmentDialog({
       />
     </FormDialog>
   );
-}
+};

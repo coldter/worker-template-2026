@@ -1,5 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+
 import { ThemeProvider } from "@/context/theme-provider";
+
 import { ThemeSwitch } from "./theme-switch";
 
 const meta = {

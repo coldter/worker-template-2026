@@ -1,5 +1,4 @@
 import { createFileRoute } from "@tanstack/react-router";
-
 import * as z from "zod/mini";
 
 import { Authorized } from "@/components/authorized";
@@ -8,14 +7,16 @@ import { PermissionDenied } from "@/modules/permissions";
 import { UsersPage } from "@/modules/users/pages/users-page";
 import { usersListQueryOptions } from "@/modules/users/query";
 
+const catchSchema = z.catch;
+
 export const usersSearchSchema = z.object({
-  order: z.catch(z.optional(z.enum(["asc", "desc"])), undefined),
-  page: z.catch(z.optional(z.number()), 1),
-  perPage: z.catch(z.optional(z.number()), 20),
+  order: catchSchema(z.optional(z.enum(["asc", "desc"])), undefined),
+  page: catchSchema(z.optional(z.number()), 1),
+  perPage: catchSchema(z.optional(z.number()), 20),
   role: z.optional(z.string()),
   search: z.optional(z.string()),
   sort: z.optional(z.string()),
-  status: z.catch(
+  status: catchSchema(
     z.optional(z.enum(["active", "inactive", "locked"])),
     undefined
   ),
@@ -23,17 +24,15 @@ export const usersSearchSchema = z.object({
 
 export type UsersSearch = z.infer<typeof usersSearchSchema>;
 
-function usersListParams(search: UsersSearch) {
-  return {
-    order: search.order ?? ("desc" as const),
-    page: Math.max(1, search.page ?? 1),
-    perPage: search.perPage ?? 20,
-    role: search.role,
-    search: search.search,
-    sort: search.sort ?? "createdAt",
-    status: search.status,
-  };
-}
+const usersListParams = (search: UsersSearch) => ({
+  order: search.order ?? ("desc" as const),
+  page: Math.max(1, search.page ?? 1),
+  perPage: search.perPage ?? 20,
+  role: search.role,
+  search: search.search,
+  sort: search.sort ?? "createdAt",
+  status: search.status,
+});
 
 export const Route = createFileRoute("/(protected)/users/")({
   component: () => (
@@ -50,6 +49,7 @@ export const Route = createFileRoute("/(protected)/users/")({
     const capabilities = queryClient.getQueryData(
       authorizationCapabilitiesQueryOptions().queryKey
     );
+
     if (capabilities?.["user:list"]) {
       await queryClient.prefetchQuery(
         usersListQueryOptions(usersListParams(deps))

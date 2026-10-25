@@ -1,10 +1,10 @@
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+
 import type { UserConfig } from "@hey-api/openapi-ts";
 import { defineConfig } from "@hey-api/openapi-ts";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const __filename = import.meta.filename;
+const __dirname = import.meta.dirname;
 
 export const openApiConfig: UserConfig = {
   input: {

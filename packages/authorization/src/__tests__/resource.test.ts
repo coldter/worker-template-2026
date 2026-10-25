@@ -1,16 +1,23 @@
 import { describe, expect, it } from "vitest";
+
 import { principalNotActive } from "../conditions";
 import { PolicyBuilder } from "../resource";
 import type { ConditionContext } from "../types";
 
-const AT_LEAST_ONE_ACTION = /at least one action/;
-const CANNOT_MIX_WILDCARD = /cannot mix the wildcard/;
-const ORG_ROLE_REQUIRED_PATTERN = /at least one org role/;
-const UNKNOWN_ORG_ROLE_PATTERN = /references org role "ghost" not in schema/;
+const AT_LEAST_ONE_ACTION = /at least one action/iu;
+const CANNOT_MIX_WILDCARD = /cannot mix the wildcard/iu;
+const ORG_ROLE_REQUIRED_PATTERN = /at least one org role/iu;
+const UNKNOWN_ORG_ROLE_PATTERN = /references org role "ghost" not in schema/iu;
 
-type TestResource = { id: string; createdBy: string };
+interface TestResource {
+  id: string;
+  createdBy: string;
+}
 
-describe("PolicyBuilder", () => {
+const isSpecialResource = (ctx: ConditionContext<TestResource>) =>
+  ctx.resource?.id === "special";
+
+describe(PolicyBuilder, () => {
   const builder = new PolicyBuilder<
     TestResource,
     "admin" | "user",
@@ -24,25 +31,25 @@ describe("PolicyBuilder", () => {
   it("allow(role).to(action) produces correct rule", () => {
     const rule = builder.allow("admin").to("*");
     expect(rule.effect).toBe("allow");
-    expect(rule.roles).toEqual(["admin"]);
+    expect(rule.roles).toStrictEqual(["admin"]);
     expect(rule.actions).toBe("*");
-    expect(rule.conditions).toEqual([]);
+    expect(rule.conditions).toStrictEqual([]);
     expect(rule.label).toBe("allow:admin:*");
   });
 
   it("deny(role).to(action) produces correct rule", () => {
     const rule = builder.deny("user").to("delete");
     expect(rule.effect).toBe("deny");
-    expect(rule.roles).toEqual(["user"]);
-    expect(rule.actions).toEqual(["delete"]);
-    expect(rule.conditions).toEqual([]);
+    expect(rule.roles).toStrictEqual(["user"]);
+    expect(rule.actions).toStrictEqual(["delete"]);
+    expect(rule.conditions).toStrictEqual([]);
     expect(rule.label).toBe("deny:user:delete");
   });
 
   it("allow('*').to(action) produces wildcard roles", () => {
     const rule = builder.allow("*").to("view");
     expect(rule.roles).toBe("*");
-    expect(rule.actions).toEqual(["view"]);
+    expect(rule.actions).toStrictEqual(["view"]);
     expect(rule.label).toBe("allow:*:view");
   });
 
@@ -63,9 +70,7 @@ describe("PolicyBuilder", () => {
   });
 
   it("allow(role).to(action).where(predicate) adds predicate condition", () => {
-    const predicate = (ctx: ConditionContext<TestResource>) =>
-      ctx.resource?.id === "special";
-    const rule = builder.allow("admin").to("view").where(predicate);
+    const rule = builder.allow("admin").to("view").where(isSpecialResource);
     expect(rule.conditions).toHaveLength(1);
     expect(rule.conditions[0]?.type).toBe("where");
     expect(rule.conditions[0]?.label).toBe("where:custom");
@@ -77,6 +82,7 @@ describe("PolicyBuilder", () => {
       .allow("user")
       .to("list")
       .whereCondition(principalNotActive());
+
     expect(rule.conditions).toHaveLength(1);
     expect(rule.conditions[0]?.type).toBe("principalNotActive");
     expect(rule.label).toBe("allow:user:list:principalNotActive");
@@ -87,6 +93,7 @@ describe("PolicyBuilder", () => {
       .allow("user")
       .to("manage")
       .withOrgRole("org_owner", "org_member");
+
     expect(rule.conditions).toHaveLength(1);
     expect(rule.conditions[0]?.type).toBe("withOrgRole");
     expect(rule.conditions[0]?.label).toBe("withOrgRole:org_owner,org_member");
@@ -112,13 +119,12 @@ describe("PolicyBuilder", () => {
   });
 
   it("chaining multiple conditions produces AND (multiple conditions)", () => {
-    const predicate = (ctx: ConditionContext<TestResource>) =>
-      ctx.resource?.id === "special";
     const rule = builder
       .allow("user")
       .to("update")
       .whereOwner()
-      .where(predicate);
+      .where(isSpecialResource);
+
     expect(rule.conditions).toHaveLength(2);
     expect(rule.conditions[0]?.type).toBe("whereOwner");
     expect(rule.conditions[1]?.type).toBe("where");
@@ -127,7 +133,7 @@ describe("PolicyBuilder", () => {
 
   it("to() with multiple actions lists them", () => {
     const rule = builder.allow("user").to("view", "list");
-    expect(rule.actions).toEqual(["view", "list"]);
+    expect(rule.actions).toStrictEqual(["view", "list"]);
     expect(rule.label).toBe("allow:user:view,list");
   });
 

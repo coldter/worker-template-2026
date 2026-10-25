@@ -1,19 +1,18 @@
-import { WorkerEntrypoint } from "cloudflare:workers";
 import { withDrizzleClient } from "@repo/db/client";
 import { logger } from "@repo/shared/logger";
 import { DrizzleLogger } from "@repo/shared/logger-drizzle";
-import { type AuthBindings, createAuth } from "./instance";
+import { WorkerEntrypoint } from "cloudflare:workers";
+
+import { createAuth } from "./instance";
+import type { AuthBindings } from "./instance";
 import app from "./server";
 
-function getDrizzleLogger() {
-  return process.env.NODE_ENV === "development"
-    ? new DrizzleLogger()
-    : undefined;
-}
+const getDrizzleLogger = () =>
+  process.env.NODE_ENV === "development" ? new DrizzleLogger() : undefined;
 
 export class AuthEntrypoint extends WorkerEntrypoint<CloudflareBindings> {
   async fetch(request: Request): Promise<Response> {
-    return app.fetch(request, this.env, this.ctx);
+    return await app.fetch(request, this.env, this.ctx);
   }
 
   private async recordRpc<T>(
@@ -21,9 +20,11 @@ export class AuthEntrypoint extends WorkerEntrypoint<CloudflareBindings> {
     run: () => Promise<T>
   ): Promise<T> {
     const start = Date.now();
+
     try {
       const result = await run();
       this.writeRpcPoint(method, "ok", Date.now() - start);
+
       return result;
     } catch (error) {
       this.writeRpcPoint(method, "error", Date.now() - start);
@@ -52,13 +53,14 @@ export class AuthEntrypoint extends WorkerEntrypoint<CloudflareBindings> {
     }
   }
 
-  async getSession(headers: Headers) {
+  getSession(headers: Headers) {
     return this.recordRpc("getSession", () =>
       withDrizzleClient(
         this.env.HYPERDRIVE.connectionString,
         async (db) => {
           // SAFETY: the API service binding targets the server worker's ApiEntrypoint, so it exposes the ApiBindingRpc methods at runtime.
           const auth = createAuth(db, this.env as AuthBindings, this.ctx);
+
           return await auth.api.getSession({ headers });
         },
         { logger: getDrizzleLogger(), waitUntil: (p) => this.ctx.waitUntil(p) }

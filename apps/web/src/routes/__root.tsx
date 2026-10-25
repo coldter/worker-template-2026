@@ -7,6 +7,7 @@ import {
 } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import { StrictMode } from "react";
+
 import { ThemeProvider } from "@/context/theme-provider";
 import { brand } from "@/lib/brand";
 import { initErrorReporting } from "@/lib/report-error";
@@ -16,14 +17,37 @@ import { DownAlert } from "@/modules/common/down-alert";
 import { NavigationProgress } from "@/modules/common/navigation-progress";
 import { NotFoundError } from "@/modules/errors/not-found-error";
 import { Toaster } from "@/modules/ui/sonner";
+
 import "../index.css";
 
-export type RouterAppContext = {
+export interface RouterAppContext {
   queryClient: QueryClient;
   session: Session | null;
-};
+}
 
 initErrorReporting();
+
+const RootComponent = () => (
+  <StrictMode>
+    <HeadContent />
+    <ThemeProvider defaultTheme="light">
+      <NavigationProgress />
+      <div className="flex min-h-svh flex-col">
+        <main className="flex-1">
+          <Outlet />
+        </main>
+      </div>
+      <Toaster richColors />
+      <DownAlert />
+    </ThemeProvider>
+    {import.meta.env.DEV && (
+      <>
+        <ReactQueryDevtools initialIsOpen={false} />
+        <TanStackRouterDevtools position="bottom-left" />
+      </>
+    )}
+  </StrictMode>
+);
 
 export const Route = createRootRouteWithContext<RouterAppContext>()({
   component: RootComponent,
@@ -54,27 +78,3 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
   }),
   notFoundComponent: NotFoundError,
 });
-
-function RootComponent() {
-  return (
-    <StrictMode>
-      <HeadContent />
-      <ThemeProvider defaultTheme="light">
-        <NavigationProgress />
-        <div className="flex min-h-svh flex-col">
-          <main className="flex-1">
-            <Outlet />
-          </main>
-        </div>
-        <Toaster richColors />
-        <DownAlert />
-      </ThemeProvider>
-      {import.meta.env.DEV && (
-        <>
-          <ReactQueryDevtools initialIsOpen={false} />
-          <TanStackRouterDevtools position="bottom-left" />
-        </>
-      )}
-    </StrictMode>
-  );
-}

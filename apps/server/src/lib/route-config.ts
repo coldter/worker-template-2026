@@ -13,6 +13,16 @@ export type Route<
   },
 > = ReturnType<typeof createRoute<P, Omit<R, "guard">>>;
 
+const toMiddlewareList = (
+  middleware: MiddlewareHandler | MiddlewareHandler[] | undefined
+): MiddlewareHandler[] => {
+  if (!middleware) {
+    return [];
+  }
+
+  return Array.isArray(middleware) ? middleware : [middleware];
+};
+
 export const createRouteConfig = <
   P extends string,
   R extends Omit<RouteOptions, "path"> & {
@@ -23,15 +33,11 @@ export const createRouteConfig = <
   ...routeConfig
 }: R): Route<P, R> => {
   const initGuard = Array.isArray(guard) ? guard : [guard];
-  let initMiddleware: MiddlewareHandler[] = [];
-  if (routeConfig.middleware) {
-    if (Array.isArray(routeConfig.middleware)) {
-      initMiddleware = routeConfig.middleware;
-    } else {
-      initMiddleware = [routeConfig.middleware];
-    }
-  }
-  const middleware = [...initGuard, ...initMiddleware];
+
+  const middleware = [
+    ...initGuard,
+    ...toMiddlewareList(routeConfig.middleware),
+  ];
 
   return createRoute({
     ...routeConfig,

@@ -17,7 +17,7 @@ interface PermissionDeniedProps {
   title?: string;
 }
 
-export function PermissionDenied({
+export const PermissionDenied = ({
   title = "Access Denied",
   message = "You don't have the required permissions to access this resource.",
   requiredPermission,
@@ -25,7 +25,7 @@ export function PermissionDenied({
   showHomeButton = true,
   showLogoutButton = false,
   children,
-}: PermissionDeniedProps) {
+}: PermissionDeniedProps) => {
   const navigate = useNavigate();
   const { history } = useRouter();
 
@@ -53,19 +53,19 @@ export function PermissionDenied({
   return (
     <div className="flex h-svh w-full items-center justify-center">
       <div className="flex flex-col items-center gap-6 px-4 text-center">
-        <div className="flex h-20 w-20 items-center justify-center rounded-full bg-destructive/10">
-          <ShieldX className="h-10 w-10 text-destructive" />
+        <div className="bg-destructive/10 flex h-20 w-20 items-center justify-center rounded-full">
+          <ShieldX className="text-destructive h-10 w-10" />
         </div>
 
         <div className="space-y-2">
           <h1 className="text-3xl font-bold tracking-tight">{title}</h1>
-          <p className="max-w-md text-muted-foreground">{message}</p>
+          <p className="text-muted-foreground max-w-md">{message}</p>
         </div>
 
         {requiredPermission ? (
-          <p className="text-sm text-muted-foreground">
+          <p className="text-muted-foreground text-sm">
             Required permission:{" "}
-            <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">
+            <code className="bg-muted rounded px-1.5 py-0.5 font-mono text-xs">
               {requiredPermission}
             </code>
           </p>
@@ -96,10 +96,10 @@ export function PermissionDenied({
           ) : null}
         </div>
 
-        <p className="text-sm text-muted-foreground">
+        <p className="text-muted-foreground text-sm">
           If you believe this is an error, please contact your administrator.
         </p>
       </div>
     </div>
   );
-}
+};

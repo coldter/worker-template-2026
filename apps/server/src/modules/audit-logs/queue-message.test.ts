@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
+
 import { parseAuditLogMessage } from "@/modules/audit-logs/queue-message";
 
-describe("parseAuditLogMessage", () => {
+describe(parseAuditLogMessage, () => {
   it("accepts a well-formed bufferable message and defaults actorType", () => {
     const data = parseAuditLogMessage({
       event: "user.viewed",
@@ -26,7 +27,7 @@ describe("parseAuditLogMessage", () => {
     });
 
     expect(data?.actorType).toBe("api");
-    expect(data?.metadata).toEqual({ count: 25 });
+    expect(data?.metadata).toStrictEqual({ count: 25 });
   });
 
   it.each([

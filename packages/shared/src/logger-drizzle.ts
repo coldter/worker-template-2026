@@ -1,11 +1,12 @@
 import { z } from "zod";
+
 import { logger } from "./logger";
 import {
   looksLikeToken,
-  type RedactableValue,
   redactableValueSchema,
   redactValue,
 } from "./redaction";
+import type { RedactableValue } from "./redaction";
 
 export interface DrizzleOrmLogger {
   logQuery: (query: string, params: unknown[]) => void;
@@ -40,19 +41,24 @@ const SENSITIVE_COLUMNS: readonly string[] = [
 const REDACTED = "[REDACTED]";
 
 const SENSITIVE_TABLES_RE = new RegExp(
-  `(^|[\\s,"\`(])"?(${SENSITIVE_TABLES.join("|")})"?($|[\\s,."\`)])`
+  `(^|[\\s,"\`(])"?(${SENSITIVE_TABLES.join("|")})"?($|[\\s,."\`)])`,
+  "u"
 );
+
 const SENSITIVE_COLUMNS_RE = new RegExp(
-  `(^|[\\s,"\`(.])"?(${SENSITIVE_COLUMNS.join("|")})"?($|[\\s,="\`)])`
+  `(^|[\\s,"\`(.])"?(${SENSITIVE_COLUMNS.join("|")})"?($|[\\s,="\`)])`,
+  "u"
 );
 
 const stringSchema = z.string();
+
 const numberSchema = z.union([
   z.number(),
   z.nan(),
   z.literal(Number.POSITIVE_INFINITY),
   z.literal(Number.NEGATIVE_INFINITY),
 ]);
+
 const booleanSchema = z.boolean();
 
 type SqlParam =
@@ -62,108 +68,139 @@ type SqlParam =
   | { readonly kind: "number"; readonly value: number }
   | { readonly kind: "string"; readonly value: string };
 
-function isLogSqlEnabled(): boolean {
+const isLogSqlEnabled = (): boolean => {
   if (typeof process === "undefined") {
     return false;
   }
+
   const flag = process.env?.LOG_SQL?.toLowerCase();
+
   if (flag === "false" || flag === "0") {
     return false;
   }
+
   if (flag === "true" || flag === "1") {
     return true;
   }
-  return process.env?.NODE_ENV !== "production";
-}
 
-function sqlReferencesSensitiveTable(sql: string): boolean {
-  return SENSITIVE_TABLES_RE.test(sql.toLowerCase());
-}
+  const nodeEnv: string | undefined = process.env?.NODE_ENV;
 
-function sqlReferencesSensitiveColumn(sql: string): boolean {
-  return SENSITIVE_COLUMNS_RE.test(sql.toLowerCase());
-}
+  return nodeEnv !== "production";
+};
 
-function toSqlParam(value: RedactableValue, filterTokens: boolean): SqlParam {
+const sqlReferencesSensitiveTable = (sql: string): boolean =>
+  SENSITIVE_TABLES_RE.test(sql.toLowerCase());
+
+const sqlReferencesSensitiveColumn = (sql: string): boolean =>
+  SENSITIVE_COLUMNS_RE.test(sql.toLowerCase());
+
+const toSqlParam = (
+  value: RedactableValue,
+  filterTokens: boolean
+): SqlParam => {
   if (value === null || value === undefined) {
     return { kind: "null" };
   }
 
   const stringValue = stringSchema.safeParse(value);
+
   if (stringValue.success) {
     const redacted =
       filterTokens && looksLikeToken(stringValue.data)
         ? REDACTED
         : stringValue.data;
+
     return { kind: "string", value: redacted };
   }
 
   const numberValue = numberSchema.safeParse(value);
+
   if (numberValue.success) {
     return { kind: "number", value: numberValue.data };
   }
 
   const booleanValue = booleanSchema.safeParse(value);
+
   if (booleanValue.success) {
     return { kind: "boolean", value: booleanValue.data };
   }
 
   return { kind: "json", value };
-}
+};
 
-function redactParams(query: string, params: readonly unknown[]): SqlParam[] {
+const redactParams = (
+  query: string,
+  params: readonly unknown[]
+): SqlParam[] => {
   const redactAll =
     sqlReferencesSensitiveTable(query) || sqlReferencesSensitiveColumn(query);
+
   return params.map((value) => {
     const parsed = redactableValueSchema.safeParse(value);
+
     if (!parsed.success) {
       if (redactAll) {
         return { kind: "string", value: REDACTED };
       }
+
       try {
         return { kind: "string", value: String(value) };
       } catch {
         return { kind: "string", value: REDACTED };
       }
     }
+
     return redactAll
       ? toSqlParam(redactValue(parsed.data), false)
       : toSqlParam(parsed.data, true);
   });
-}
+};
+
+const formatSqlQuery = (sqlTemplate: string, values: SqlParam[]): string => {
+  const placeholderCount = (sqlTemplate.match(/\$\d+/gu) || []).length;
+
+  if (placeholderCount !== values.length) {
+    return sqlTemplate;
+  }
+
+  return sqlTemplate.replaceAll(/\$(?<index>\d+)/gu, (_match, index) => {
+    const value = values[Math.trunc(Number(index)) - 1];
+
+    if (value === undefined || value.kind === "null") {
+      return "NULL";
+    }
+
+    if (value.kind === "string") {
+      return `'${value.value.replaceAll("'", "''")}'`;
+    }
+
+    if (value.kind === "number") {
+      return value.value.toString();
+    }
+
+    if (value.kind === "boolean") {
+      return value.value ? "true" : "false";
+    }
+
+    return `'${JSON.stringify(value.value).replaceAll("'", "''")}'`;
+  });
+};
 
 export class DrizzleLogger implements DrizzleOrmLogger {
+  readonly #formatQuery = formatSqlQuery;
+
   logQuery(query: string, params: unknown[]): void {
     if (!isLogSqlEnabled()) {
       return;
     }
+
     const safeParams = redactParams(query, params);
     logger.debug("DB Query", {
-      query: this.replaceSqlPlaceholders(query, safeParams),
+      query: this.#formatQuery(query, safeParams),
     });
   }
 
   replaceSqlPlaceholders(sqlTemplate: string, values: SqlParam[]): string {
-    const placeholderCount = (sqlTemplate.match(/\$\d+/g) || []).length;
-    if (placeholderCount !== values.length) {
-      return sqlTemplate;
-    }
-
-    return sqlTemplate.replace(/\$(\d+)/g, (_match, index) => {
-      const value = values[Number.parseInt(index, 10) - 1];
-      if (value === undefined || value.kind === "null") {
-        return "NULL";
-      }
-      if (value.kind === "string") {
-        return `'${value.value.replace(/'/g, "''")}'`;
-      }
-      if (value.kind === "number") {
-        return value.value.toString();
-      }
-      if (value.kind === "boolean") {
-        return value.value ? "true" : "false";
-      }
-      return `'${JSON.stringify(value.value).replace(/'/g, "''")}'`;
-    });
+    return this.#formatQuery(sqlTemplate, values);
   }
 }

@@ -1,7 +1,10 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { type ColumnDef, useTable } from "@tanstack/react-table";
+import { useTable } from "@tanstack/react-table";
+import type { ColumnDef } from "@tanstack/react-table";
 import { CheckCircle2, Circle, Lock, Shield, User } from "lucide-react";
+
 import { Badge } from "@/modules/ui/badge";
+
 import { DataTableColumnHeader } from "./column-header";
 import { DataTable } from "./data-table";
 import type { DataTableFeatures } from "./features";
@@ -9,14 +12,14 @@ import { dataTableFeatures } from "./features";
 import { DataTablePagination } from "./pagination";
 import { DataTableToolbar } from "./toolbar";
 
-type MockRow = {
+interface MockRow {
   id: string;
   name: string;
   email: string;
   status: "active" | "inactive" | "locked";
   role: "admin" | "editor" | "viewer";
   createdAt: string;
-};
+}
 
 const mockRows: MockRow[] = [
   {
@@ -177,51 +180,50 @@ const columns: ColumnDef<DataTableFeatures, MockRow>[] = [
   },
 ];
 
-type CompositionProps = {
+const additionalColumns: ColumnDef<DataTableFeatures, MockRow>[] = [
+  {
+    accessorKey: "id",
+    cell: ({ row }) => (
+      <code className="text-muted-foreground text-xs">{row.original.id}</code>
+    ),
+    enableSorting: true,
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="ID" />
+    ),
+    id: "id",
+  },
+  {
+    accessorKey: "email",
+    cell: ({ row }) => (
+      <span className="text-muted-foreground text-sm">
+        {row.original.email}
+      </span>
+    ),
+    enableSorting: true,
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Email" />
+    ),
+    id: "email",
+  },
+];
+
+interface CompositionProps {
   data: MockRow[];
   isLoading?: boolean;
   isError?: boolean;
   withFilters?: boolean;
   extraColumns?: boolean;
-};
+}
 
-function TableComposition({
+const TableComposition = ({
   data,
   isLoading,
   isError,
   withFilters,
   extraColumns,
-}: CompositionProps) {
-  const allColumns: ColumnDef<DataTableFeatures, MockRow>[] = extraColumns
-    ? [
-        ...columns,
-        {
-          accessorKey: "id",
-          cell: ({ row }) => (
-            <code className="text-muted-foreground text-xs">
-              {row.original.id}
-            </code>
-          ),
-          enableSorting: true,
-          header: ({ column }) => (
-            <DataTableColumnHeader column={column} title="ID" />
-          ),
-          id: "id",
-        },
-        {
-          accessorKey: "email",
-          cell: ({ row }) => (
-            <span className="text-muted-foreground text-sm">
-              {row.original.email}
-            </span>
-          ),
-          enableSorting: true,
-          header: ({ column }) => (
-            <DataTableColumnHeader column={column} title="Email" />
-          ),
-          id: "email",
-        },
-      ]
+}: CompositionProps) => {
+  const allColumns = extraColumns
+    ? [...columns, ...additionalColumns]
     : columns;
 
   const table = useTable({
@@ -256,7 +258,7 @@ function TableComposition({
       <DataTablePagination table={table} />
     </div>
   );
-}
+};
 
 const meta = {
   component: TableComposition,

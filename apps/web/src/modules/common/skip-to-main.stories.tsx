@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useEffect, useRef } from "react";
+
 import { SkipToMain } from "./skip-to-main";
 
 const meta = {
@@ -32,20 +33,24 @@ export const Default: Story = {
   ),
 };
 
+const FocusedStory = () => {
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const link = ref.current?.querySelector("a");
+    link?.focus();
+  }, []);
+
+  return (
+    <div className="relative min-h-40 p-8" ref={ref}>
+      <p className="text-muted-foreground text-sm">
+        The skip link is focused on mount to demonstrate its visible state.
+      </p>
+      <SkipToMain />
+    </div>
+  );
+};
+
 export const Focused: Story = {
-  render: () => {
-    const ref = useRef<HTMLDivElement>(null);
-    useEffect(() => {
-      const link = ref.current?.querySelector("a");
-      link?.focus();
-    }, []);
-    return (
-      <div className="relative min-h-40 p-8" ref={ref}>
-        <p className="text-muted-foreground text-sm">
-          The skip link is focused on mount to demonstrate its visible state.
-        </p>
-        <SkipToMain />
-      </div>
-    );
-  },
+  render: () => <FocusedStory />,
 };

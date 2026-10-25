@@ -14,47 +14,59 @@ interface SerializedError {
   stack: string | undefined;
 }
 
-function replaceErrors<T>(_key: string, value: T): T | SerializedError {
+const replaceErrors = <T>(_key: string, value: T): T | SerializedError => {
   if (value instanceof Error) {
     const serialized: SerializedError = {
       message: value.message,
       name: value.name,
       stack: value.stack,
     };
+
     if (value.cause !== undefined) {
       serialized.cause = value.cause;
     }
+
     return serialized;
   }
-  return value;
-}
 
-function log<T extends object>(
+  return value;
+};
+
+const log = <T extends object>(
   level: LogLevel,
   message: string,
   context?: T
-): void {
+): void => {
   const payload = { level, message, ts: Date.now(), ...context };
+
+  const nodeEnv: string | undefined = process.env.NODE_ENV;
+
   const entry =
-    process.env.NODE_ENV === "production"
+    nodeEnv === "production"
       ? JSON.stringify(payload, replaceErrors)
       : JSON.stringify(payload, replaceErrors, 2);
+
   switch (level) {
-    case "error":
+    case "error": {
       console.error(entry);
       break;
-    case "warn":
+    }
+
+    case "warn": {
       console.warn(entry);
       break;
-    case "debug":
-      // biome-ignore lint/suspicious/noConsole: logger implementation
+    }
+
+    case "debug": {
       console.debug(entry);
       break;
-    default:
-      // biome-ignore lint/suspicious/noConsole: logger implementation
+    }
+
+    default: {
       console.log(entry);
+    }
   }
-}
+};
 
 export const logger: Logger = {
   debug: (message, context) => log("debug", message, context),

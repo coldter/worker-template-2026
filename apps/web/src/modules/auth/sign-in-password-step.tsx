@@ -1,5 +1,7 @@
 import { ChevronLeft } from "lucide-react";
+
 import { Avatar, AvatarFallback, AvatarImage } from "@/modules/ui/avatar";
+
 import { SignInForm } from "./sign-in-form";
 
 interface SignInPasswordStepProps {
@@ -13,13 +15,14 @@ interface SignInPasswordStepProps {
   };
 }
 
-export function SignInPasswordStep({
+export const SignInPasswordStep = ({
   user,
   onBack,
   onSuccess,
   onTwoFactorRequired,
-}: SignInPasswordStepProps) {
+}: SignInPasswordStepProps) => {
   const displayName = user.name || "User";
+
   const initials = user.name
     ? user.name
         .split(" ")
@@ -34,11 +37,11 @@ export function SignInPasswordStep({
       <div className="flex items-center space-x-4">
         <button
           aria-label="Back"
-          className="group flex size-10 items-center justify-center rounded-full border bg-background transition-colors hover:bg-accent"
+          className="group bg-background hover:bg-accent flex size-10 items-center justify-center rounded-full border transition-colors"
           onClick={onBack}
           type="button"
         >
-          <ChevronLeft className="size-6 text-muted-foreground group-hover:text-foreground" />
+          <ChevronLeft className="text-muted-foreground group-hover:text-foreground size-6" />
         </button>
         <div className="flex items-center space-x-3">
           <Avatar className="size-10">
@@ -46,7 +49,7 @@ export function SignInPasswordStep({
             <AvatarFallback>{initials}</AvatarFallback>
           </Avatar>
           <div className="flex flex-col">
-            <span className="font-semibold text-sm leading-none">
+            <span className="text-sm leading-none font-semibold">
               {displayName}
             </span>
             <span className="text-muted-foreground text-xs">{user.email}</span>
@@ -55,7 +58,7 @@ export function SignInPasswordStep({
       </div>
 
       <div className="space-y-2">
-        <h1 className="font-bold text-2xl text-foreground">Enter password</h1>
+        <h1 className="text-foreground text-2xl font-bold">Enter password</h1>
         <p className="text-muted-foreground text-sm">
           Please enter your password to continue.
         </p>
@@ -69,4 +72,4 @@ export function SignInPasswordStep({
       />
     </div>
   );
-}
+};

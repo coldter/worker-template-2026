@@ -1,43 +1,42 @@
 import type { DrizzleClient } from "@repo/db";
-import { describe, expect, test } from "vitest";
-import { SESSION_CONFIG } from "../lib/platform";
-import {
-  createSessionUpdateBeforeHook,
-  type SessionUpdateHookContext,
-} from "./session-update";
+import { describe, expect, it } from "vitest";
 
-function createDatabaseStub(): DrizzleClient {
-  // SAFETY: both tests resolve before the hook reaches a database call, so the stub value is never read.
-  return {} as DrizzleClient;
-}
+import { SESSION_CONFIG } from "../lib/platform";
+import { createSessionUpdateBeforeHook } from "./session-update";
+import type { SessionUpdateHookContext } from "./session-update";
+
+// SAFETY: both tests resolve before the hook reaches a database call, so the stub value is never read.
+const createDatabaseStub = (): DrizzleClient => ({}) as DrizzleClient;
 
 type SessionUpdateResult = Awaited<
   ReturnType<ReturnType<typeof createSessionUpdateBeforeHook>>
 >;
 
-function readExpiresAt(result: SessionUpdateResult): number {
+const readExpiresAt = (result: SessionUpdateResult): number => {
   const { expiresAt } = result.data;
+
   if (!(expiresAt instanceof Date)) {
-    throw new Error("expected the hook to return an expiresAt");
+    throw new TypeError("expected the hook to return an expiresAt");
   }
+
   return expiresAt.getTime();
-}
+};
 
 const db = createDatabaseStub();
 
-function createContext(platform: "mobile" | "web"): SessionUpdateHookContext {
-  return {
-    context: {
-      session: {
-        session: { platform },
-        user: { id: "usr_test" },
-      },
+const createContext = (
+  platform: "mobile" | "web"
+): SessionUpdateHookContext => ({
+  context: {
+    session: {
+      session: { platform },
+      user: { id: "usr_test" },
     },
-  };
-}
+  },
+});
 
-describe("createSessionUpdateBeforeHook", () => {
-  test.each([
+describe(createSessionUpdateBeforeHook, () => {
+  it.each([
     ["web", SESSION_CONFIG.web.expiresIn],
     ["mobile", SESSION_CONFIG.mobile.expiresIn],
   ] as const)(
@@ -57,11 +56,11 @@ describe("createSessionUpdateBeforeHook", () => {
     }
   );
 
-  test("leaves updates without an expiry untouched", async () => {
+  it("leaves updates without an expiry untouched", async () => {
     const hook = createSessionUpdateBeforeHook(db);
 
     const result = await hook({ activeOrgRole: null }, createContext("mobile"));
 
-    expect(result).toEqual({ data: { activeOrgRole: null } });
+    expect(result).toStrictEqual({ data: { activeOrgRole: null } });
   });
 });

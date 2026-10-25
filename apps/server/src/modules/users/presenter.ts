@@ -1,6 +1,6 @@
 import type { UserStatus } from "./types";
 
-type UserSummaryRecord = {
+interface UserSummaryRecord {
   id: string;
   name: string;
   email: string;
@@ -10,7 +10,7 @@ type UserSummaryRecord = {
   roleSlugs: string[];
   createdAt: Date;
   updatedAt: Date;
-};
+}
 
 type UserDetailRecord = UserSummaryRecord & {
   failedLoginAttempts: number;
@@ -20,7 +20,7 @@ type UserDetailRecord = UserSummaryRecord & {
   deactivatedReason: string | null;
 };
 
-type MyAccountRecord = {
+interface MyAccountRecord {
   id: string;
   name: string;
   email: string;
@@ -29,50 +29,44 @@ type MyAccountRecord = {
   onboardingCompletedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
-};
-
-export function toUserSummaryResponse(user: UserSummaryRecord) {
-  return {
-    createdAt: user.createdAt.toISOString(),
-    email: user.email,
-    emailVerified: user.emailVerified,
-    id: user.id,
-    image: user.image,
-    name: user.name,
-    roleSlugs: user.roleSlugs,
-    status: user.status,
-    updatedAt: user.updatedAt.toISOString(),
-  };
 }
 
-export function toUserDetailResponse(user: UserDetailRecord) {
-  return {
-    createdAt: user.createdAt.toISOString(),
-    deactivatedAt: user.deactivatedAt?.toISOString() ?? null,
-    deactivatedBy: user.deactivatedBy,
-    deactivatedReason: user.deactivatedReason,
-    email: user.email,
-    emailVerified: user.emailVerified,
-    failedLoginAttempts: user.failedLoginAttempts,
-    id: user.id,
-    image: user.image,
-    lockedUntil: user.lockedUntil?.toISOString() ?? null,
-    name: user.name,
-    roleSlugs: user.roleSlugs,
-    status: user.status,
-    updatedAt: user.updatedAt.toISOString(),
-  };
-}
+export const toUserSummaryResponse = (user: UserSummaryRecord) => ({
+  createdAt: user.createdAt.toISOString(),
+  email: user.email,
+  emailVerified: user.emailVerified,
+  id: user.id,
+  image: user.image,
+  name: user.name,
+  roleSlugs: user.roleSlugs,
+  status: user.status,
+  updatedAt: user.updatedAt.toISOString(),
+});
 
-export function toMyAccountResponse(user: MyAccountRecord) {
-  return {
-    createdAt: user.createdAt.toISOString(),
-    email: user.email,
-    emailVerified: user.emailVerified,
-    id: user.id,
-    image: user.image,
-    name: user.name,
-    onboardingCompletedAt: user.onboardingCompletedAt?.toISOString() ?? null,
-    updatedAt: user.updatedAt.toISOString(),
-  };
-}
+export const toUserDetailResponse = (user: UserDetailRecord) => ({
+  createdAt: user.createdAt.toISOString(),
+  deactivatedAt: user.deactivatedAt?.toISOString() ?? null,
+  deactivatedBy: user.deactivatedBy,
+  deactivatedReason: user.deactivatedReason,
+  email: user.email,
+  emailVerified: user.emailVerified,
+  failedLoginAttempts: user.failedLoginAttempts,
+  id: user.id,
+  image: user.image,
+  lockedUntil: user.lockedUntil?.toISOString() ?? null,
+  name: user.name,
+  roleSlugs: user.roleSlugs,
+  status: user.status,
+  updatedAt: user.updatedAt.toISOString(),
+});
+
+export const toMyAccountResponse = (user: MyAccountRecord) => ({
+  createdAt: user.createdAt.toISOString(),
+  email: user.email,
+  emailVerified: user.emailVerified,
+  id: user.id,
+  image: user.image,
+  name: user.name,
+  onboardingCompletedAt: user.onboardingCompletedAt?.toISOString() ?? null,
+  updatedAt: user.updatedAt.toISOString(),
+});

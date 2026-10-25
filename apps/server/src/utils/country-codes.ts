@@ -53,11 +53,11 @@ const ALPHA2_TO_NUMERIC = {
 
 type Alpha2Code = keyof typeof ALPHA2_TO_NUMERIC;
 
-function isAlpha2Code(value: string): value is Alpha2Code {
-  return value in ALPHA2_TO_NUMERIC;
-}
+const isAlpha2Code = (value: string): value is Alpha2Code =>
+  value in ALPHA2_TO_NUMERIC;
 
-export function alpha2ToNumeric(alpha2: string): string {
+export const alpha2ToNumeric = (alpha2: string): string => {
   const code = alpha2.toUpperCase();
+
   return isAlpha2Code(code) ? ALPHA2_TO_NUMERIC[code] : alpha2;
-}
+};

@@ -5,18 +5,21 @@ import {
   createRouter,
   RouterProvider,
 } from "@tanstack/react-router";
+
 import { GeneralError } from "./general-error";
 
-function renderWithRouter(minimal = false) {
+const renderWithRouter = (minimal = false) => {
   const rootRoute = createRootRoute({
     component: () => <GeneralError minimal={minimal} />,
   });
+
   const router = createRouter({
     history: createMemoryHistory({ initialEntries: ["/"] }),
     routeTree: rootRoute,
   });
+
   return <RouterProvider router={router} />;
-}
+};
 
 const meta = {
   component: GeneralError,

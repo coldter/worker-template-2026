@@ -1,3 +1,5 @@
-import type { Session, SessionData, SessionUser } from "@/lib/auth-client";
-
-export type { Session, SessionData, SessionUser };
+export {
+  type Session,
+  type SessionData,
+  type SessionUser,
+} from "@/lib/auth-client";

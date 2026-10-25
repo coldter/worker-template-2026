@@ -1,21 +1,16 @@
-import {
-  WorkflowEntrypoint,
-  type WorkflowEvent,
-  type WorkflowStep,
-} from "cloudflare:workers";
 import { withDrizzleClient } from "@repo/db/client";
 import * as schema from "@repo/db/schema";
 import { logger } from "@repo/shared/logger";
 import { DrizzleLogger } from "@repo/shared/logger-drizzle";
+import { WorkflowEntrypoint } from "cloudflare:workers";
+import type { WorkflowEvent, WorkflowStep } from "cloudflare:workers";
 import { eq } from "drizzle-orm";
+
 import { getBrandConfigFromBindings } from "@/lib/brand";
 import { runWithWorkflowMetrics } from "@/lib/workflow-metrics";
 
-function getDrizzleLogger() {
-  return process.env.NODE_ENV === "development"
-    ? new DrizzleLogger()
-    : undefined;
-}
+const getDrizzleLogger = () =>
+  process.env.NODE_ENV === "development" ? new DrizzleLogger() : undefined;
 
 interface EmailNotificationParams {
   notificationId: string;
@@ -41,7 +36,7 @@ export class EmailNotificationWorkflow extends WorkflowEntrypoint<
     const notificationData = await step.do(
       "load-notification",
       { retries: { backoff: "exponential", delay: "2 seconds", limit: 3 } },
-      async () =>
+      () =>
         withDrizzleClient(
           this.env.HYPERDRIVE.connectionString,
           async (db) => {
@@ -75,6 +70,7 @@ export class EmailNotificationWorkflow extends WorkflowEntrypoint<
       logger.warn("No email found for notification", {
         notificationId: event.payload.notificationId,
       });
+
       return;
     }
 
@@ -87,6 +83,7 @@ export class EmailNotificationWorkflow extends WorkflowEntrypoint<
         const { sendEmail, NotificationEmail } = await import("@repo/email");
 
         const brand = getBrandConfigFromBindings(this.env);
+
         return await sendEmail({
           apiKey: this.env.RESEND_API_KEY,
           from: `${brand.appName} <${this.env.EMAIL_FROM}>`,

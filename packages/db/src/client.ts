@@ -2,29 +2,29 @@ import { logger } from "@repo/shared/logger";
 import type { Logger as DrizzleLoggerInterface } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Client } from "pg";
+
 import { relations } from "./relations";
 
-export function createDrizzleClient(
+export const createDrizzleClient = (
   client: Client,
-  logger?: DrizzleLoggerInterface
-) {
-  return drizzle({
+  drizzleLogger?: DrizzleLoggerInterface
+) =>
+  drizzle({
     client,
     relations,
-    ...(logger && { logger }),
+    ...(drizzleLogger && { logger: drizzleLogger }),
   });
-}
 
-export type WithDrizzleClientOptions = {
+export interface WithDrizzleClientOptions {
   logger?: DrizzleLoggerInterface;
   waitUntil?: (promise: Promise<unknown>) => void;
-};
+}
 
-export async function withDrizzleClient<T>(
+export const withDrizzleClient = async <T>(
   connectionString: string,
-  callback: (db: DrizzleClient) => Promise<T>,
+  run: (db: DrizzleClient) => Promise<T>,
   options?: WithDrizzleClientOptions
-): Promise<T> {
+): Promise<T> => {
   const client = new Client({ connectionString });
 
   client.on("error", (error) => {
@@ -32,12 +32,15 @@ export async function withDrizzleClient<T>(
   });
 
   let connectPromise: Promise<Client> | undefined;
+
   const ensureConnected = () => {
     if (!connectPromise) {
       connectPromise = client.connect();
     }
+
     return connectPromise;
   };
+
   const originalQuery = client.query.bind(client);
 
   // SAFETY: the wrapper forwards every call to the bound pg method after connecting, preserving each query overload's argument and return contract; no single arrow signature can be inferred against an overload set.
@@ -46,13 +49,15 @@ export async function withDrizzleClient<T>(
       originalQuery(...queryArgs)
     )) as typeof client.query;
   const db = createDrizzleClient(client, options?.logger);
+
   try {
-    return await callback(db);
+    return await run(db);
   } finally {
     if (connectPromise) {
       const endPromise = connectPromise
         .then(() => client.end())
-        .catch(() => undefined);
+        .catch(() => null);
+
       if (options?.waitUntil) {
         options.waitUntil(endPromise);
       } else {
@@ -60,10 +65,12 @@ export async function withDrizzleClient<T>(
       }
     }
   }
-}
+};
 
 export type DrizzleClient = ReturnType<typeof createDrizzleClient>;
+
 export type Transaction = Parameters<
   Parameters<DrizzleClient["transaction"]>[0]
 >[0];
+
 export type Executor = DrizzleClient | Transaction;

@@ -8,6 +8,7 @@ export const useOnlineManager = () => {
     const unsubscribe = onlineManager.subscribe((online) =>
       setIsOnline(online)
     );
+
     return () => unsubscribe();
   }, []);
 

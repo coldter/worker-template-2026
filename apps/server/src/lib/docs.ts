@@ -1,9 +1,10 @@
-import { env } from "cloudflare:workers";
 import type { OpenAPIHono } from "@hono/zod-openapi";
 import { Scalar } from "@scalar/hono-api-reference";
+import { env } from "cloudflare:workers";
+
 import type { AppEnv } from "@/lib/context";
 
-export function setupDocs(app: OpenAPIHono<AppEnv>): void {
+export const setupDocs = (app: OpenAPIHono<AppEnv>): void => {
   const registry = app.openAPIRegistry;
 
   registry.registerComponent("securitySchemes", "cookieAuth", {
@@ -25,8 +26,9 @@ export function setupDocs(app: OpenAPIHono<AppEnv>): void {
   });
 
   if (String(env.NODE_ENV) !== "production") {
-    app.get("/docs", (c) =>
-      Scalar<AppEnv>({
+    app.get(
+      "/docs",
+      Scalar<AppEnv>((c) => ({
         servers: [
           {
             description: "Current",
@@ -35,7 +37,7 @@ export function setupDocs(app: OpenAPIHono<AppEnv>): void {
         ],
         theme: "deepSpace",
         url: "openapi.json",
-      })(c, async () => {})
+      }))
     );
   }
-}
+};

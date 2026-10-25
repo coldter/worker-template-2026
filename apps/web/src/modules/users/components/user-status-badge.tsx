@@ -1,13 +1,18 @@
 import { cn } from "@/lib/utils";
 import { Badge } from "@/modules/ui/badge";
-import { USER_STATUS_CONFIG, type UserStatus } from "../types";
+
+import { USER_STATUS_CONFIG } from "../types";
+import type { UserStatus } from "../types";
 
 interface UserStatusBadgeProps {
   className?: string;
   status: UserStatus;
 }
 
-export function UserStatusBadge({ status, className }: UserStatusBadgeProps) {
+export const UserStatusBadge = ({
+  status,
+  className,
+}: UserStatusBadgeProps) => {
   const config = USER_STATUS_CONFIG[status];
 
   return (
@@ -15,4 +20,4 @@ export function UserStatusBadge({ status, className }: UserStatusBadgeProps) {
       {config.label}
     </Badge>
   );
-}
+};

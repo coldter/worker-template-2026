@@ -17,5 +17,6 @@ export const getSafeRedirectPath = (
   if (!redirect?.startsWith("/") || redirect.startsWith("//")) {
     return;
   }
+
   return redirect;
 };

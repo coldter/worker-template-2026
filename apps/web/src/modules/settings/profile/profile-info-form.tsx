@@ -2,6 +2,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
+
 import { authClient } from "@/lib/auth-client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/modules/ui/avatar";
 import { Badge } from "@/modules/ui/badge";
@@ -27,17 +28,16 @@ const profileInfoSchema = z.object({
 
 type ProfileInfoValues = z.infer<typeof profileInfoSchema>;
 
-function getInitials(name: string) {
-  return name
+const getInitials = (name: string) =>
+  name
     .split(" ")
     .map((n) => n[0])
     .filter(Boolean)
     .slice(0, 2)
     .join("")
     .toUpperCase();
-}
 
-export function ProfileInfoForm() {
+export const ProfileInfoForm = () => {
   const user = useUserStore((s) => s.user);
   const updateUser = useUserStore((s) => s.updateUser);
 
@@ -48,19 +48,20 @@ export function ProfileInfoForm() {
     resolver: zodResolver(profileInfoSchema),
   });
 
-  async function onSubmit(data: ProfileInfoValues) {
+  const onSubmit = async (data: ProfileInfoValues) => {
     const { error } = await authClient.updateUser({
       name: data.name,
     });
 
     if (error) {
       toast.error(error.message || "Failed to update profile");
+
       return;
     }
 
     updateUser({ name: data.name });
     toast.success("Profile updated");
-  }
+  };
 
   return (
     <Form {...form}>
@@ -73,7 +74,7 @@ export function ProfileInfoForm() {
             </AvatarFallback>
           </Avatar>
           <div className="space-y-1">
-            <p className="font-medium leading-none">{user?.name ?? ""}</p>
+            <p className="leading-none font-medium">{user?.name ?? ""}</p>
             <div className="flex items-center gap-2">
               <p className="text-muted-foreground text-sm">
                 {user?.email ?? ""}
@@ -111,4 +112,4 @@ export function ProfileInfoForm() {
       </form>
     </Form>
   );
-}
+};

@@ -1,5 +1,4 @@
 import { createFileRoute } from "@tanstack/react-router";
-
 import * as z from "zod/mini";
 
 import { Authorized } from "@/components/authorized";
@@ -8,14 +7,16 @@ import { AuditLogs } from "@/modules/audit-logs";
 import { auditLogsListQueryOptions } from "@/modules/audit-logs/query";
 import { PermissionDenied } from "@/modules/permissions";
 
+const catchSchema = z.catch;
+
 export const auditLogsSearchSchema = z.object({
   actorId: z.optional(z.string()),
   event: z.optional(z.string()),
-  order: z.catch(z.optional(z.enum(["asc", "desc"])), undefined),
-  page: z.catch(z.optional(z.number()), 1),
-  perPage: z.catch(z.optional(z.number()), 20),
+  order: catchSchema(z.optional(z.enum(["asc", "desc"])), undefined),
+  page: catchSchema(z.optional(z.number()), 1),
+  perPage: catchSchema(z.optional(z.number()), 20),
   sort: z.optional(z.string()),
-  targetType: z.catch(
+  targetType: catchSchema(
     z.optional(z.enum(["user", "role", "session"])),
     undefined
   ),
@@ -23,17 +24,15 @@ export const auditLogsSearchSchema = z.object({
 
 export type AuditLogsSearch = z.infer<typeof auditLogsSearchSchema>;
 
-function auditLogsListParams(search: AuditLogsSearch) {
-  return {
-    actorId: search.actorId,
-    event: search.event,
-    order: search.order ?? ("desc" as const),
-    page: Math.max(1, search.page ?? 1),
-    perPage: search.perPage ?? 20,
-    sort: search.sort ?? "createdAt",
-    targetType: search.targetType,
-  };
-}
+const auditLogsListParams = (search: AuditLogsSearch) => ({
+  actorId: search.actorId,
+  event: search.event,
+  order: search.order ?? ("desc" as const),
+  page: Math.max(1, search.page ?? 1),
+  perPage: search.perPage ?? 20,
+  sort: search.sort ?? "createdAt",
+  targetType: search.targetType,
+});
 
 export const Route = createFileRoute("/(protected)/audit-logs/")({
   component: () => (
@@ -50,6 +49,7 @@ export const Route = createFileRoute("/(protected)/audit-logs/")({
     const capabilities = queryClient.getQueryData(
       authorizationCapabilitiesQueryOptions().queryKey
     );
+
     if (capabilities?.["audit-log:list"]) {
       await queryClient.prefetchQuery(
         auditLogsListQueryOptions(auditLogsListParams(deps))

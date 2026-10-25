@@ -1,23 +1,32 @@
 import type * as React from "react";
-import { createContext, useContext, useEffect, useState } from "react";
-import { type Theme, useUIStore } from "@/store";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+
+import { useUIStore } from "@/store";
+import type { Theme } from "@/store";
 
 type ResolvedTheme = Exclude<Theme, "system">;
 
 const DEFAULT_THEME = "light";
 
-type ThemeProviderProps = {
+interface ThemeProviderProps {
   children: React.ReactNode;
   defaultTheme?: Theme;
-};
+}
 
-type ThemeProviderState = {
+interface ThemeProviderState {
   defaultTheme: Theme;
   resolvedTheme: ResolvedTheme;
   theme: Theme;
   setTheme: (theme: Theme) => void;
   resetTheme: () => void;
-};
+}
 
 const initialState: ThemeProviderState = {
   defaultTheme: DEFAULT_THEME,
@@ -29,11 +38,11 @@ const initialState: ThemeProviderState = {
 
 const ThemeContext = createContext<ThemeProviderState>(initialState);
 
-export function ThemeProvider({
+export const ThemeProvider = ({
   children,
   defaultTheme = DEFAULT_THEME,
   ...props
-}: ThemeProviderProps) {
+}: ThemeProviderProps) => {
   const theme = useUIStore((state) => state.theme);
   const setThemeStore = useUIStore((state) => state.setTheme);
 
@@ -45,6 +54,7 @@ export function ThemeProvider({
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+
     const handleChange = () => {
       setSystemTheme(mediaQuery.matches ? "dark" : "light");
     };
@@ -60,28 +70,34 @@ export function ThemeProvider({
     root.classList.add(resolvedTheme);
   }, [resolvedTheme]);
 
-  const setTheme = (nextTheme: Theme) => {
-    setThemeStore(nextTheme);
-  };
+  const setTheme = useCallback(
+    (nextTheme: Theme) => {
+      setThemeStore(nextTheme);
+    },
+    [setThemeStore]
+  );
 
-  const resetTheme = () => {
+  const resetTheme = useCallback(() => {
     setThemeStore(DEFAULT_THEME);
-  };
+  }, [setThemeStore]);
 
-  const contextValue = {
-    defaultTheme,
-    resetTheme,
-    resolvedTheme,
-    setTheme,
-    theme,
-  };
+  const contextValue = useMemo(
+    () => ({
+      defaultTheme,
+      resetTheme,
+      resolvedTheme,
+      setTheme,
+      theme,
+    }),
+    [defaultTheme, resetTheme, resolvedTheme, setTheme, theme]
+  );
 
   return (
     <ThemeContext value={contextValue} {...props}>
       {children}
     </ThemeContext>
   );
-}
+};
 
 export const useTheme = () => {
   const context = useContext(ThemeContext);

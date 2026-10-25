@@ -43,7 +43,7 @@ export interface OrgRoleConditionParams {
 
 export interface Condition<TResource = unknown> {
   effect: ConditionEffect;
-  evaluate(ctx: ConditionContext<TResource>): boolean | Promise<boolean>;
+  evaluate: (ctx: ConditionContext<TResource>) => boolean | Promise<boolean>;
   label: string;
   params?: OrgRoleConditionParams;
   type: string;

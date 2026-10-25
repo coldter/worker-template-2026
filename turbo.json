@@ -21,8 +21,8 @@
     "cf-typegen:check": {
       "cache": false
     },
-    "check-types": {
-      "dependsOn": ["^check-types", "cf-typegen"],
+    "typecheck": {
+      "dependsOn": ["^typecheck", "cf-typegen"],
       "inputs": ["$TURBO_DEFAULT$", "tsconfig*.json", "../../tsconfig*.json"],
       "outputs": []
     },

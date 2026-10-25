@@ -1,18 +1,20 @@
 import { SearchIcon } from "lucide-react";
+
 import { useSearchBar } from "@/context/search-provider";
 import { cn } from "@/lib/utils";
 import { Button } from "@/modules/ui/button";
 
-type SearchProps = {
+interface SearchProps {
   className?: string;
   placeholder?: string;
-};
+}
 
-export function Search({
+export const Search = ({
   className = "",
   placeholder = "Search",
-}: SearchProps) {
+}: SearchProps) => {
   const { setOpen } = useSearchBar();
+
   return (
     <Button
       className={cn(
@@ -33,4 +35,4 @@ export function Search({
       </kbd>
     </Button>
   );
-}
+};

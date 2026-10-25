@@ -6,9 +6,10 @@ import type {
   SortingState,
   Table,
 } from "@tanstack/react-table";
+
 import type { DataTableFeatures } from "./features";
 
-export type DataTableProps<TData extends RowData> = {
+export interface DataTableProps<TData extends RowData> {
   columns: ColumnDef<DataTableFeatures, TData>[];
   data: TData[];
   isLoading?: boolean;
@@ -20,4 +21,4 @@ export type DataTableProps<TData extends RowData> = {
   sorting?: SortingState;
   onSortingChange?: OnChangeFn<SortingState>;
   table?: Table<DataTableFeatures, TData>;
-};
+}

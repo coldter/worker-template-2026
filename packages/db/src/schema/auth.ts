@@ -1,6 +1,5 @@
 import { sql } from "drizzle-orm";
 import {
-  type AnyPgColumn,
   boolean,
   check,
   index,
@@ -10,6 +9,8 @@ import {
   timestamp,
   varchar,
 } from "drizzle-orm/pg-core";
+import type { AnyPgColumn } from "drizzle-orm/pg-core";
+
 import { createdAt, timestamps } from "../helpers";
 import { generatePrefixedCuid, ID_PREFIXES } from "../ids";
 

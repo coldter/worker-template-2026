@@ -1,7 +1,13 @@
 import type { KnipConfig } from "knip";
 
 const config: KnipConfig = {
-  ignore: [".agents/skills/**/templates/**"],
+  ignore: [
+    ".agents/**",
+    ".claude/**",
+    "agent-ref/**",
+    "ref-project/**",
+    "apps/web/src/__tests__/test-utils.tsx",
+  ],
   ignoreDependencies: [
     "cloudflare",
     "postcss",

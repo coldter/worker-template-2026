@@ -1,7 +1,8 @@
+import { getRouteApi } from "@tanstack/react-router";
 import { flexRender } from "@tanstack/react-table";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
-import { useServerTable } from "@/hooks/use-server-table";
+import { useServerTable, useServerTableState } from "@/hooks/use-server-table";
 import { DataTablePagination } from "@/modules/data-table";
 import { TableEmpty } from "@/modules/data-table/table-empty";
 import { TableError } from "@/modules/data-table/table-error";
@@ -14,59 +15,58 @@ import {
   TableHeader,
   TableRow,
 } from "@/modules/ui/table";
-import {
-  type AuditLogsSearch,
-  Route,
-} from "@/routes/(protected)/audit-logs/index";
+import type { AuditLogsSearch } from "@/routes/(protected)/audit-logs/index";
 
 import { AuditLogDetailSheet } from "../detail";
-import { type AuditLogsQueryParams, useAuditLogsQuery } from "../query";
-import { type AuditLog, auditLogsColumns } from "./columns";
+import { useAuditLogsQuery } from "../query";
+import type { AuditLogsQueryParams } from "../query";
+import { auditLogsColumns } from "./columns";
+import type { AuditLog } from "./columns";
 import { AuditLogsFilters } from "./filters";
 import { AuditLogsHeader } from "./header";
 
+const auditLogsRoute = getRouteApi("/(protected)/audit-logs/");
+
 type AuditLogId = AuditLog["id"];
 
-export function AuditLogsTable() {
+export const AuditLogsTable = () => {
   const [selectedLogId, setSelectedLogId] = useState<AuditLogId | null>(null);
-  const [detailOpen, setDetailOpen] = useState(false);
+
+  const routeNavigate = auditLogsRoute.useNavigate();
+  const routeSearch = auditLogsRoute.useSearch();
+
+  const state = useServerTableState<AuditLogsSearch, AuditLogsQueryParams>({
+    buildQueryParams: ({ page, perPage, sort, search: s }) => ({
+      actorId: s.actorId,
+      event: s.event,
+      order: sort.desc ? "desc" : "asc",
+      page,
+      perPage,
+      sort: sort.id,
+      targetType: s.targetType,
+    }),
+    defaultSort: "createdAt",
+    navigate: routeNavigate,
+    pageSizeKey: "perPage",
+    search: routeSearch,
+  });
+
+  const query = useAuditLogsQuery(state.queryParams);
 
   const { table, navigate, search, rows, isLoading, isError, total } =
     useServerTable<AuditLog, AuditLogsSearch, AuditLogsQueryParams>({
-      buildQueryParams: ({ page, perPage, sort, search: s }) => ({
-        actorId: s.actorId,
-        event: s.event,
-        order: sort.desc ? "desc" : "asc",
-        page,
-        perPage,
-        sort: sort.id,
-        targetType: s.targetType,
-      }),
       columns: auditLogsColumns,
-      defaultSort: "createdAt",
-      pageSizeKey: "perPage",
-      route: Route,
-      useData: useAuditLogsQuery,
+      query,
+      state,
     });
 
-  const selectedLog = useMemo(() => {
-    if (!selectedLogId) {
-      return null;
-    }
-    return rows.find((row) => row.id === selectedLogId) ?? null;
-  }, [rows, selectedLogId]);
-
-  useEffect(() => {
-    if (detailOpen && selectedLogId && !selectedLog) {
-      setDetailOpen(false);
-      setSelectedLogId(null);
-    }
-  }, [detailOpen, selectedLogId, selectedLog]);
-
-  function handleRowClick(log: AuditLog) {
-    setSelectedLogId(log.id);
-    setDetailOpen(true);
-  }
+  const selectedLog = useMemo(
+    () =>
+      selectedLogId === null
+        ? null
+        : (rows.find((row) => row.id === selectedLogId) ?? null),
+    [rows, selectedLogId]
+  );
 
   const renderContent = () => {
     if (isError) {
@@ -78,6 +78,7 @@ export function AuditLogsTable() {
     }
 
     const tableRows = table.getRowModel().rows;
+
     if (tableRows.length === 0) {
       return (
         <TableEmpty
@@ -91,7 +92,7 @@ export function AuditLogsTable() {
       <TableRow
         className="cursor-pointer transition-colors"
         key={row.id}
-        onClick={() => handleRowClick(row.original)}
+        onClick={() => setSelectedLogId(row.original.id)}
       >
         {row.getVisibleCells().map((cell, index) =>
           index === 0 ? (
@@ -101,7 +102,7 @@ export function AuditLogsTable() {
                 className="cursor-pointer text-left"
                 onClick={(event) => {
                   event.stopPropagation();
-                  handleRowClick(row.original);
+                  setSelectedLogId(row.original.id);
                 }}
                 type="button"
               >
@@ -150,9 +151,13 @@ export function AuditLogsTable() {
 
       <AuditLogDetailSheet
         log={selectedLog}
-        onOpenChange={setDetailOpen}
-        open={detailOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setSelectedLogId(null);
+          }
+        }}
+        open={selectedLog !== null}
       />
     </div>
   );
-}
+};

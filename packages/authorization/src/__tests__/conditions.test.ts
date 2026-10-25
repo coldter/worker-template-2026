@@ -1,4 +1,6 @@
+/* oxlint-disable vitest/prefer-to-be-truthy, vitest/prefer-to-be-falsy -- strict boolean assertions are intentional */
 import { describe, expect, it } from "vitest";
+
 import {
   createOrgRoleCondition,
   createOwnerCondition,
@@ -8,7 +10,9 @@ import {
 } from "../conditions";
 import type { ConditionContext } from "../types";
 
-describe("principalNotActive", () => {
+const resolveOwner = (resource: { createdBy: string }) => resource.createdBy;
+
+describe(principalNotActive, () => {
   const condition = principalNotActive();
 
   it("returns true when status is not active", () => {
@@ -19,6 +23,7 @@ describe("principalNotActive", () => {
         roles: ["user"],
       },
     };
+
     expect(condition.evaluate(ctx)).toBe(true);
   });
 
@@ -30,6 +35,7 @@ describe("principalNotActive", () => {
         roles: ["user"],
       },
     };
+
     expect(condition.evaluate(ctx)).toBe(false);
   });
 
@@ -37,12 +43,12 @@ describe("principalNotActive", () => {
     const ctx: ConditionContext = {
       principal: { attributes: {}, id: "u1", roles: ["user"] },
     };
+
     expect(condition.evaluate(ctx)).toBe(true);
   });
 });
 
-describe("createOwnerCondition", () => {
-  const resolveOwner = (resource: { createdBy: string }) => resource.createdBy;
+describe(createOwnerCondition, () => {
   const condition = createOwnerCondition(resolveOwner);
 
   it("returns true when principal is owner", () => {
@@ -50,6 +56,7 @@ describe("createOwnerCondition", () => {
       principal: { attributes: {}, id: "u1", roles: ["user"] },
       resource: { createdBy: "u1" },
     };
+
     expect(condition.evaluate(ctx)).toBe(true);
   });
 
@@ -58,6 +65,7 @@ describe("createOwnerCondition", () => {
       principal: { attributes: {}, id: "u1", roles: ["user"] },
       resource: { createdBy: "u2" },
     };
+
     expect(condition.evaluate(ctx)).toBe(false);
   });
 
@@ -65,11 +73,12 @@ describe("createOwnerCondition", () => {
     const ctx: ConditionContext<{ createdBy: string }> = {
       principal: { attributes: {}, id: "u1", roles: ["user"] },
     };
+
     expect(condition.evaluate(ctx)).toBe(false);
   });
 });
 
-describe("createSelfTargetCondition", () => {
+describe(createSelfTargetCondition, () => {
   const condition = createSelfTargetCondition();
 
   it("returns true when resource id matches principal id", () => {
@@ -77,6 +86,7 @@ describe("createSelfTargetCondition", () => {
       principal: { attributes: {}, id: "u1", roles: [] },
       resource: { id: "u1" },
     };
+
     expect(condition.evaluate(ctx)).toBe(true);
   });
 
@@ -85,36 +95,41 @@ describe("createSelfTargetCondition", () => {
       principal: { attributes: {}, id: "u1", roles: [] },
       resource: { id: "u2" },
     };
+
     expect(condition.evaluate(ctx)).toBe(false);
   });
 });
 
-describe("createPredicateCondition", () => {
+describe(createPredicateCondition, () => {
   it("evaluates sync predicate", () => {
     const condition = createPredicateCondition<{ status: string }>(
       (ctx) => ctx.resource?.status === "draft",
       "custom:draft-check"
     );
+
     const ctx: ConditionContext<{ status: string }> = {
       principal: { attributes: {}, id: "u1", roles: [] },
       resource: { status: "draft" },
     };
+
     expect(condition.evaluate(ctx)).toBe(true);
   });
 
   it("evaluates async predicate", async () => {
     const condition = createPredicateCondition(
-      async (ctx) => ctx.principal.id === "u1",
+      (ctx) => Promise.resolve(ctx.principal.id === "u1"),
       "custom:async-check"
     );
+
     const ctx: ConditionContext = {
       principal: { attributes: {}, id: "u1", roles: [] },
     };
+
     await expect(condition.evaluate(ctx)).resolves.toBe(true);
   });
 });
 
-describe("createOrgRoleCondition", () => {
+describe(createOrgRoleCondition, () => {
   const condition = createOrgRoleCondition<{ id: string }>(["owner"]);
 
   it("returns true when the principal org role matches", () => {
@@ -126,6 +141,7 @@ describe("createOrgRoleCondition", () => {
         roles: ["member"],
       },
     };
+
     expect(condition.evaluate(ctx)).toBe(true);
   });
 
@@ -138,6 +154,7 @@ describe("createOrgRoleCondition", () => {
         roles: ["member"],
       },
     };
+
     expect(condition.evaluate(ctx)).toBe(false);
   });
 
@@ -145,6 +162,7 @@ describe("createOrgRoleCondition", () => {
     const ctx: ConditionContext<{ id: string }> = {
       principal: { attributes: {}, id: "u1", roles: ["member"] },
     };
+
     expect(condition.evaluate(ctx)).toBe(false);
   });
 });

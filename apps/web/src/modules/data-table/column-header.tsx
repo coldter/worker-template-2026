@@ -5,6 +5,7 @@ import {
   EyeNoneIcon,
 } from "@radix-ui/react-icons";
 import type { Column, RowData } from "@tanstack/react-table";
+
 import { cn } from "@/lib/utils";
 import { Button } from "@/modules/ui/button";
 import {
@@ -14,6 +15,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/modules/ui/dropdown-menu";
+
 import type { DataTableFeatures } from "./features";
 
 type DataTableColumnHeaderProps<
@@ -24,11 +26,29 @@ type DataTableColumnHeaderProps<
   title: string;
 };
 
-export function DataTableColumnHeader<TData extends RowData, TValue>({
+const SortIcon = <TData extends RowData, TValue>({
+  column,
+}: {
+  column: Column<DataTableFeatures, TData, TValue>;
+}) => {
+  const isSorted = column.getIsSorted();
+
+  if (isSorted === "desc") {
+    return <ArrowDownIcon className="ms-2 h-4 w-4" />;
+  }
+
+  if (isSorted === "asc") {
+    return <ArrowUpIcon className="ms-2 h-4 w-4" />;
+  }
+
+  return <CaretSortIcon className="ms-2 h-4 w-4" />;
+};
+
+export const DataTableColumnHeader = <TData extends RowData, TValue>({
   column,
   title,
   className,
-}: DataTableColumnHeaderProps<TData, TValue>) {
+}: DataTableColumnHeaderProps<TData, TValue>) => {
   if (!column.getCanSort()) {
     return <div className={cn(className)}>{title}</div>;
   }
@@ -68,19 +88,4 @@ export function DataTableColumnHeader<TData extends RowData, TValue>({
       </DropdownMenu>
     </div>
   );
-}
-
-function SortIcon<TData extends RowData, TValue>({
-  column,
-}: {
-  column: Column<DataTableFeatures, TData, TValue>;
-}) {
-  const isSorted = column.getIsSorted();
-  if (isSorted === "desc") {
-    return <ArrowDownIcon className="ms-2 h-4 w-4" />;
-  }
-  if (isSorted === "asc") {
-    return <ArrowUpIcon className="ms-2 h-4 w-4" />;
-  }
-  return <CaretSortIcon className="ms-2 h-4 w-4" />;
-}
+};

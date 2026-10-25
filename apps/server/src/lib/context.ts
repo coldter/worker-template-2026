@@ -4,9 +4,10 @@ import type {
   AuthorizationSessionInput,
   AuthorizationUserInput,
 } from "@repo/shared/authorization";
+
 import type { AuditContext } from "@/lib/audit-context";
 
-export type AppEnv = {
+export interface AppEnv {
   Bindings: CloudflareBindings;
   Variables: {
     requestId: string;
@@ -18,9 +19,10 @@ export type AppEnv = {
 
     principal?: Principal | null;
   };
-};
+}
 
 export type Env = AppEnv;
 
 export type AuthUser = AuthorizationUserInput;
+
 export type AuthSession = AuthorizationSessionInput & { id: string };

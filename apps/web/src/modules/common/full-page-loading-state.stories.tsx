@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+
 import { FullPageLoadingState } from "./full-page-loading-state";
 
 const meta = {

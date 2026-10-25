@@ -23,86 +23,114 @@ export type CapabilityMap<TResources extends Record<string, AnyResourceDef>> = {
 export interface RegistryInstance<
   TResources extends Record<string, AnyResourceDef>,
 > {
-  assertCan<K extends keyof TResources & string>(
+  assertCan: <K extends keyof TResources & string>(
     principal: Principal | null | undefined,
     resource: K,
     action: ActionsOf<TResources[K]>,
     opts?: { resource?: ResourceTypeFor<TResources[K]> }
-  ): Promise<void>;
+  ) => Promise<void>;
 
-  can<K extends keyof TResources & string>(
+  can: <K extends keyof TResources & string>(
     principal: Principal | null | undefined,
     resource: K,
     action: ActionsOf<TResources[K]>,
     opts?: { resource?: ResourceTypeFor<TResources[K]> }
-  ): Promise<PolicyDecision>;
+  ) => Promise<PolicyDecision>;
 
-  evaluateCapabilities(
+  evaluateCapabilities: (
     principal: Principal
-  ): Promise<CapabilityMap<TResources>>;
+  ) => Promise<CapabilityMap<TResources>>;
 
   readonly resources: TResources;
 }
 
-export function buildRegistryInstance<
+export const buildRegistryInstance = <
   TResources extends Record<string, AnyResourceDef>,
 >(
   resources: TResources,
   options: RegistryOptions
-): RegistryInstance<TResources> {
+): RegistryInstance<TResources> => {
   validateRegistry(resources, options);
 
-  return {
-    async assertCan(principal, resource, action, opts) {
-      const decision = await this.can(principal, resource, action, opts);
-      if (!decision.allowed) {
-        throw new AuthorizationError(decision.reason, decision.matchedPolicy);
-      }
-    },
+  const can = <K extends keyof TResources & string>(
+    principal: Principal | null | undefined,
+    resourceName: K,
+    action: ActionsOf<TResources[K]>,
+    opts?: { resource?: ResourceTypeFor<TResources[K]> }
+  ): Promise<PolicyDecision> => {
+    const resourceDef = Object.hasOwn(resources, resourceName)
+      ? resources[resourceName]
+      : undefined;
 
-    async can(principal, resourceName, action, opts) {
-      const resourceDef = Object.hasOwn(resources, resourceName)
-        ? resources[resourceName]
-        : undefined;
-
-      if (!resourceDef?.actions.includes(action)) {
-        return { allowed: false, reason: "NO_MATCHING_POLICY" };
-      }
-
-      return evaluate({
-        action,
-        globalPolicies: options.globalPolicies,
-        principal,
-        resolveOrganization: resourceDef.resolveOrganization,
-        resource: opts?.resource,
-        resourcePolicies: resourceDef.policies,
-        systemAdminRoles: options.systemAdminRoles,
+    if (!resourceDef?.actions.includes(action)) {
+      return Promise.resolve({
+        allowed: false,
+        reason: "NO_MATCHING_POLICY",
       });
-    },
+    }
 
-    async evaluateCapabilities(principal) {
-      const tasks: Promise<readonly [string, boolean]>[] = [];
-      for (const [name, resourceDef] of Object.entries(resources)) {
-        for (const action of resourceDef.actions) {
-          tasks.push(
-            evaluateOptimistic({
-              action,
-              globalPolicies: options.globalPolicies,
-              principal,
-              resourcePolicies: resourceDef.policies,
-              systemAdminRoles: options.systemAdminRoles,
-            }).then(
-              (decision) => [`${name}:${action}`, decision.allowed] as const
-            )
-          );
-        }
+    // SAFETY: AnyResourceDef erases the resource type of resolveOrganization, so it reads as `(resource: never) => …`; a registry only holds definitions built for the resource type it is queried with.
+    const resolveOrganization = resourceDef.resolveOrganization as
+      | ((
+          resource: ResourceTypeFor<TResources[K]>
+        ) => string | null | undefined)
+      | undefined;
+
+    return evaluate<ResourceTypeFor<TResources[K]>>({
+      action,
+      globalPolicies: options.globalPolicies,
+      principal,
+      resolveOrganization,
+      resource: opts?.resource,
+      resourcePolicies: resourceDef.policies,
+      systemAdminRoles: options.systemAdminRoles,
+    });
+  };
+
+  const assertCan = async <K extends keyof TResources & string>(
+    principal: Principal | null | undefined,
+    resource: K,
+    action: ActionsOf<TResources[K]>,
+    opts?: { resource?: ResourceTypeFor<TResources[K]> }
+  ): Promise<void> => {
+    const decision = await can(principal, resource, action, opts);
+
+    if (!decision.allowed) {
+      throw new AuthorizationError(decision.reason, decision.matchedPolicy);
+    }
+  };
+
+  const evaluateCapabilities = async (
+    principal: Principal
+  ): Promise<CapabilityMap<TResources>> => {
+    const tasks: Promise<readonly [string, boolean]>[] = [];
+
+    for (const [name, resourceDef] of Object.entries(resources)) {
+      for (const action of resourceDef.actions) {
+        tasks.push(
+          evaluateOptimistic({
+            action,
+            globalPolicies: options.globalPolicies,
+            principal,
+            resourcePolicies: resourceDef.policies,
+            systemAdminRoles: options.systemAdminRoles,
+          }).then(
+            (decision) => [`${name}:${action}`, decision.allowed] as const
+          )
+        );
       }
+    }
 
-      const settled = await Promise.all(tasks);
-      // SAFETY: every task key is built as `${resourceName}:${action}` for a resource/action pair, which is exactly the CapabilityKey<TResources> shape.
-      return Object.fromEntries(settled) as CapabilityMap<TResources>;
-    },
+    const settled = await Promise.all(tasks);
 
+    // SAFETY: every task key is built as `${resourceName}:${action}` for a resource/action pair, which is exactly the CapabilityKey<TResources> shape.
+    return Object.fromEntries(settled) as CapabilityMap<TResources>;
+  };
+
+  return {
+    assertCan,
+    can,
+    evaluateCapabilities,
     resources,
   };
-}
+};

@@ -1,4 +1,10 @@
 import type { z } from "@hono/zod-openapi";
+import type {
+  ActorType,
+  AuditLogMetadata,
+  CriticalAuditEvent,
+  TargetType,
+} from "@repo/shared/audit";
 
 import type { listAuditLogsQuerySchema } from "./schema";
 
@@ -13,12 +19,12 @@ export type {
 
 export interface CriticalAuditLogInput {
   actorId?: string;
-  actorType?: import("@repo/shared/audit").ActorType;
-  event: import("@repo/shared/audit").CriticalAuditEvent;
+  actorType?: ActorType;
+  event: CriticalAuditEvent;
   ipAddress?: string;
-  metadata?: import("@repo/shared/audit").AuditLogMetadata;
+  metadata?: AuditLogMetadata;
   targetId?: string;
-  targetType?: import("@repo/shared/audit").TargetType;
+  targetType?: TargetType;
   userAgent?: string;
 }
 

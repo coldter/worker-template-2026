@@ -15,20 +15,24 @@ export const timestamps = () =>
     updatedAt: updatedAt(),
   }) as const;
 
-export async function firstOrNull<T>(query: Promise<T[]>): Promise<T | null> {
+export const firstOrNull = async <T>(
+  query: Promise<T[]>
+): Promise<T | null> => {
   const rows = await query;
-  return rows[0] ?? null;
-}
 
-export async function firstOrThrow<T>(
+  return rows[0] ?? null;
+};
+
+export const firstOrThrow = async <T>(
   query: Promise<T[]>,
   message = "Row not found"
-): Promise<T> {
+): Promise<T> => {
   const rows = await query;
   const [row] = rows;
 
   if (row === undefined || row === null) {
     throw new Error(message);
   }
+
   return row;
-}
+};

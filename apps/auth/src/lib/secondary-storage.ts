@@ -11,28 +11,29 @@ export type JsonValue =
 
 const counterSchema = z.number();
 
-export function createSecondaryStorage(cache: KVNamespace) {
-  return {
-    delete: async (key: string) => {
+export const createSecondaryStorage = (cache: KVNamespace) => ({
+  delete: async (key: string) => {
+    await kvDelete(cache, key);
+  },
+  get: (key: string) => kvGetJson(cache, key),
+  getAndDelete: async (key: string) => {
+    const value = await kvGetJson(cache, key);
+
+    if (value !== null) {
       await kvDelete(cache, key);
-    },
-    get: async (key: string) => kvGetJson(cache, key),
-    getAndDelete: async (key: string) => {
-      const value = await kvGetJson(cache, key);
-      if (value !== null) {
-        await kvDelete(cache, key);
-      }
-      return value;
-    },
-    increment: async (key: string, ttl: number) => {
-      const current = await kvGetJson(cache, key);
-      const parsed = counterSchema.safeParse(current);
-      const next = (parsed.success ? parsed.data : 0) + 1;
-      await kvSetJson(cache, key, next, ttl).catch(() => undefined);
-      return next;
-    },
-    set: async (key: string, value: JsonValue, ttl?: number) => {
-      await kvSetJson(cache, key, value, ttl);
-    },
-  };
-}
+    }
+
+    return value;
+  },
+  increment: async (key: string, ttl: number) => {
+    const current = await kvGetJson(cache, key);
+    const parsed = counterSchema.safeParse(current);
+    const next = (parsed.success ? parsed.data : 0) + 1;
+    await kvSetJson(cache, key, next, ttl).catch(() => null);
+
+    return next;
+  },
+  set: async (key: string, value: JsonValue, ttl?: number) => {
+    await kvSetJson(cache, key, value, ttl);
+  },
+});

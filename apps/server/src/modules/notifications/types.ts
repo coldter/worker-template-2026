@@ -7,16 +7,17 @@ import type {
   PushPlatform,
   PushToken,
 } from "@repo/db/schema";
+
 import type { PaginationQuery } from "@/utils/pagination";
 
 import type { NotificationsSortColumn, NotificationType } from "./constants";
 
-export type {
-  NotificationChannel,
-  NotificationPriority,
-  NotificationStatus,
-  PushPlatform,
-};
+export {
+  type NotificationChannel,
+  type NotificationPriority,
+  type NotificationStatus,
+  type PushPlatform,
+} from "@repo/db/schema";
 
 export type NotificationProps = NonNullable<Notification["props"]>;
 

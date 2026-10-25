@@ -4,24 +4,22 @@ const PG_UNDEFINED_TABLE = "42P01";
 
 type UndefinedTableError = Error & { code: typeof PG_UNDEFINED_TABLE };
 
-export function isUndefinedTableError(
+export const isUndefinedTableError = (
   err: unknown
-): err is UndefinedTableError {
-  return (
-    err instanceof Error && "code" in err && err.code === PG_UNDEFINED_TABLE
-  );
-}
+): err is UndefinedTableError =>
+  err instanceof Error && "code" in err && err.code === PG_UNDEFINED_TABLE;
 
-export async function tolerateMissingOrgTables<T>(
+export const tolerateMissingOrgTables = async <T>(
   op: () => Promise<T>,
   ctx: { reason: string; meta?: Record<string, string> }
-): Promise<T | undefined> {
+): Promise<T | undefined> => {
   try {
     return await op();
-  } catch (err) {
-    if (!isUndefinedTableError(err)) {
-      throw err;
+  } catch (error) {
+    if (!isUndefinedTableError(error)) {
+      throw error;
     }
+
     logger.warn(ctx.reason, ctx.meta);
   }
-}
+};

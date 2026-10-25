@@ -1,3 +1,4 @@
+import { logger } from "@repo/shared/logger";
 import { env } from "cloudflare:workers";
 import { z } from "zod";
 
@@ -33,33 +34,35 @@ const cachedTokenSchema = z.object({
 const FCM_SCOPE = "https://www.googleapis.com/auth/firebase.messaging";
 const TOKEN_URL = "https://oauth2.googleapis.com/token";
 const TOKEN_REFRESH_MARGIN_MS = 5 * 60 * 1000;
+const TOKEN_CACHE_KEY = "fcm:access_token";
 
 let cachedToken: CachedToken | null = null;
 let cachedCryptoKey: CryptoKey | null = null;
 let cachedServiceAccount: ServiceAccount | null = null;
 
-const RE_PLUS = /\+/g;
-const RE_SLASH = /\//g;
-const RE_TRAILING_EQUALS = /[=]+$/;
+const RE_PLUS = /\+/gu;
+const RE_SLASH = /\//gu;
+const RE_TRAILING_EQUALS = /[=]+$/u;
 
-function base64UrlEncode(data: Uint8Array): string {
-  const binary = Array.from(data, (b) => String.fromCharCode(b)).join("");
+const base64UrlEncode = (data: Uint8Array): string => {
+  const binary = Array.from(data, (b) => String.fromCodePoint(b)).join("");
+
   return btoa(binary)
-    .replace(RE_PLUS, "-")
-    .replace(RE_SLASH, "_")
+    .replaceAll(RE_PLUS, "-")
+    .replaceAll(RE_SLASH, "_")
     .replace(RE_TRAILING_EQUALS, "");
-}
+};
 
-function textToBase64Url(text: string): string {
-  return base64UrlEncode(new TextEncoder().encode(text));
-}
+const textToBase64Url = (text: string): string =>
+  base64UrlEncode(new TextEncoder().encode(text));
 
-export function parseServiceAccount(): ServiceAccount {
+export const parseServiceAccount = (): ServiceAccount => {
   if (cachedServiceAccount) {
     return cachedServiceAccount;
   }
 
   const keyBase64 = env.FIREBASE_SERVICE_ACCOUNT_KEY_BASE64;
+
   if (!keyBase64) {
     throw new Error(
       "FIREBASE_SERVICE_ACCOUNT_KEY_BASE64 is required for FCM provider"
@@ -84,9 +87,9 @@ export function parseServiceAccount(): ServiceAccount {
   };
 
   return cachedServiceAccount;
-}
+};
 
-async function importPrivateKey(pem: string): Promise<CryptoKey> {
+const importPrivateKey = async (pem: string): Promise<CryptoKey> => {
   if (cachedCryptoKey) {
     return cachedCryptoKey;
   }
@@ -94,13 +97,14 @@ async function importPrivateKey(pem: string): Promise<CryptoKey> {
   const pemBody = pem
     .replace("-----BEGIN PRIVATE KEY-----", "")
     .replace("-----END PRIVATE KEY-----", "")
-    .replace(/\s/g, "");
+    .replaceAll(/\s/gu, "");
 
   const binaryString = atob(pemBody);
-  const bytes = new Uint8Array(binaryString.length);
-  for (let i = 0; i < binaryString.length; i += 1) {
-    bytes[i] = binaryString.charCodeAt(i);
-  }
+
+  const bytes = Uint8Array.from(
+    binaryString,
+    (char) => char.codePointAt(0) ?? 0
+  );
 
   cachedCryptoKey = await crypto.subtle.importKey(
     "pkcs8",
@@ -111,14 +115,15 @@ async function importPrivateKey(pem: string): Promise<CryptoKey> {
   );
 
   return cachedCryptoKey;
-}
+};
 
-async function createSignedJwt(
+const createSignedJwt = async (
   serviceAccount: ServiceAccount
-): Promise<string> {
+): Promise<string> => {
   const now = Math.floor(Date.now() / 1000);
 
   const header = textToBase64Url(JSON.stringify({ alg: "RS256", typ: "JWT" }));
+
   const payload = textToBase64Url(
     JSON.stringify({
       aud: TOKEN_URL,
@@ -131,6 +136,7 @@ async function createSignedJwt(
 
   const signingInput = `${header}.${payload}`;
   const key = await importPrivateKey(serviceAccount.private_key);
+
   const signature = await crypto.subtle.sign(
     "RSASSA-PKCS1-v1_5",
     key,
@@ -138,11 +144,11 @@ async function createSignedJwt(
   );
 
   return `${signingInput}.${base64UrlEncode(new Uint8Array(signature))}`;
-}
+};
 
-async function fetchAccessToken(
+const fetchAccessToken = async (
   serviceAccount: ServiceAccount
-): Promise<CachedToken> {
+): Promise<CachedToken> => {
   const jwt = await createSignedJwt(serviceAccount);
 
   const response = await fetch(TOKEN_URL, {
@@ -160,6 +166,7 @@ async function fetchAccessToken(
 
   const rawData: unknown = await response.json();
   const parsedData = oauthTokenResponseSchema.safeParse(rawData);
+
   if (!parsedData.success) {
     throw new Error("OAuth2 token response did not match expected shape");
   }
@@ -168,11 +175,35 @@ async function fetchAccessToken(
     accessToken: parsedData.data.access_token,
     expiresAt: Date.now() + parsedData.data.expires_in * 1000,
   };
-}
+};
 
-export async function getAccessToken(
+const readCachedToken = async (): Promise<CachedToken | null> => {
+  try {
+    const parsed = cachedTokenSchema.safeParse(
+      await env.CACHE.get(TOKEN_CACHE_KEY, "json")
+    );
+
+    return parsed.success ? parsed.data : null;
+  } catch (error) {
+    logger.debug("FCM token cache read failed", { error });
+
+    return null;
+  }
+};
+
+const persistCachedToken = async (token: CachedToken): Promise<void> => {
+  try {
+    await env.CACHE.put(TOKEN_CACHE_KEY, JSON.stringify(token), {
+      expirationTtl: 3300,
+    });
+  } catch (error) {
+    logger.debug("FCM token cache write failed", { error });
+  }
+};
+
+export const getAccessToken = async (
   serviceAccount: ServiceAccount
-): Promise<string> {
+): Promise<string> => {
   if (
     cachedToken &&
     Date.now() < cachedToken.expiresAt - TOKEN_REFRESH_MARGIN_MS
@@ -180,29 +211,22 @@ export async function getAccessToken(
     return cachedToken.accessToken;
   }
 
-  try {
-    const parsed = cachedTokenSchema.safeParse(
-      await env.CACHE.get("fcm:access_token", "json")
-    );
-    if (
-      parsed.success &&
-      Date.now() < parsed.data.expiresAt - TOKEN_REFRESH_MARGIN_MS
-    ) {
-      cachedToken = parsed.data;
-      return parsed.data.accessToken;
-    }
-  } catch {}
+  const storedToken = await readCachedToken();
+
+  if (
+    storedToken &&
+    Date.now() < storedToken.expiresAt - TOKEN_REFRESH_MARGIN_MS
+  ) {
+    cachedToken = storedToken;
+
+    return storedToken.accessToken;
+  }
 
   const token = await fetchAccessToken(serviceAccount);
   cachedToken = token;
-
-  try {
-    await env.CACHE.put("fcm:access_token", JSON.stringify(token), {
-      expirationTtl: 3300,
-    });
-  } catch {}
+  await persistCachedToken(token);
 
   return token.accessToken;
-}
+};
 
 export type { ServiceAccount };

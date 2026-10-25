@@ -1,5 +1,6 @@
 import { DrizzleLogger } from "@repo/shared/logger-drizzle";
 import { createMiddleware } from "hono/factory";
+
 import type { AppEnv } from "@/lib/context";
 
 export const dbMiddleware = createMiddleware<AppEnv>(async (c, next) => {
@@ -9,7 +10,8 @@ export const dbMiddleware = createMiddleware<AppEnv>(async (c, next) => {
     c.env.HYPERDRIVE.connectionString,
     async (db) => {
       c.set("db", db);
-      await next();
+
+      return await next();
     },
     {
       logger:
