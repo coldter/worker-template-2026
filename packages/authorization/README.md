@@ -1,80 +1,8 @@
-# `@repo/authorization`
+# @repo/authorization
 
-A deny-by-default authorization engine for TypeScript. It answers questions such as:
+Deny-by-default authorization engine for TypeScript. It combines roles (RBAC), principal attributes (ABAC), ownership, organization roles, and tenant scoping. Policies live in code.
 
-- Can this user view, update, or delete this record?
-- Can a member of the active organization act on this org-scoped resource?
-- Which actions should the UI offer this user?
-
-The engine combines roles (RBAC), principal attributes (ABAC), ownership checks, org-role checks, and tenant scoping in one policy model. Policies live in code and ship with the app. It is not a policy database, an admin console, or a runtime rule editor.
-
-## Mental Model
-
-Every decision is built from the same five pieces:
-
-1. **Principal** — the authenticated actor: `id`, `roles`, `attributes`, and an optional `organization`.
-2. **Schema** — the authorization vocabulary: valid roles, optional org roles, system admin roles, and global (resource-independent) policies.
-3. **Resource** — a named subject such as `user`, `project`, or `invoice`, plus its actions, policies, and optional `resolveOwner` / `resolveOrganization` accessors.
-4. **Registry** — a map of every resource in the app, built and validated from the schema.
-5. **Evaluator** — applies global denies, then resource denies, then resource allows. If nothing matched, the answer is deny.
-
-At runtime the flow is:
-
-```text
-request
-  -> resolve principal from the session
-  -> load the target resource when the policy needs one
-  -> evaluate global denies
-  -> evaluate resource denies
-  -> evaluate resource allows
-  -> deny when nothing matches
-```
-
-## Public API
-
-### Core — `@repo/authorization`
-
-```ts
-import {
-  AuthorizationError,
-  createAuthSchema,
-  principalNotActive,
-  type DenyReason,
-  type PolicyDecision,
-  type Principal,
-} from "@repo/authorization";
-```
-
-- `createAuthSchema({ roles, systemAdminRoles, organizationRoles?, globalPolicies })` creates the schema. Global policies are deny-only.
-- `schema.createResource<TResource>()(name, config)` defines a resource. It is curried so the resource type is pinned once, while `actions` is inferred as a literal union.
-- `schema.buildRegistry({ [name]: resource })` validates the resources and returns the registry.
-- `principalNotActive()` is a prebuilt condition for global policies. It matches any principal whose `attributes.status !== "active"`.
-- `AuthorizationError` is thrown by `assertCan` and carries `reason` and an optional `matchedPolicy`.
-
-The registry exposes:
-
-- `can(principal, resource, action, { resource? })` returns a `PolicyDecision`.
-- `assertCan(...)` throws `AuthorizationError` when the decision is not allowed.
-- `evaluateCapabilities(principal)` returns the capability map described below.
-- `resources` is the raw resource map.
-
-### Hono adapter — `@repo/authorization/hono`
-
-```ts
-import {
-  createAuthorize,
-  getAuthorizedResource,
-  isAuthorizationGuard,
-} from "@repo/authorization/hono";
-```
-
-- `createAuthorize(registry, { resolvePrincipal })` builds route middleware.
-- `authorize(resource, action, { loadResource? })` guards a route. `resource` and `action` are narrowed to the registry vocabulary.
-- `getAuthorizedResource<T>(c)` returns the record loaded by `loadResource` so handlers do not refetch it.
-- `isAuthorizationGuard(middleware)` detects middleware created by `authorize` (it checks the exported `AUTHORIZATION_GUARD` symbol); use it in route-coverage tests.
-- Denials map to 401 (no principal), 404 (resource missing while the action is otherwise allowed), 403 (policy denial), and 500 (evaluation error).
-
-## Quick Example
+## Quick example
 
 ```ts
 import {
@@ -98,7 +26,7 @@ export type AppPrincipal = Principal<
 
 type UserRecord = { id: string };
 
-export const usersAuthorization = auth.createResource<UserRecord>()("user", {
+export const users = auth.createResource<UserRecord>()("user", {
   actions: ["list", "view", "create", "update", "delete"],
   policies: (p) => [
     p.allow("admin").to("*"),
@@ -108,12 +36,20 @@ export const usersAuthorization = auth.createResource<UserRecord>()("user", {
   resolveOwner: (resource) => resource.id,
 });
 
-export const authorization = auth.buildRegistry({
-  user: usersAuthorization,
-});
+export const authorization = auth.buildRegistry({ user: users });
 ```
 
-Wire it into Hono:
+## Core API
+
+- createAuthSchema({ roles, systemAdminRoles, organizationRoles?, globalPolicies }) creates the schema. Global policies are deny-only.
+- schema.createResource<T>()(name, config) defines a resource; actions are inferred as a literal union.
+- schema.buildRegistry(resources) validates the registry and returns it.
+- principalNotActive() is a prebuilt condition for inactive principals.
+- AuthorizationError is thrown by assertCan and carries reason and matchedPolicy.
+
+The registry exposes can, assertCan, evaluateCapabilities, and resources.
+
+## Hono adapter
 
 ```ts
 import {
@@ -121,15 +57,12 @@ import {
   getAuthorizedResource,
 } from "@repo/authorization/hono";
 
-type AppEnv = { Variables: { principal: Principal | null } };
-
-export const authorize = createAuthorize<
+const authorize = createAuthorize<
   typeof authorization.resources,
-  AppEnv
+  { Variables: { principal: AppPrincipal | null } }
 >(authorization, { resolvePrincipal: (c) => c.get("principal") ?? null });
 
 app.get("/users", authorize("user", "list"), listUsers);
-
 app.get(
   "/users/:userId",
   authorize("user", "view", {
@@ -139,84 +72,43 @@ app.get(
 );
 ```
 
-In this repo the principal is built by `buildAuthorizationPrincipal(user, session)` in `packages/shared/src/principal-builder.ts`, and the app registry lives in `packages/shared/src/authorization-schema.ts`.
+- authorize(resource, action, { loadResource? }) narrows resource/action to the registry vocabulary.
+- getAuthorizedResource(c) returns the loaded record.
+- isAuthorizationGuard(middleware) detects authorize middleware for route-coverage tests.
+- Denials map to 401 (no principal), 404 (missing resource), 403 (policy), and 500 (evaluation error).
 
-## Evaluation Order
+## Evaluation
 
-For every `can`, `assertCan`, or route check:
+1. No principal: deny (UNAUTHENTICATED).
+2. Global deny: deny (GLOBAL_DENY).
+3. Resource deny: deny (EXPLICIT_DENY).
+4. Resource allow: allow.
+5. No match: deny (NO_MATCHING_POLICY).
 
-1. No principal -> deny with `UNAUTHENTICATED`.
-2. Global deny policies -> first match denies with `GLOBAL_DENY`.
-3. Resource deny policies -> first match denies with `EXPLICIT_DENY`.
-4. Resource allow policies -> first match allows.
-5. Nothing matched -> deny with `NO_MATCHING_POLICY`.
+Resource-dependent conditions run only when a resource is supplied. whereOwner, whereTargetIsSelf, and where with the default effect are resource-dependent; where(predicate, { effect: "principal_only" }) is not.
 
-Resource-dependent conditions (`whereOwner`, `whereTargetIsSelf`, and `where` with the default effect) only run when a resource is supplied. Calling `can(principal, resource, action)` without `{ resource }` therefore skips every policy that depends on a resource. `where(predicate, { effect: "principal_only" })` marks a custom predicate as resource-independent, which makes it usable in global policies.
-
-When a resource defines `resolveOrganization`, tenancy is checked before resource policies run:
-
-- No `principal.organization` -> `ORG_CONTEXT_MISSING`.
-- `resolveOrganization` returns `null` or `undefined` -> `ORG_RESOLUTION_FAILED`.
-- Principal org differs from resource org -> `TENANT_MISMATCH`.
-
-A principal holding a `systemAdminRoles` role bypasses tenancy checks for policies whose roles match, but explicit denies still apply. A condition that throws is logged and treated as a deny with `EVALUATION_ERROR`.
-
-Unknown resources and actions are denied with `NO_MATCHING_POLICY` even if the TypeScript types are bypassed.
+If a resource defines resolveOrganization, tenant checks run before resource policies: missing principal organization gives ORG_CONTEXT_MISSING, an unresolved resource organization gives ORG_RESOLUTION_FAILED, and a different organization gives TENANT_MISMATCH. System admins bypass tenancy for matching roles, but explicit denies still apply. Thrown conditions are logged and denied with EVALUATION_ERROR.
 
 ## Conditions
 
 | Builder | Checks |
 | --- | --- |
-| `whereOwner()` | `resolveOwner(resource) === principal.id`. Requires `resolveOwner` on the resource. |
-| `whereTargetIsSelf()` | `resource.id === principal.id`. |
-| `where(predicate, opts?)` | Custom predicate over `{ principal, resource }`. Defaults to `requires_resource`; pass `{ effect: "principal_only" }` for resource-independent checks. |
-| `withOrgRole(...)` | `principal.organization.role` is one of the listed org roles. Requires `resolveOrganization` on the resource. |
-| `whereCondition(condition)` | Attaches a prebuilt condition. Used by global policies with `principalNotActive()`. |
+| whereOwner() | resolveOwner(resource) equals principal.id |
+| whereTargetIsSelf() | resource.id equals principal.id |
+| where(predicate, opts?) | custom predicate; defaults to requires_resource |
+| withOrgRole(...) | principal.organization.role is in the listed org roles |
+| whereCondition(condition) | attaches a prebuilt condition |
 
-`.to(...)` is required before conditions can be added. `allow()` and `deny()` return a stage that exposes only `to(...)`.
+to(...) is required before conditions. allow() and deny() expose only to(...).
 
-## Multi-Tenant
+## Capabilities
 
-Multi-tenancy has two parts:
+evaluateCapabilities(principal) returns a typed map keyed by resource:action. It is optimistic: resource-dependent conditions are treated as satisfied and resource-dependent denies are skipped; principal-only conditions run normally. Use it for navigation and broad action visibility, never for access enforcement.
 
-1. The principal carries the active organization: `{ id, role }`. Better Auth stores `activeOrganizationId` and `activeOrgRole` on the session, and the principal builder copies them over.
-2. Org-scoped resources define `resolveOrganization(resource)`. The evaluator compares the result with `principal.organization.id` before any resource policy can match.
+## Validation
 
-Declare `organizationRoles` in the schema and use `withOrgRole(...)` when an action depends on the caller's role inside the organization. `withOrgRole` is a principal-only condition, so it still applies in capability maps, where no concrete resource exists. Tenant matching cannot run without a resource, so capabilities do not prove tenant access for a specific record.
+buildRegistry throws when systemAdminRoles is not a subset of roles, a policy references an unknown role, action, or org role, a policy has no roles or actions, a global policy is not a deny or uses a resource-dependent condition, a registry key does not match the resource name, or a resource uses withOrgRole without resolveOrganization. The builder also rejects empty actions, mixing "*" with explicit actions, whereOwner without resolveOwner, and withOrgRole without roles.
 
-## Capability Maps
+## In this repo
 
-`registry.evaluateCapabilities(principal)` returns a typed map keyed by `${resourceName}:${action}` with boolean values:
-
-```ts
-const capabilities = await authorization.evaluateCapabilities(principal);
-const canCreate = capabilities["user:create"];
-```
-
-The map is optimistic by design:
-
-- resource-dependent conditions (ownership, self-target, custom `where` predicates) are treated as satisfied
-- resource-dependent denies are not applied
-- principal-only conditions, including status and org-role checks, are evaluated normally
-
-Use it to gate navigation, page shells, and broad action visibility. Never use it to enforce access. A `true` value means "this action is reachable for some record", not "this action will succeed for the record in front of the user". Record-level decisions come from `can` with a loaded resource or from the route middleware.
-
-## Validation Guarantees
-
-`buildRegistry` fails fast with a message naming the offending policy or resource when:
-
-- `systemAdminRoles` contains a role not in `roles`
-- a policy references a role or org role not in the schema
-- a policy has no roles or no actions
-- a policy references an action not declared in the resource's `actions`
-- a global policy is not `deny`
-- a global policy uses a resource-dependent condition
-- a registry key does not match the resource name
-- a resource uses `withOrgRole` but does not define `resolveOrganization`
-
-The fluent builder also throws during construction when `to()` receives no actions, when `"*"` is mixed with explicit actions, when `whereOwner()` is used without `resolveOwner`, or when `withOrgRole()` receives no roles.
-
-## See Also
-
-- [Quick Start](./docs/quick-start.md)
-- [`@repo/authorization` source](./src/index.ts)
+buildAuthorizationPrincipal lives in packages/shared/src/principal-builder.ts; the app registry is in packages/shared/src/authorization-schema.ts. No app resource uses org scoping yet.

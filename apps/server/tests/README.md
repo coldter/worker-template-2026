@@ -1,59 +1,34 @@
 # Server Tests
 
-Integration tests for the Hono API server. Don't run the test unless you have a test database set up or you have explicitly permission to run them.
+Vitest tests running in workerd through @cloudflare/vitest-plugin. The setup connects to Postgres, so set DATABASE_TEST_URL and provision the schema first.
 
-## Setup
+```bash
+DATABASE_URL=<test-db-url> bun run db:push
+bun run test
+```
 
-1. Create a test database and set `DATABASE_TEST_URL` in your `.env.test` or environment
-2. Run migrations: `DATABASE_URL=$DATABASE_TEST_URL bun db:push`
-3. Run tests: `bun run test`
+## Commands
+
+```bash
+bun run test
+bun run test:watch
+bun run test:coverage
+cd apps/server && bun run test -- -t "pattern"
+```
 
 ## Structure
 
-```
+```text
 tests/
-├── setup.ts      # Global lifecycle hooks and mocks
-├── fixtures.ts   # Static test data (headers, users)
-├── helpers.ts    # Domain helpers (create user, parse response)
-└── **/*.test.ts  # Test files organized by feature
+├── setup.ts      # Database client, migrations, and mocks
+├── fixtures.ts   # Headers and test data
+├── helpers.ts    # Response and assertion helpers
+└── **/*.test.ts  # Feature tests
 ```
 
-## Writing Tests
+Use testClient from hono/testing with the shared fixtures:
 
-```typescript
-import { testClient } from "hono/testing";
-import { afterEach, beforeAll, describe, expect, it } from "vitest";
-
-import { defaultHeaders, testUser } from "./fixtures";
-import { parseResponse } from "./helpers";
-import { clearDatabase, mockRateLimiter } from "./setup";
-
-mockRateLimiter();
-
-describe("Feature Name", async () => {
-  const { default: app } = await import("@/server");
-  const client = testClient(app);
-
-  beforeAll(async () => {
-    // Setup test-specific state
-  });
-
-  afterEach(async () => {
-    await clearDatabase();
-  });
-
-  it("should do something", async () => {
-    const res = await client.api.endpoint.$get({}, { headers: defaultHeaders });
-    expect(res.status).toBe(200);
-  });
-});
-```
-
-## Running Tests
-
-```bash
-bun test              # Run all tests
-bun test:watch        # Watch mode for development
-bun test:coverage     # Generate coverage report
-bun test -- --grep "pattern"  # Run specific tests
+```ts
+const client = testClient(app);
+const res = await client.api.endpoint.$get({}, { headers: defaultHeaders });
 ```
