@@ -24,10 +24,10 @@
     "@repo/db": "workspace:*",
     "@repo/email": "workspace:*",
     "@repo/shared": "workspace:*",
-    "@scalar/hono-api-reference": "^0.12.14",
-    "better-auth": "^1.7.12",
-    "drizzle-orm": "1.0.0-rc.5-5935859",
-    "hono": "^4.13.14",
+    "@scalar/hono-api-reference": "^0.12.18",
+    "better-auth": "^1.7.18",
+    "drizzle-orm": "1.0.0-rc.5",
+    "hono": "^4.13.17",
     "pg": "^8.23.1",
     "pg-error-enum": "^2.0.1",
     "react": "^19.3.1",
@@ -35,17 +35,17 @@
     "zod": "^4.6.7"
   },
   "devDependencies": {
-    "@cloudflare/vitest-plugin": "^1.4.7",
+    "@cloudflare/vitest-plugin": "^1.6.0",
     "@faker-js/faker": "^10.6.0",
-    "@inquirer/prompts": "^8.7.4",
+    "@inquirer/prompts": "^8.7.5",
     "@types/pg": "^8.23.1",
-    "@vitest/coverage-v8": "^5.0.5",
+    "@vitest/coverage-v8": "^5.1.0",
     "chalk": "^6.0.1",
     "cli-highlight": "^2.1.11",
-    "drizzle-kit": "1.0.0-rc.5-5935859",
+    "drizzle-kit": "1.0.0-rc.5",
     "type-fest": "^5.10.0",
     "typescript": "^7.0.2",
-    "vitest": "^5.0.5",
-    "wrangler": "^4.152.0"
+    "vitest": "^5.1.0",
+    "wrangler": "^4.158.0"
   }
 }

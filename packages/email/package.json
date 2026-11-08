@@ -14,19 +14,19 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@react-email/render": "^2.1.1",
+    "@react-email/render": "^2.2.0",
     "@repo/shared": "workspace:*",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
-    "react-email": "^6.11.3",
-    "resend": "^6.34.1"
+    "react-email": "^6.11.8",
+    "resend": "^6.37.0"
   },
   "devDependencies": {
-    "@react-email/ui": "^6.11.3",
+    "@react-email/ui": "^6.11.8",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "tsup": "^9.0.0",
     "typescript": "^7.0.2",
-    "vitest": "^5.0.5"
+    "vitest": "^5.1.0"
   }
 }

@@ -36,22 +36,29 @@
     },
     "db:push": {
       "cache": false,
-      "persistent": true
+      "env": ["DATABASE_URL", "DATABASE_TEST_URL"]
     },
     "db:studio": {
       "cache": false,
-      "persistent": true
+      "persistent": true,
+      "env": ["DATABASE_URL", "DATABASE_TEST_URL"]
     },
     "db:migrate": {
-      "cache": false
+      "cache": false,
+      "env": ["DATABASE_URL", "DATABASE_TEST_URL"]
     },
     "db:generate": {
-      "cache": false
+      "cache": false,
+      "env": ["DATABASE_URL", "DATABASE_TEST_URL"]
     },
     "generate-openapi": {
       "cache": true,
       "outputs": ["openapi.cache.json"],
-      "inputs": ["src/**/*.ts"]
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "../../packages/*/src/**",
+        "../../packages/*/package.json"
+      ]
     },
     "generate-client": {
       "cache": true,

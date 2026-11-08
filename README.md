@@ -57,7 +57,7 @@ A production-ready monorepo template with authentication, RBAC, user management,
 
 ### Prerequisites
 
-- Bun 1.4+ (pinned to 1.4.2 via `packageManager`)
+- Bun 1.4+ (pinned to 1.4.4 via `packageManager`)
 - Node.js `^22.18.0 || ^24.0.0 || >=26.0.0`
 - A reachable PostgreSQL instance (local or remote)
 - `wrangler login` for deploys (not required for local dev)
@@ -95,7 +95,7 @@ Non-secret deploy values live in each `wrangler.jsonc` `vars` and default to loc
 
 ## Requirements
 
-- Bun 1.4+ (pinned to 1.4.2 via `packageManager`)
+- Bun 1.4+ (pinned to 1.4.4 via `packageManager`)
 - Node.js `^22.18.0 || ^24.0.0 || >=26.0.0`
 - PostgreSQL
 

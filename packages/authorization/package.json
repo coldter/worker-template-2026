@@ -12,9 +12,9 @@
     "test": "vitest run"
   },
   "devDependencies": {
-    "hono": "^4.13.14",
+    "hono": "^4.13.17",
     "typescript": "^7.0.2",
-    "vitest": "^5.0.5"
+    "vitest": "^5.1.0"
   },
   "peerDependencies": {
     "hono": "^4.0.0"

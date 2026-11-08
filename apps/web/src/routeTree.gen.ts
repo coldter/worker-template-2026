@@ -250,7 +250,7 @@ declare module '@tanstack/react-router' {
     '/(protected)': {
       id: '/(protected)'
       path: ''
-      fullPath: ''
+      fullPath: '/'
       preLoaderRoute: typeof protectedRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
