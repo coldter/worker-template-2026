@@ -1,20 +1,8 @@
 import type { KnipConfig } from "knip";
 
 const config: KnipConfig = {
-  ignore: [
-    ".agents/**",
-    ".claude/**",
-    "agent-ref/**",
-    "ref-project/**",
-    "apps/web/src/__tests__/test-utils.tsx",
-  ],
-  ignoreDependencies: [
-    "cloudflare",
-    "postcss",
-    "tailwindcss",
-    "tw-animate-css",
-    "drizzle-orm",
-  ],
+  ignore: [".agents/**", ".claude/**", "agent-ref/**", "ref-project/**"],
+  ignoreDependencies: ["tailwindcss", "tw-animate-css"],
   ignoreExportsUsedInFile: true,
   ignoreIssues: {
     "packages/email/src/templates/**": ["duplicates"],
@@ -32,7 +20,6 @@ const config: KnipConfig = {
         "tests/**/*.ts",
         "src/**/*.test.ts",
       ],
-      ignore: ["src/middlewares/**", "src/lib/**"],
       paths: {
         "@/*": ["./src/*"],
       },

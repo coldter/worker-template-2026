@@ -15,9 +15,7 @@ export const dbMiddleware = createMiddleware<AppEnv>(async (c, next) => {
     },
     {
       logger:
-        process.env.NODE_ENV === "development"
-          ? new DrizzleLogger()
-          : undefined,
+        c.env.NODE_ENV === "development" ? new DrizzleLogger() : undefined,
       waitUntil: (p) => c.executionCtx.waitUntil(p),
     }
   );

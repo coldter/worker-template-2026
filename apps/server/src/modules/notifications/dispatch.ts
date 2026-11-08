@@ -18,6 +18,7 @@ import type {
 type WaitUntil = (promise: Promise<unknown>) => void;
 
 export interface DispatchOptions {
+  env: CloudflareBindings;
   waitUntil?: WaitUntil;
 }
 
@@ -66,7 +67,7 @@ export const notificationDispatch = {
   async send(
     db: DrizzleClient,
     input: SendNotificationInput,
-    options: DispatchOptions = {}
+    options: DispatchOptions
   ): Promise<SendResult> {
     const typeConfig = NOTIFICATION_TYPE_CONFIG[input.type];
 
@@ -128,19 +129,15 @@ export const notificationDispatch = {
 
           if (waitUntil) {
             const deferredId = notification.id;
-            dispatchEvent(
-              event,
-              { waitUntil },
-              {
-                onFailure: (error) =>
-                  markNotificationFailed(db, deferredId, error),
-              }
-            );
+            dispatchEvent(event, { waitUntil }, options.env, {
+              onFailure: (error) =>
+                markNotificationFailed(db, deferredId, error),
+            });
 
             return { channel, notificationId, sent: true as const };
           }
 
-          await triggerWorkflow(event);
+          await triggerWorkflow(event, options.env);
 
           return { channel, notificationId, sent: true as const };
         } catch (error) {

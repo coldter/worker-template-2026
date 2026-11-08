@@ -5,8 +5,8 @@ import { WorkerEntrypoint } from "cloudflare:workers";
 import { NOTIFICATION_TYPES } from "@/modules/notifications/constants";
 import { notificationDispatch } from "@/modules/notifications/dispatch";
 
-const getDrizzleLogger = () =>
-  process.env.NODE_ENV === "development" ? new DrizzleLogger() : undefined;
+const getDrizzleLogger = (nodeEnv: string) =>
+  nodeEnv === "development" ? new DrizzleLogger() : undefined;
 
 export class ApiEntrypoint extends WorkerEntrypoint<CloudflareBindings> {
   async onUserCreated(user: {
@@ -33,19 +33,26 @@ export class ApiEntrypoint extends WorkerEntrypoint<CloudflareBindings> {
         const deviceDesc =
           params.platform === "mobile" ? "a mobile device" : "a web browser";
 
-        await notificationDispatch.send(db, {
-          body: `A new sign-in was detected from ${deviceDesc}.`,
-          props: {
-            ipAddress: params.ipAddress,
-            platform: params.platform,
-            userAgent: params.userAgent,
+        await notificationDispatch.send(
+          db,
+          {
+            body: `A new sign-in was detected from ${deviceDesc}.`,
+            props: {
+              ipAddress: params.ipAddress,
+              platform: params.platform,
+              userAgent: params.userAgent,
+            },
+            subject: "New device sign-in",
+            type: NOTIFICATION_TYPES.SECURITY_LOGIN_NEW_DEVICE,
+            userId: params.userId,
           },
-          subject: "New device sign-in",
-          type: NOTIFICATION_TYPES.SECURITY_LOGIN_NEW_DEVICE,
-          userId: params.userId,
-        });
+          { env: this.env }
+        );
       },
-      { logger: getDrizzleLogger(), waitUntil: (p) => this.ctx.waitUntil(p) }
+      {
+        logger: getDrizzleLogger(this.env.NODE_ENV),
+        waitUntil: (p) => this.ctx.waitUntil(p),
+      }
     );
   }
 }

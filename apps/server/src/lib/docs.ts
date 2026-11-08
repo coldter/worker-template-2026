@@ -1,6 +1,5 @@
 import type { OpenAPIHono } from "@hono/zod-openapi";
 import { Scalar } from "@scalar/hono-api-reference";
-import { env } from "cloudflare:workers";
 
 import type { AppEnv } from "@/lib/context";
 
@@ -15,29 +14,39 @@ export const setupDocs = (app: OpenAPIHono<AppEnv>): void => {
     type: "apiKey",
   });
 
-  app.doc31("/openapi.json", {
-    info: {
-      description: "API documentation",
-      title: "Server API",
-      version: "v1",
-    },
-    openapi: "3.1.0",
-    servers: [{ url: env.APP_URL }],
+  app.get("/openapi.json", (c) =>
+    c.json(
+      app.getOpenAPI31Document({
+        info: {
+          description: "API documentation",
+          title: "Server API",
+          version: "v1",
+        },
+        openapi: "3.1.0",
+        servers: [{ url: c.env.APP_URL }],
+      })
+    )
+  );
+
+  app.use("/docs", async (c, next) => {
+    if (String(c.env.NODE_ENV) === "production") {
+      return c.notFound();
+    }
+
+    return await next();
   });
 
-  if (String(env.NODE_ENV) !== "production") {
-    app.get(
-      "/docs",
-      Scalar<AppEnv>((c) => ({
-        servers: [
-          {
-            description: "Current",
-            url: new URL(c.req.url).origin,
-          },
-        ],
-        theme: "deepSpace",
-        url: "openapi.json",
-      }))
-    );
-  }
+  app.get(
+    "/docs",
+    Scalar<AppEnv>((c) => ({
+      servers: [
+        {
+          description: "Current",
+          url: new URL(c.req.url).origin,
+        },
+      ],
+      theme: "deepSpace",
+      url: "openapi.json",
+    }))
+  );
 };

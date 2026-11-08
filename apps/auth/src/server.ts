@@ -61,9 +61,7 @@ app.use("*", async (c, proceed) => {
     },
     {
       logger:
-        process.env.NODE_ENV === "development"
-          ? new DrizzleLogger()
-          : undefined,
+        c.env.NODE_ENV === "development" ? new DrizzleLogger() : undefined,
       waitUntil: (p) => c.executionCtx.waitUntil(p),
     }
   );

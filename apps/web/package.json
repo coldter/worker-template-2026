@@ -80,7 +80,6 @@
     "@vitejs/plugin-react": "^6.2.1",
     "@vitest/coverage-v8": "^5.1.0",
     "jsdom": "^31.0.0",
-    "postcss": "^8.5.32",
     "react-grab": "^0.2.0",
     "storybook": "^10.6.6",
     "tailwindcss": "^4.3.5",

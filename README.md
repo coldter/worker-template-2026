@@ -60,13 +60,13 @@ A production-ready monorepo template with authentication, RBAC, user management,
 - Bun 1.4+ (pinned to 1.4.4 via `packageManager`)
 - Node.js `^22.18.0 || ^24.0.0 || >=26.0.0`
 - A reachable PostgreSQL instance (local or remote)
-- `wrangler login` for deploys (not required for local dev)
+- `bunx wrangler login` for deploys (not required for local dev)
 
 ## Build
 
 ```bash
 bun install                          # Install dependencies
-bun run build                        # Build all workspaces
+bun run build                        # Build the web app
 bun run check                        # Lint + static checks
 bun run fix                          # Auto-fix lint/format issues
 bun run typecheck                    # Type-check all workspaces
@@ -90,14 +90,8 @@ bun run db:studio                    # Open Drizzle Studio
 Non-secret deploy values live in each `wrangler.jsonc` `vars` and default to localhost for local dev. Override them with `--var` flags at deploy time; never commit secrets (use `wrangler secret put` for those).
 
 - `apps/server` deploy reads `APP_URL` and `CORS_ORIGINS` from the root `.env` and forwards them: run `bunx turbo -F server deploy` or `cd apps/server && bun run deploy`.
-- `apps/auth` deploy keeps localhost defaults unless overridden, for example: `cd apps/auth && wrangler deploy --var NODE_ENV:production --var ENABLE_SIGNUP:false --var APP_URL:https://api.example.com --var CORS_ORIGINS:https://app.example.com`.
+- `apps/auth` deploy keeps localhost defaults unless overridden, for example: `cd apps/auth && bunx wrangler deploy --var NODE_ENV:production --var ENABLE_SIGNUP:false --var APP_URL:https://api.example.com --var CORS_ORIGINS:https://app.example.com`.
 - `apps/web` deploys static assets and has no runtime `vars`; its `VITE_*` brand values are baked in at build time from `apps/web/.env` (`bun run deploy:web`).
-
-## Requirements
-
-- Bun 1.4+ (pinned to 1.4.4 via `packageManager`)
-- Node.js `^22.18.0 || ^24.0.0 || >=26.0.0`
-- PostgreSQL
 
 ## Structure
 

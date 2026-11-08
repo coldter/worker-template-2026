@@ -9,8 +9,8 @@ import { eq, inArray } from "drizzle-orm";
 import { getPushProvider } from "@/lib/firebase";
 import { runWithWorkflowMetrics } from "@/lib/workflow-metrics";
 
-const getDrizzleLogger = () =>
-  process.env.NODE_ENV === "development" ? new DrizzleLogger() : undefined;
+const getDrizzleLogger = (nodeEnv: string) =>
+  nodeEnv === "development" ? new DrizzleLogger() : undefined;
 
 interface PushNotificationParams {
   notificationId: string;
@@ -63,7 +63,7 @@ export class PushNotificationWorkflow extends WorkflowEntrypoint<
               tokens: tokens.map((t) => t.token),
             };
           },
-          { logger: getDrizzleLogger() }
+          { logger: getDrizzleLogger(this.env.NODE_ENV) }
         )
     );
 
@@ -79,7 +79,7 @@ export class PushNotificationWorkflow extends WorkflowEntrypoint<
       "send-push",
       { retries: { backoff: "exponential", delay: "5 seconds", limit: 3 } },
       async () => {
-        const provider = getPushProvider();
+        const provider = getPushProvider(this.env);
 
         const results = await Promise.all(
           data.tokens.map(async (token) => {
@@ -146,7 +146,7 @@ export class PushNotificationWorkflow extends WorkflowEntrypoint<
               });
             }
           },
-          { logger: getDrizzleLogger() }
+          { logger: getDrizzleLogger(this.env.NODE_ENV) }
         );
       }
     );

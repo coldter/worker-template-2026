@@ -1,5 +1,4 @@
 import { logger } from "@repo/shared/logger";
-import { env } from "cloudflare:workers";
 
 export type AppEvent =
   | {
@@ -18,7 +17,8 @@ export interface DispatchEventOptions {
 }
 
 export const triggerWorkflow = async (
-  event: AppEvent
+  event: AppEvent,
+  env: CloudflareBindings
 ): Promise<{ workflowId: string }> => {
   try {
     let workflowId: string;
@@ -92,10 +92,11 @@ const eventContext = (event: AppEvent) => {
 
 const runDispatch = async (
   event: AppEvent,
-  options: DispatchEventOptions
+  options: DispatchEventOptions,
+  env: CloudflareBindings
 ): Promise<void> => {
   try {
-    await triggerWorkflow(event);
+    await triggerWorkflow(event, env);
   } catch (error) {
     const failure = error instanceof Error ? error : new Error(String(error));
 
@@ -123,7 +124,8 @@ const runDispatch = async (
 export const dispatchEvent = (
   event: AppEvent,
   ctx: DeferralContext,
+  env: CloudflareBindings,
   options: DispatchEventOptions = {}
 ): void => {
-  ctx.waitUntil(runDispatch(event, options));
+  ctx.waitUntil(runDispatch(event, options, env));
 };

@@ -1,5 +1,4 @@
 import { logger } from "@repo/shared/logger";
-import { env } from "cloudflare:workers";
 import { z } from "zod";
 
 import type { ServiceAccount } from "./firebase-token";
@@ -65,10 +64,11 @@ const INVALID_TOKEN_ERROR_CODES = new Set([
 ]);
 
 const createFcmPushProvider = (
-  serviceAccount: ServiceAccount
+  serviceAccount: ServiceAccount,
+  env: CloudflareBindings
 ): PushProvider => ({
   send: async (message) => {
-    const accessToken = await getAccessToken(serviceAccount);
+    const accessToken = await getAccessToken(serviceAccount, env);
     const url = `https://fcm.googleapis.com/v1/projects/${serviceAccount.project_id}/messages:send`;
 
     const response = await fetch(url, {
@@ -125,7 +125,7 @@ const createFcmPushProvider = (
 
 let pushProvider: PushProvider | null = null;
 
-export const getPushProvider = (): PushProvider => {
+export const getPushProvider = (env: CloudflareBindings): PushProvider => {
   if (pushProvider) {
     return pushProvider;
   }
@@ -136,7 +136,7 @@ export const getPushProvider = (): PushProvider => {
     configuredProvider === "fcm" || configuredProvider === "firebase";
 
   if (wantsFcm && env.FIREBASE_SERVICE_ACCOUNT_KEY_BASE64) {
-    pushProvider = createFcmPushProvider(parseServiceAccount());
+    pushProvider = createFcmPushProvider(parseServiceAccount(env), env);
     logger.info("FCM HTTP v1 push provider initialized");
   } else {
     pushProvider = createConsolePushProvider();

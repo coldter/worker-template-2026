@@ -9,8 +9,8 @@ import { eq } from "drizzle-orm";
 import { getBrandConfigFromBindings } from "@/lib/brand";
 import { runWithWorkflowMetrics } from "@/lib/workflow-metrics";
 
-const getDrizzleLogger = () =>
-  process.env.NODE_ENV === "development" ? new DrizzleLogger() : undefined;
+const getDrizzleLogger = (nodeEnv: string) =>
+  nodeEnv === "development" ? new DrizzleLogger() : undefined;
 
 interface EmailNotificationParams {
   notificationId: string;
@@ -62,7 +62,7 @@ export class EmailNotificationWorkflow extends WorkflowEntrypoint<
               userName: user?.name,
             };
           },
-          { logger: getDrizzleLogger() }
+          { logger: getDrizzleLogger(this.env.NODE_ENV) }
         )
     );
 
@@ -115,7 +115,7 @@ export class EmailNotificationWorkflow extends WorkflowEntrypoint<
               })
               .where(eq(schema.notifications.id, event.payload.notificationId));
           },
-          { logger: getDrizzleLogger() }
+          { logger: getDrizzleLogger(this.env.NODE_ENV) }
         );
       }
     );

@@ -38,7 +38,7 @@
     "test": "turbo test",
     "test:coverage": "turbo test:coverage",
     "test:watch": "turbo test:watch",
-    "update:deps": "bunx taze major -w -r --ignore-other-workspaces --ignore-paths apps/mobile",
+    "update:deps": "bunx taze major -w -r --ignore-other-workspaces",
     "verify:generated": "bun run generate-client && bun run cf-typegen:check && git diff --exit-code -- apps/server/openapi.cache.json apps/web/src/api.gen"
   },
   "devDependencies": {

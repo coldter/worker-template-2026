@@ -7,8 +7,8 @@ import { createAuth } from "./instance";
 import type { AuthBindings } from "./instance";
 import app from "./server";
 
-const getDrizzleLogger = () =>
-  process.env.NODE_ENV === "development" ? new DrizzleLogger() : undefined;
+const getDrizzleLogger = (nodeEnv: string) =>
+  nodeEnv === "development" ? new DrizzleLogger() : undefined;
 
 export class AuthEntrypoint extends WorkerEntrypoint<CloudflareBindings> {
   async fetch(request: Request): Promise<Response> {
@@ -63,7 +63,10 @@ export class AuthEntrypoint extends WorkerEntrypoint<CloudflareBindings> {
 
           return await auth.api.getSession({ headers });
         },
-        { logger: getDrizzleLogger(), waitUntil: (p) => this.ctx.waitUntil(p) }
+        {
+          logger: getDrizzleLogger(this.env.NODE_ENV),
+          waitUntil: (p) => this.ctx.waitUntil(p),
+        }
       )
     );
   }

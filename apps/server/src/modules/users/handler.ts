@@ -8,7 +8,7 @@ import type { AppEnv } from "@/lib/context";
 import { dispatchEvent } from "@/lib/events";
 import { recordBufferableAuditEvent } from "@/modules/audit-logs/buffer";
 import { AUDIT_EVENTS, TARGET_TYPES } from "@/modules/audit-logs/constants";
-import { notificationService } from "@/modules/notifications";
+import { notificationService } from "@/modules/notifications/service";
 import { defaultHook } from "@/utils/default-hook";
 
 import { requireAuthorizedUserId } from "./auth-loader";
@@ -120,7 +120,8 @@ const usersHandler = app
         payload: { email: user.email, name: user.name, userId: user.id },
         type: "user.created",
       },
-      c.executionCtx
+      c.executionCtx,
+      c.env
     );
 
     return c.json({ user: toUserSummaryResponse(user) }, 201);

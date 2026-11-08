@@ -3,9 +3,6 @@
   "name": "auth",
   "main": "src/index.ts",
   "compatibility_date": "2026-11-04",
-  "compatibility_flags": [
-    "nodejs_compat"
-  ],
   "placement": {
     "mode": "smart"
   },

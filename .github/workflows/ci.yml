@@ -26,12 +26,14 @@ jobs:
       DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres
       DATABASE_TEST_URL: postgres://postgres:postgres@localhost:5432/postgres
     steps:
-      - uses: actions/checkout@v7
-      - uses: oven-sh/setup-bun@v2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
         with:
           bun-version: 1.4.4
       - run: bun install --frozen-lockfile
+      - run: bun run db:migrate
       - run: bun run check
       - run: bun run verify:generated
       - run: bun run typecheck
+      - run: bun run build
       - run: bun run test

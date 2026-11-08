@@ -4,9 +4,13 @@ import * as schema from "@repo/db/schema";
 import type { ApiBindingRpc } from "@repo/shared/api-binding";
 import { getBrandConfig } from "@repo/shared/brand";
 import { betterAuth } from "better-auth";
-import type { BetterAuthOptions, Session, User } from "better-auth";
+import type { BetterAuthOptions } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { bearer, emailOTP, jwt, openAPI, twoFactor } from "better-auth/plugins";
+import { bearer } from "better-auth/plugins/bearer";
+import { emailOTP } from "better-auth/plugins/email-otp";
+import { jwt } from "better-auth/plugins/jwt";
+import { openAPI } from "better-auth/plugins/open-api";
+import { twoFactor } from "better-auth/plugins/two-factor";
 import { z } from "zod";
 
 import { RATE_LIMIT_CONFIG, TWO_FACTOR_CONFIG } from "./constants";
@@ -20,14 +24,10 @@ import {
 } from "./hooks/user-create";
 import type { MinimalExecutionContext } from "./lib/execution-context";
 import { platformSchema, SESSION_CONFIG } from "./lib/platform";
-import type { SessionWithAdditionalFields } from "./lib/platform";
 import { createSecondaryStorage } from "./lib/secondary-storage";
 import { loginSecurityPlugin } from "./plugins/login-security";
 import { createOrganizationPlugin } from "./plugins/organization-setup";
 import { enhancedUserPlugin } from "./plugins/user-status";
-import type { UserWithStatusFields } from "./plugins/user-status";
-
-export { type SessionWithAdditionalFields } from "./lib/platform";
 
 export type AuthBindings = Omit<
   CloudflareBindings,
@@ -37,13 +37,6 @@ export type AuthBindings = Omit<
   NODE_ENV: string;
   ENABLE_SIGNUP: string;
 };
-
-interface SessionInference {
-  Session: {
-    user: User & UserWithStatusFields;
-    session: Session & SessionWithAdditionalFields;
-  };
-}
 
 const jwtUserFieldsSchema = z.object({
   roleSlugs: z.array(z.string()),
@@ -178,11 +171,6 @@ export const createAuth = (
           issuer: env.APP_URL,
         },
       }),
-      {
-        // SAFETY: better-auth reads `$Infer` only at the type level, so this runtime value is intentionally empty.
-        $Infer: {} as SessionInference,
-        id: "override-type",
-      },
     ],
 
     rateLimit: {

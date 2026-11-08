@@ -2,7 +2,6 @@ import { createAuthSchema, principalNotActive } from "@repo/authorization";
 import type { Principal, PrincipalAttributeValue } from "@repo/authorization";
 
 import { SYSTEM_ROLE_SLUG_VALUES } from "./roles";
-import { USER_STATUS_VALUES } from "./users";
 import type { UserStatus } from "./users";
 
 export const auth = createAuthSchema({
@@ -41,10 +40,6 @@ export const isAuthorizationRole = (slug: string): slug is AuthorizationRole =>
 export const isAuthorizationOrgRole = (
   role: string
 ): role is AuthorizationOrgRole => Object.hasOwn(VALID_ORG_ROLES, role);
-
-export const VALID_STATUSES = new Set<AuthorizationAttributes["status"]>(
-  USER_STATUS_VALUES
-);
 
 export interface UserAuthorizationResource {
   id: string;

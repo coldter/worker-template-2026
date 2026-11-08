@@ -3,22 +3,13 @@ import type { SortOrder } from "@repo/shared/pagination";
 import { asc, desc } from "drizzle-orm";
 import type { Column, SQL } from "drizzle-orm";
 
-export type {
-  PaginatedResponse,
-  PaginationMeta,
-  PaginationQuery,
-  SortOrder,
-} from "@repo/shared/pagination";
+export type { PaginationQuery, SortOrder } from "@repo/shared/pagination";
 
 export {
   createPaginatedResponse,
   createPaginatedResponseSchema,
   getPaginationParams,
-  PAGINATION_DEFAULTS,
-  paginationMetaSchema,
   paginationQuerySchema,
-  resolveSortColumn,
-  sortOrderSchema,
 } from "@repo/shared/pagination";
 
 export const buildOrderBy = <T extends Record<string, Column>>(

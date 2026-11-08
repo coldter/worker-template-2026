@@ -1,5 +1,4 @@
 import { logger } from "@repo/shared/logger";
-import { env } from "cloudflare:workers";
 import { z } from "zod";
 
 interface ServiceAccount {
@@ -56,7 +55,9 @@ const base64UrlEncode = (data: Uint8Array): string => {
 const textToBase64Url = (text: string): string =>
   base64UrlEncode(new TextEncoder().encode(text));
 
-export const parseServiceAccount = (): ServiceAccount => {
+export const parseServiceAccount = (
+  env: CloudflareBindings
+): ServiceAccount => {
   if (cachedServiceAccount) {
     return cachedServiceAccount;
   }
@@ -177,7 +178,9 @@ const fetchAccessToken = async (
   };
 };
 
-const readCachedToken = async (): Promise<CachedToken | null> => {
+const readCachedToken = async (
+  env: CloudflareBindings
+): Promise<CachedToken | null> => {
   try {
     const parsed = cachedTokenSchema.safeParse(
       await env.CACHE.get(TOKEN_CACHE_KEY, "json")
@@ -191,7 +194,10 @@ const readCachedToken = async (): Promise<CachedToken | null> => {
   }
 };
 
-const persistCachedToken = async (token: CachedToken): Promise<void> => {
+const persistCachedToken = async (
+  token: CachedToken,
+  env: CloudflareBindings
+): Promise<void> => {
   try {
     await env.CACHE.put(TOKEN_CACHE_KEY, JSON.stringify(token), {
       expirationTtl: 3300,
@@ -202,7 +208,8 @@ const persistCachedToken = async (token: CachedToken): Promise<void> => {
 };
 
 export const getAccessToken = async (
-  serviceAccount: ServiceAccount
+  serviceAccount: ServiceAccount,
+  env: CloudflareBindings
 ): Promise<string> => {
   if (
     cachedToken &&
@@ -211,7 +218,7 @@ export const getAccessToken = async (
     return cachedToken.accessToken;
   }
 
-  const storedToken = await readCachedToken();
+  const storedToken = await readCachedToken(env);
 
   if (
     storedToken &&
@@ -224,7 +231,7 @@ export const getAccessToken = async (
 
   const token = await fetchAccessToken(serviceAccount);
   cachedToken = token;
-  await persistCachedToken(token);
+  await persistCachedToken(token, env);
 
   return token.accessToken;
 };

@@ -42,10 +42,7 @@
   "editor.codeActionsOnSave": {
     "source.fixAll.oxc": "explicit"
   },
-  "cSpell.words": [
-    "Pooler",
-    "stormglass"
-  ],
+  "cSpell.words": ["Pooler"],
   "[html]": {
     "editor.defaultFormatter": "oxc.oxc-vscode"
   },

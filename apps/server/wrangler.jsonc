@@ -3,9 +3,6 @@
   "name": "server",
   "main": "src/index.ts",
   "compatibility_date": "2026-11-04",
-  "compatibility_flags": [
-    "nodejs_compat"
-  ],
   "placement": {
     "mode": "smart"
   },
@@ -128,6 +125,6 @@
     "SUPPORT_EMAIL": "support@example.com",
     "LOGO_TEXT": "App",
     "BRAND_PRIMARY_COLOR": "#2563eb",
-    "FCM_PROVIDER": "firebase",
+    "FCM_PROVIDER": "firebase"
   }
 }

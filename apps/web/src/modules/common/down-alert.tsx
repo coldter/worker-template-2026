@@ -53,8 +53,6 @@ const downAlertConfig = {
   },
 } as const;
 
-export type AlertKeys = keyof typeof downAlertConfig;
-
 export const DownAlert = () => {
   const { isOnline } = useOnlineManager();
   const { downAlert, setDownAlert } = useAlertStore();

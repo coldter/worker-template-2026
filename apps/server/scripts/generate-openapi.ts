@@ -1,8 +1,5 @@
 import { writeFileSync } from "node:fs";
-import { register } from "node:module";
 import path from "node:path";
-
-register("./cloudflare-stub-hooks.mjs", import.meta.url);
 
 process.env.SKIP_DB = "true";
 
